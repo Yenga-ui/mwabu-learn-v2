@@ -19,7 +19,8 @@ public sealed class LoginRequest
 }
 public sealed record UserResponse(Guid Id, string Email, string UserName, string FirstName, string LastName,
     string? PhoneNumber, bool IsActive, DateTime? LastLoginAt, DateTime CreatedAt, DateTime? UpdatedAt);
-public sealed record LoginResponse(string AccessToken, string TokenType, DateTime ExpiresAt);
+public sealed record LoginResponse(string AccessToken, string TokenType, DateTime ExpiresAt,
+    string? RefreshToken = null, DateTime? RefreshExpiresAt = null, DateTime? ServerTime = null);
 public sealed record ActiveRequest([property: JsonRequired] bool IsActive);
 public sealed class UserSearchRequest
 {
@@ -44,7 +45,7 @@ public sealed record RoleResponse(Guid Id, string Code, string Name, bool Grants
 public sealed record PermissionResponse(Guid Id, string Code, string Name);
 public sealed record UserMembershipResponse(MembershipResponse Membership, string OrganisationName,
     bool OrganisationIsActive, IReadOnlyList<string> RoleCodes);
-public enum IdentityError { Validation, Authentication, Forbidden, NotFound, Conflict }
+public enum IdentityError { Validation, Authentication, Forbidden, NotFound, Conflict, Unavailable }
 public sealed class IdentityException(IdentityError error, string message) : Exception(message)
 {
     public IdentityError Error { get; } = error;

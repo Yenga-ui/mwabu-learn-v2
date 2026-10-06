@@ -40,7 +40,12 @@ public static class AuthenticationRegistration
                     // Current account state is checked on every authenticated request; tokens hold no role graph.
                     var state = await db.Users.AsNoTracking().Where(u => u.Id == id && u.IsActive && u.AccessTokenVersion == version)
                         .Select(u => new { u.LockoutEnd }).SingleOrDefaultAsync(context.HttpContext.RequestAborted);
-                    if (state is null || state.LockoutEnd > now) context.Fail("Invalid access token.");
+                    if (state is null || state.LockoutEnd > now) { context.Fail("Invalid access token."); return; }
+                    var familyClaim = context.Principal?.FindFirst("sid")?.Value;
+                    if (familyClaim is not null && (!Guid.TryParse(familyClaim, out var family) ||
+                        !await db.RefreshSessions.AsNoTracking().AnyAsync(x => x.UserId == id && x.FamilyId == family &&
+                            x.RevokedAt == null && x.ExpiresAt > DateTime.UtcNow && x.AbsoluteExpiresAt > DateTime.UtcNow,
+                            context.HttpContext.RequestAborted))) context.Fail("Invalid access token.");
                 },
                 OnChallenge = async context =>
                 {
@@ -79,3 +84,4 @@ public sealed class BootstrapStartup(IServiceScopeFactory scopes) : IHostedServi
     }
     public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
 }
+

@@ -4,6 +4,7 @@ using MwabuLearn.Domain.Entities.Content;
 using MwabuLearn.Domain.Entities.Organisations;
 using MwabuLearn.Infrastructure.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using MwabuLearn.Domain.Entities.Identity;
 
 namespace MwabuLearn.Infrastructure.Persistence;
 
@@ -29,6 +30,7 @@ public class MwabuDbContext(DbContextOptions<MwabuDbContext> options) : Identity
     public DbSet<OrganisationRole> OrganisationRoles => Set<OrganisationRole>();
     public DbSet<OrganisationMembershipRole> OrganisationMembershipRoles => Set<OrganisationMembershipRole>();
     public DbSet<Permission> Permissions => Set<Permission>();
+    public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

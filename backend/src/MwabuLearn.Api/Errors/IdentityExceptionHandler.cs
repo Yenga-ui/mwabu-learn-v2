@@ -12,7 +12,7 @@ public sealed class IdentityExceptionHandler(IProblemDetailsService problems) : 
         var status = error.Error switch
         {
             IdentityError.Validation => 400, IdentityError.Authentication => 401, IdentityError.Forbidden => 403,
-            IdentityError.NotFound => 404, IdentityError.Conflict => 409, _ => 500
+            IdentityError.NotFound => 404, IdentityError.Conflict => 409, IdentityError.Unavailable => 503, _ => 500
         };
         context.Response.StatusCode = status;
         if (status == 401) context.Response.Headers.WWWAuthenticate = "Bearer";

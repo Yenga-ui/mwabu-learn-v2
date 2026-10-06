@@ -37,7 +37,7 @@ public sealed class JwtOptions
 
 public sealed class JwtTokenIssuer(IOptions<JwtOptions> options)
 {
-    public LoginResponse Create(ApplicationUser user)
+    public LoginResponse Create(ApplicationUser user, Guid? sessionFamilyId = null)
     {
         var settings = options.Value;
         var now = DateTime.UtcNow;
@@ -49,8 +49,10 @@ public sealed class JwtTokenIssuer(IOptions<JwtOptions> options)
             new(JwtRegisteredClaimNames.Iat, new DateTimeOffset(now).ToUnixTimeSeconds().ToString(System.Globalization.CultureInfo.InvariantCulture), ClaimValueTypes.Integer64),
             new("ver", user.AccessTokenVersion.ToString(System.Globalization.CultureInfo.InvariantCulture), ClaimValueTypes.Integer32)
         ];
-        var token = new JwtSecurityToken(settings.Issuer, settings.Audience, claims, now, expires,
+        var tokenClaims = sessionFamilyId.HasValue ? claims.Append(new Claim("sid", sessionFamilyId.Value.ToString())) : claims;
+        var token = new JwtSecurityToken(settings.Issuer, settings.Audience, tokenClaims, now, expires,
             new SigningCredentials(new SymmetricSecurityKey(Convert.FromBase64String(settings.SigningKeyBase64)), SecurityAlgorithms.HmacSha256));
         return new LoginResponse(new JwtSecurityTokenHandler().WriteToken(token), "Bearer", expires);
     }
 }
+

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using MwabuLearn.Application.Identity;
 using MwabuLearn.Infrastructure.Organisations;
 using MwabuLearn.Infrastructure.Persistence;
@@ -35,6 +36,12 @@ public static class IdentityServiceRegistration
         services.AddOptions<BootstrapOptions>().Bind(configuration.GetSection("BootstrapAdministrator")).Validate(BootstrapOptions.IsSecure,
             "Enabled administrator bootstrap requires strong explicitly supplied credentials and organisation details.").ValidateOnStart();
         services.AddScoped<JwtTokenIssuer>();
+        services.AddOptions<SessionOptions>().Bind(configuration.GetSection("Sessions")).Validate(SessionOptions.IsValid,
+            "Session lifetimes must be positive and bounded; absolute lifetime must cover idle lifetime.").ValidateOnStart();
+        services.AddOptions<DataProtectionTokenProviderOptions>().Configure<IOptions<SessionOptions>>((o, settings) =>
+            o.TokenLifespan = TimeSpan.FromMinutes(settings.Value.PasswordResetMinutes));
+        services.TryAddScoped<IAccountNotificationService, UnavailableAccountNotifications>();
+        services.AddScoped<ISessionService, SessionService>();
         services.AddSingleton(sp => new UnknownAccountPasswordWork(new PasswordHasher<ApplicationUser>(sp.GetRequiredService<IOptions<PasswordHasherOptions>>())));
         services.AddScoped<PlatformAdministratorGuard>();
         services.AddScoped<IUserService, UserService>();

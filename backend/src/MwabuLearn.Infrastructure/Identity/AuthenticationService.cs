@@ -16,7 +16,7 @@ public sealed class UnknownAccountPasswordWork(IPasswordHasher<ApplicationUser> 
 }
 
 public sealed class AuthenticationService(MwabuDbContext db, UserManager<ApplicationUser> users,
-    SignInManager<ApplicationUser> signIn, UnknownAccountPasswordWork unknown, JwtTokenIssuer tokens) : IAuthenticationService
+    SignInManager<ApplicationUser> signIn, UnknownAccountPasswordWork unknown, ISessionService sessions) : IAuthenticationService
 {
     private static IdentityException Failure() => new(IdentityError.Authentication, "Invalid email or password.");
     public async Task<LoginResponse> LoginAsync(LoginRequest request, CancellationToken ct)
@@ -35,7 +35,7 @@ public sealed class AuthenticationService(MwabuDbContext db, UserManager<Applica
         user.UpdatedAt = DateTime.UtcNow;
         if (!(await users.UpdateAsync(user)).Succeeded) throw Failure();
         ct.ThrowIfCancellationRequested();
-        return tokens.Create(user);
+        return await sessions.CreateAsync(user.Id, ct);
     }
     public async Task<UserResponse> MeAsync(Guid userId, CancellationToken ct) =>
         await db.Users.AsNoTracking().Where(x => x.Id == userId && x.IsActive).Select(UserService.Projection).SingleOrDefaultAsync(ct) ?? throw Failure();
