@@ -38,7 +38,7 @@ public sealed class AuthController(IAuthenticationService service, ICurrentUser 
     {
         await sessions.LogoutAllAsync(current.UserId!.Value, ct); return NoContent();
     }
-    [Authorize, HttpPost("change-password")]
+    [Authorize, EnableRateLimiting("credentials"), HttpPost("change-password")]
     [ProducesResponseType(204)]
     public async Task<IActionResult> ChangePassword(ChangePasswordRequest request, CancellationToken ct)
     {

@@ -18,7 +18,7 @@ using MwabuLearn.Infrastructure.Persistence;
 
 namespace MwabuLearn.Tests;
 
-internal sealed class CatalogueApiFactory(bool development = false) : WebApplicationFactory<Program>
+internal sealed class CatalogueApiFactory(bool development = false, Action<IWebHostBuilder>? configure = null) : WebApplicationFactory<Program>
 {
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web) { Converters = { new JsonStringEnumConverter() } };
     private readonly SqliteConnection connection = new("Data Source=:memory:");
@@ -28,6 +28,7 @@ internal sealed class CatalogueApiFactory(bool development = false) : WebApplica
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         TestSecurityConfiguration.Configure(builder);
+        configure?.Invoke(builder);
         connection.Open();
         builder.UseEnvironment(development ? "Development" : "Testing");
         builder.UseSetting("ConnectionStrings:MwabuLearnDb", "Host=localhost;Database=unused_test_configuration");

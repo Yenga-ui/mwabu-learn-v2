@@ -20,7 +20,7 @@ namespace MwabuLearn.Api.Controllers;
 public sealed class ContentController(IContentService service, IOptions<ContentOptions> options, IAuthorizationService authorization) : ControllerBase
 {
     [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
-    [HttpGet]
+    [HttpGet, Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("search")]
     [ProducesResponseType<PagedResponse<ContentResponse>>(200)]
     public async Task<ActionResult<PagedResponse<ContentResponse>>> Search([FromQuery] ContentSearchRequest request, CancellationToken ct) =>
         Ok(await service.SearchAsync(request, ct));
@@ -77,7 +77,7 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
     public async Task<ActionResult<IReadOnlyList<AssetResponse>>> Assets(Guid id, CancellationToken ct) => Ok(await service.ListAssetsAsync(id, ct));
 
     [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
-    [HttpPost("{id:guid}/assets")]
+    [HttpPost("{id:guid}/assets"), Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("upload")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType<AssetResponse>(201)]
     public async Task<ActionResult<AssetResponse>> Upload(Guid id, [FromForm] AssetUploadForm request, CancellationToken ct)
@@ -91,7 +91,7 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
     }
 
     [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
-    [HttpGet("{id:guid}/assets/{assetId:guid}")]
+    [HttpGet("{id:guid}/assets/{assetId:guid}"), Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("download")]
     [Produces("application/octet-stream")]
     [ProducesResponseType(200)]
     public async Task<IActionResult> Download(Guid id, Guid assetId, CancellationToken ct)

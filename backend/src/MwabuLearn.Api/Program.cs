@@ -39,6 +39,10 @@ builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddMwabuAuthentication(builder.Configuration);
 builder.Services.AddOptions<MwabuLearn.Infrastructure.Devices.DeviceOptions>().BindConfiguration("Devices")
     .Validate(MwabuLearn.Infrastructure.Devices.DeviceOptions.IsValid, "Invalid device credential lifetime.").ValidateOnStart();
+builder.Services.AddOptions<MwabuLearn.Infrastructure.Sync.SyncOptions>().BindConfiguration("Sync")
+    .Validate(MwabuLearn.Infrastructure.Sync.SyncOptions.IsValid, "Invalid sync bounds.").ValidateOnStart();
+builder.Services.AddScoped<MwabuLearn.Infrastructure.Sync.SyncCursorProtector>();
+builder.Services.AddScoped<MwabuLearn.Application.Sync.ISyncService, MwabuLearn.Infrastructure.Sync.SyncService>();
 builder.Services.AddScoped<MwabuLearn.Application.Devices.IDeviceService, MwabuLearn.Infrastructure.Devices.DeviceService>();
 builder.Services.AddScoped<MwabuLearn.Application.Devices.IDeviceContext, HttpDeviceContext>();
 builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, RegisteredDeviceHandler>();
@@ -46,6 +50,7 @@ builder.Services.AddAuthorization(options => options.AddPolicy("registered-devic
 builder.Services.AddScoped<MwabuLearn.Application.Auditing.IAuditContext, HttpAuditContext>();
 builder.Services.AddScoped<MwabuLearn.Application.Auditing.IAuditService, MwabuLearn.Infrastructure.Auditing.AuditService>();
 builder.AddHttpSecurity();
+builder.AddDurableDataProtection();
 builder.Logging.ClearProviders();
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>

@@ -56,10 +56,15 @@ public static class AuthenticationRegistration
                 OnForbidden = context => WriteProblem(context.HttpContext, 403, "This operation is not permitted.")
             };
         });
-        var loginLimit = configuration.GetValue<int?>("Authentication:LoginAttemptsPerMinute") ?? 10;
-        if (loginLimit is < 1 or > 100) throw new InvalidOperationException("Login rate limit must be between 1 and 100 per minute.");
+        services.AddOptions<MwabuLearn.Api.Operations.TrafficOptions>().BindConfiguration("Traffic").Validate(MwabuLearn.Api.Operations.TrafficOptions.IsValid).ValidateOnStart();
         services.AddRateLimiter(options =>
         {
+        var loginLimit = configuration.GetValue<int?>("Authentication:LoginAttemptsPerMinute") ?? 10;
+        if (loginLimit is < 1 or > 100) throw new InvalidOperationException("Login rate limit must be between 1 and 100 per minute.");
+        var traffic = configuration.GetSection("Traffic").Get<MwabuLearn.Api.Operations.TrafficOptions>() ?? new();
+        if (!MwabuLearn.Api.Operations.TrafficOptions.IsValid(traffic)) throw new InvalidOperationException("Invalid Traffic limits.");
+
+            traffic.Policies(options);
             options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
                 (context.Connection.RemoteIpAddress?.ToString() ?? "unknown") + ":" + (context.Items["AuthPartition"] as string ?? "unknown"), _ => new FixedWindowRateLimiterOptions
                 { PermitLimit = loginLimit, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
@@ -70,7 +75,7 @@ public static class AuthenticationRegistration
                 var principal = context.User.FindFirst("sub")?.Value;
                 var key = (auth ? "auth-ip:" : "api:") + (auth ? context.Connection.RemoteIpAddress?.ToString() : principal ?? context.Connection.RemoteIpAddress?.ToString());
                 return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
-                { PermitLimit = auth ? Math.Max(100, loginLimit * 10) : 600, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true });
+                { PermitLimit = auth ? traffic.AuthIpPerMinute : traffic.ApiPerUserPerMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true });
             });
             options.OnRejected = (context, _) => new ValueTask(WriteProblem(context.HttpContext, 429, "Too many requests. Try again later."));
         });
