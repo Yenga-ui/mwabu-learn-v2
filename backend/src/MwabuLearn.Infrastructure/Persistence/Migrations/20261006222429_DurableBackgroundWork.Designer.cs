@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using MwabuLearn.Infrastructure.Persistence;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace MwabuLearn.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(MwabuDbContext))]
-    partial class MwabuDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261006222429_DurableBackgroundWork")]
+    partial class DurableBackgroundWork
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -687,75 +690,6 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         {
                             t.HasCheckConstraint("CK_CurriculumVersions_SortOrder", "\"SortOrder\" >= 0");
                         });
-                });
-
-            modelBuilder.Entity("MwabuLearn.Domain.Entities.Devices.Device", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("AppVersion")
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
-
-                    b.Property<Guid>("ClientRegistrationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("CredentialExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CredentialHash")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)");
-
-                    b.Property<string>("DisplayName")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime?>("LastSeenAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("OrganisationId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Platform")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<DateTime>("RegisteredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("RegisteredByUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("RevokedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .IsConcurrencyToken()
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RegisteredByUserId");
-
-                    b.HasIndex("OrganisationId", "ClientRegistrationId")
-                        .IsUnique();
-
-                    b.HasIndex("OrganisationId", "IsActive", "Id");
-
-                    b.ToTable("Devices");
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Grade", b =>
@@ -2077,21 +2011,6 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Curriculum");
-                });
-
-            modelBuilder.Entity("MwabuLearn.Domain.Entities.Devices.Device", b =>
-                {
-                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.Organisation", null)
-                        .WithMany()
-                        .HasForeignKey("OrganisationId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
-                        .WithMany()
-                        .HasForeignKey("RegisteredByUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Grade", b =>

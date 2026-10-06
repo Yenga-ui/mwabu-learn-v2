@@ -85,6 +85,16 @@ public sealed class ContentApiTests
         using var partial = await client.SendAsync(rangeRequest);
         Assert.Equal(HttpStatusCode.PartialContent, partial.StatusCode);
         Assert.Equal(bytes.Take(4).ToArray(), await partial.Content.ReadAsByteArrayAsync());
+        Assert.Equal("\"" + asset.Checksum + "\"", download.Headers.ETag!.Tag);
+        using var unsatisfiable = new HttpRequestMessage(HttpMethod.Get, response.Headers.Location);
+        unsatisfiable.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(bytes.Length + 1, null);
+        Assert.Equal(HttpStatusCode.RequestedRangeNotSatisfiable, (await client.SendAsync(unsatisfiable)).StatusCode);
+        using var changed = new HttpRequestMessage(HttpMethod.Get, response.Headers.Location);
+        changed.Headers.Range = new System.Net.Http.Headers.RangeHeaderValue(0, 3);
+        changed.Headers.IfRange = new System.Net.Http.Headers.RangeConditionHeaderValue(new System.Net.Http.Headers.EntityTagHeaderValue("\"different\""));
+        using var full = await client.SendAsync(changed);
+        Assert.Equal(HttpStatusCode.OK, full.StatusCode);
+        Assert.Equal(bytes, await full.Content.ReadAsByteArrayAsync());
         Assert.Equal(HttpStatusCode.NoContent, (await client.DeleteAsync($"/api/content/{content.Id}/assets/{asset.Id}")).StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync(response.Headers.Location)).StatusCode);
     }

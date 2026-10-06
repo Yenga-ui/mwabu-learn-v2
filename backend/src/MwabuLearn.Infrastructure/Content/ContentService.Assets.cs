@@ -64,7 +64,7 @@ public sealed partial class ContentService
         var content = await GetAsync(id, ct);
         var asset = await db.ContentAssets.AsNoTracking().SingleOrDefaultAsync(x => x.Id == assetId && x.ContentItemId == id && !x.IsPendingDeletion, ct) ?? throw Missing("Asset");
         if (!content.IsDownloadable) throw Conflict("This content is not downloadable.");
-        return new AssetDownload(await storage.OpenReadAsync(asset.StorageKey, ct), asset.FileName, asset.FileSizeBytes);
+        return new AssetDownload(await storage.OpenReadAsync(asset.StorageKey, ct), asset.FileName, asset.FileSizeBytes, asset.Checksum);
     }
 
     public async Task RemoveAssetAsync(Guid id, Guid assetId, CancellationToken ct)

@@ -21,7 +21,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false)));
 builder.Services.AddScoped<IContentService, ContentService>();
-builder.Services.AddSingleton<IContentStorage, LocalContentStorage>();
+builder.Services.AddContentStorage(builder.Configuration);
+builder.Services.AddOptions<MwabuLearn.Infrastructure.Operations.BackgroundWorkOptions>().BindConfiguration("BackgroundWork")
+    .Validate(MwabuLearn.Infrastructure.Operations.BackgroundWorkOptions.IsValid, "Invalid background work settings.").ValidateOnStart();
+builder.Services.AddScoped<MwabuLearn.Infrastructure.Operations.BackgroundJobRunner>();
+builder.Services.AddHostedService<MwabuLearn.Infrastructure.Operations.BackgroundWorkService>();
 builder.Services.AddOptions<ContentOptions>().BindConfiguration("Content")
     .Validate(x => x.MaxUploadBytes is > 0 and <= 1073741824, "Upload limit must be between 1 byte and 1 GiB.").ValidateOnStart();
 builder.Services.AddOptions<LocalContentStorageOptions>().Configure(options =>
@@ -33,6 +37,12 @@ builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLi
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = uploadLimit + 1024 * 1024);
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddMwabuAuthentication(builder.Configuration);
+builder.Services.AddOptions<MwabuLearn.Infrastructure.Devices.DeviceOptions>().BindConfiguration("Devices")
+    .Validate(MwabuLearn.Infrastructure.Devices.DeviceOptions.IsValid, "Invalid device credential lifetime.").ValidateOnStart();
+builder.Services.AddScoped<MwabuLearn.Application.Devices.IDeviceService, MwabuLearn.Infrastructure.Devices.DeviceService>();
+builder.Services.AddScoped<MwabuLearn.Application.Devices.IDeviceContext, HttpDeviceContext>();
+builder.Services.AddScoped<Microsoft.AspNetCore.Authorization.IAuthorizationHandler, RegisteredDeviceHandler>();
+builder.Services.AddAuthorization(options => options.AddPolicy("registered-device", policy => policy.RequireAuthenticatedUser().AddRequirements(new RegisteredDeviceRequirement())));
 builder.Services.AddScoped<MwabuLearn.Application.Auditing.IAuditContext, HttpAuditContext>();
 builder.Services.AddScoped<MwabuLearn.Application.Auditing.IAuditService, MwabuLearn.Infrastructure.Auditing.AuditService>();
 builder.AddHttpSecurity();

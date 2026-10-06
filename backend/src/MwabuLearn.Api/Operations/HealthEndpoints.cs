@@ -8,7 +8,7 @@ public static class HealthEndpoints
     {
         app.MapGet("/health/live", () => Results.Ok(new { status = "healthy" })).AllowAnonymous();
         app.MapGet("/api/health", () => Results.Ok(new { status = "healthy" })).AllowAnonymous();
-        app.MapGet("/health/ready", async (MwabuDbContext db, CancellationToken ct) =>
+        app.MapGet("/health/ready", async (MwabuDbContext db, IServiceProvider services, CancellationToken ct) =>
         {
             try
             {
@@ -16,6 +16,7 @@ public static class HealthEndpoints
                 timeout.CancelAfter(TimeSpan.FromSeconds(5));
                 if (!await db.Database.CanConnectAsync(timeout.Token) || (await db.Database.GetPendingMigrationsAsync(timeout.Token)).Any())
                     return Results.Json(new { status = "unhealthy" }, statusCode: 503);
+                await services.GetRequiredService<MwabuLearn.Application.Content.IStorageReadiness>().ProbeAsync(timeout.Token);
                 return Results.Ok(new { status = "healthy" });
             }
             catch (Exception) when (!ct.IsCancellationRequested)

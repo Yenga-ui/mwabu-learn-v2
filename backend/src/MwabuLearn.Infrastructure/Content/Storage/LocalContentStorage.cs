@@ -10,7 +10,7 @@ public sealed class LocalContentStorageOptions
     public string RootPath { get; set; } = string.Empty;
 }
 
-public sealed class LocalContentStorage : IContentStorage
+public sealed class LocalContentStorage : IContentStorage, IStorageReadiness
 {
     private readonly string root;
     private static readonly Regex KeyFormat = new(@"\Acontent/[a-f0-9]{32}/assets/[a-f0-9]{32}\z", RegexOptions.CultureInvariant);
@@ -85,6 +85,15 @@ public sealed class LocalContentStorage : IContentStorage
     {
         ct.ThrowIfCancellationRequested();
         return Task.FromResult(File.Exists(Resolve(storageKey)));
+    }
+
+    public async Task ProbeAsync(CancellationToken ct)
+    {
+        RejectLinks(root);
+        await using var probe = new FileStream(Path.Combine(root, Guid.NewGuid().ToString("N") + ".probe"), FileMode.CreateNew,
+            FileAccess.ReadWrite, FileShare.None, 1, FileOptions.Asynchronous | FileOptions.DeleteOnClose);
+        await probe.WriteAsync(new byte[] { 1 }, ct);
+        await probe.FlushAsync(ct);
     }
 
     private string Resolve(string key)

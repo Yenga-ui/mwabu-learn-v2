@@ -11,6 +11,7 @@ namespace MwabuLearn.Infrastructure.Persistence;
 public partial class MwabuDbContext(DbContextOptions<MwabuDbContext> options, MwabuLearn.Application.Auditing.IAuditContext? auditContext = null) : IdentityUserContext<ApplicationUser, Guid>(options)
 {
     public DbSet<MwabuLearn.Domain.Entities.Auditing.AuditEvent> AuditEvents => Set<MwabuLearn.Domain.Entities.Auditing.AuditEvent>();
+    public DbSet<MwabuLearn.Domain.Entities.Devices.Device> Devices => Set<MwabuLearn.Domain.Entities.Devices.Device>();
     public DbSet<Curriculum> Curricula => Set<Curriculum>();
     public DbSet<CurriculumVersion> CurriculumVersions => Set<CurriculumVersion>();
     public DbSet<Grade> Grades => Set<Grade>();

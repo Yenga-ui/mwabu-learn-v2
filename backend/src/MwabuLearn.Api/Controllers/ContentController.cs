@@ -99,7 +99,9 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         var result = await service.OpenAssetAsync(id, assetId, ct);
         Response.Headers["X-Content-Type-Options"] = "nosniff";
         // Client MIME metadata never determines executable/inline browser behavior.
-        return File(result.Stream, "application/octet-stream", result.FileName, enableRangeProcessing: true);
+        var file = File(result.Stream, "application/octet-stream", result.FileName, enableRangeProcessing: true);
+        if (result.Checksum is not null) file.EntityTag = new Microsoft.Net.Http.Headers.EntityTagHeaderValue("\"" + result.Checksum + "\"");
+        return file;
     }
 
     [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]

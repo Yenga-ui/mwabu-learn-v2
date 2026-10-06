@@ -24,6 +24,7 @@ public partial class MwabuDbContext
     {
         var added = new List<AuditEvent>();
         ChangeTracker.DetectChanges();
+        PrepareJobs();
         var entries = ChangeTracker.Entries().ToArray();
         if (entries.Any(x => x.Entity is AuditEvent && x.State is EntityState.Modified or EntityState.Deleted))
             throw new InvalidOperationException("Audit records are append-only.");
@@ -36,7 +37,7 @@ public partial class MwabuDbContext
         {
             if (entry.Entity is AuditEvent) continue;
             // Refresh credentials, Identity internals and personal values are deliberately excluded.
-            if (entry.Entity is RefreshSession || entry.Entity is not BaseEntity && entry.Entity is not ApplicationUser) continue;
+            if (entry.Entity is RefreshSession or MwabuLearn.Domain.Entities.Operations.BackgroundJob || entry.Entity is not BaseEntity && entry.Entity is not ApplicationUser) continue;
             var id = entry.Entity is BaseEntity entity ? entity.Id : ((ApplicationUser)entry.Entity).Id;
             var type = entry.Metadata.ClrType.Name;
             Guid? organisation = entry.Entity switch
