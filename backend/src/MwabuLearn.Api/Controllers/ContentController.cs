@@ -1,32 +1,41 @@
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using MwabuLearn.Api.Security;
+using MwabuLearn.Application.Identity;
 using Microsoft.Extensions.Options;
 using MwabuLearn.Application.Content;
 using MwabuLearn.Domain.Entities.Content;
 
 namespace MwabuLearn.Api.Controllers;
 
-[ApiController]
+[ApiController, Authorize, RequireHttps]
 [Route("api/content")]
 [Produces("application/json")]
+[ProducesResponseType<ProblemDetails>(401)]
+[ProducesResponseType<ProblemDetails>(403)]
 [ProducesResponseType<ProblemDetails>(400)]
 [ProducesResponseType<ProblemDetails>(404)]
 [ProducesResponseType<ProblemDetails>(409)]
-public sealed class ContentController(IContentService service, IOptions<ContentOptions> options) : ControllerBase
+public sealed class ContentController(IContentService service, IOptions<ContentOptions> options, IAuthorizationService authorization) : ControllerBase
 {
+    [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
     [HttpGet]
     [ProducesResponseType<PagedResponse<ContentResponse>>(200)]
     public async Task<ActionResult<PagedResponse<ContentResponse>>> Search([FromQuery] ContentSearchRequest request, CancellationToken ct) =>
         Ok(await service.SearchAsync(request, ct));
 
+    [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
     [HttpGet("{id:guid}")]
     [ProducesResponseType<ContentResponse>(200)]
     public async Task<ActionResult<ContentResponse>> Get(Guid id, CancellationToken ct) => Ok(await service.GetAsync(id, ct));
 
+    [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
     [HttpGet("slug/{slug}")]
     [ProducesResponseType<ContentResponse>(200)]
     public async Task<ActionResult<ContentResponse>> GetBySlug(string slug, CancellationToken ct) => Ok(await service.GetBySlugAsync(slug, ct));
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpPost]
     [ProducesResponseType<ContentResponse>(201)]
     public async Task<ActionResult<ContentResponse>> Create(ContentRequest request, CancellationToken ct)
@@ -35,16 +44,25 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
     }
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<ContentResponse>(200)]
     public async Task<ActionResult<ContentResponse>> Update(Guid id, ContentRequest request, CancellationToken ct) =>
         Ok(await service.UpdateAsync(id, request, ct));
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpPatch("{id:guid}/status")]
+    [EndpointDescription("Requires platform content.manage. Entering Published additionally requires platform content.publish; workflow rules still apply.")]
     [ProducesResponseType<ContentResponse>(200)]
-    public async Task<ActionResult<ContentResponse>> Status(Guid id, StatusRequest request, CancellationToken ct) =>
-        Ok(await service.ChangeStatusAsync(id, request, ct));
+    public async Task<ActionResult<ContentResponse>> Status(Guid id, StatusRequest request, CancellationToken ct)
+    {
+        if (request.Status == ContentStatus.Published && !(await authorization.AuthorizeAsync(User,
+            RequirePermissionAttribute.PolicyName(PermissionCodes.ContentPublish, PermissionScope.Platform))).Succeeded)
+            return Forbid();
+        return Ok(await service.ChangeStatusAsync(id, request, ct));
+    }
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpPost("{id:guid}/archive")]
     [ProducesResponseType(204)]
     public async Task<IActionResult> Archive(Guid id, CancellationToken ct)
@@ -53,10 +71,12 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return NoContent();
     }
 
+    [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
     [HttpGet("{id:guid}/assets")]
     [ProducesResponseType<IReadOnlyList<AssetResponse>>(200)]
     public async Task<ActionResult<IReadOnlyList<AssetResponse>>> Assets(Guid id, CancellationToken ct) => Ok(await service.ListAssetsAsync(id, ct));
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpPost("{id:guid}/assets")]
     [Consumes("multipart/form-data")]
     [ProducesResponseType<AssetResponse>(201)]
@@ -70,6 +90,7 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return CreatedAtAction(nameof(Download), new { id, assetId = result.Id }, result);
     }
 
+    [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
     [HttpGet("{id:guid}/assets/{assetId:guid}")]
     [Produces("application/octet-stream")]
     [ProducesResponseType(200)]
@@ -81,6 +102,7 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return File(result.Stream, "application/octet-stream", result.FileName, enableRangeProcessing: true);
     }
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpDelete("{id:guid}/assets/{assetId:guid}")]
     [ProducesResponseType(204)]
     public async Task<IActionResult> RemoveAsset(Guid id, Guid assetId, CancellationToken ct)
@@ -89,11 +111,13 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return NoContent();
     }
 
+    [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
     [HttpGet("{id:guid}/collections")]
     [ProducesResponseType<IReadOnlyList<CollectionAssignmentResponse>>(200)]
     public async Task<ActionResult<IReadOnlyList<CollectionAssignmentResponse>>> Collections(Guid id, CancellationToken ct) =>
         Ok(await service.ListContentCollectionsAsync(id, ct));
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpPost("{id:guid}/collections")]
     [ProducesResponseType<CollectionAssignmentResponse>(201)]
     public async Task<ActionResult<CollectionAssignmentResponse>> AddCollection(Guid id, CollectionAssignmentRequest request, CancellationToken ct)
@@ -102,6 +126,7 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return CreatedAtAction(nameof(Collections), new { id }, result);
     }
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpDelete("{id:guid}/collections/{collectionId:guid}")]
     [ProducesResponseType(204)]
     public async Task<IActionResult> RemoveCollection(Guid id, Guid collectionId, CancellationToken ct)
@@ -110,10 +135,12 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return NoContent();
     }
 
+    [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
     [HttpGet("{id:guid}/tags")]
     [ProducesResponseType<IReadOnlyList<TagResponse>>(200)]
     public async Task<ActionResult<IReadOnlyList<TagResponse>>> Tags(Guid id, CancellationToken ct) => Ok(await service.ListContentTagsAsync(id, ct));
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpPost("{id:guid}/tags")]
     [ProducesResponseType<TagResponse>(201)]
     public async Task<ActionResult<TagResponse>> AddTag(Guid id, TagAssignmentRequest request, CancellationToken ct)
@@ -122,6 +149,7 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return CreatedAtAction(nameof(Tags), new { id }, result);
     }
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpDelete("{id:guid}/tags/{tagId:guid}")]
     [ProducesResponseType(204)]
     public async Task<IActionResult> RemoveTag(Guid id, Guid tagId, CancellationToken ct)
@@ -130,10 +158,12 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return NoContent();
     }
 
+    [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
     [HttpGet("{id:guid}/curriculum-mappings")]
     [ProducesResponseType<IReadOnlyList<MappingResponse>>(200)]
     public async Task<ActionResult<IReadOnlyList<MappingResponse>>> Mappings(Guid id, CancellationToken ct) => Ok(await service.ListMappingsAsync(id, ct));
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpPost("{id:guid}/curriculum-mappings")]
     [ProducesResponseType<MappingResponse>(201)]
     public async Task<ActionResult<MappingResponse>> AddMapping(Guid id, MappingRequest request, CancellationToken ct)
@@ -142,6 +172,7 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
         return CreatedAtAction(nameof(Mappings), new { id }, result);
     }
 
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
     [HttpDelete("{id:guid}/curriculum-mappings/{mappingId:guid}")]
     [ProducesResponseType(204)]
     public async Task<IActionResult> RemoveMapping(Guid id, Guid mappingId, CancellationToken ct)

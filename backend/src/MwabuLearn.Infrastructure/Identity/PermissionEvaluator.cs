@@ -10,11 +10,30 @@ public sealed class PermissionEvaluator(MwabuDbContext db) : IPermissionEvaluato
 {
     private sealed record Snapshot(bool PlatformAuthority, HashSet<string> Codes, bool? OrganisationIsActive);
     private readonly Dictionary<(Guid User, Guid? Organisation), Snapshot> cache = new();
+    private readonly Dictionary<(Guid User, string Permission), bool> catalogueCache = new();
     public async Task<bool> HasPlatformAuthorityAsync(Guid userId, CancellationToken ct) => (await Load(userId, null, ct)).PlatformAuthority;
+    public async Task<bool> CanReadCatalogueAsync(Guid userId, string permission, CancellationToken ct)
+    {
+        if (permission is not (PermissionCodes.CurriculumRead or PermissionCodes.ContentRead)) return false;
+        var key = (userId, permission);
+        if (catalogueCache.TryGetValue(key, out var allowed)) return allowed;
+        allowed = await (from assignment in db.OrganisationMembershipRoles.AsNoTracking()
+            join mapping in db.RolePermissions.AsNoTracking() on assignment.RoleId equals mapping.RoleId
+            where assignment.Membership.UserId == userId && assignment.Membership.IsActive &&
+                assignment.Membership.Organisation.IsActive && db.Users.Any(u => u.Id == userId && u.IsActive) &&
+                mapping.Permission.Code == permission
+            select assignment.Id).AnyAsync(ct);
+        catalogueCache.Add(key, allowed);
+        return allowed;
+    }
     public async Task<bool> CanAsync(Guid userId, string permission, Guid? organisationId, bool platformOnly, CancellationToken ct)
     {
         if (!PermissionCodes.All.Contains(permission)) return false;
-        if (platformOnly) return await HasPlatformAuthorityAsync(userId, ct);
+        if (platformOnly)
+        {
+            var platform = await Load(userId, null, ct);
+            return platform.PlatformAuthority && platform.Codes.Contains(permission);
+        }
         if (organisationId is null || organisationId == Guid.Empty) return false;
         var grants = await Load(userId, organisationId, ct);
         // A platform administrator may reach the service for a missing resource (404), but may

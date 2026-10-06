@@ -4,10 +4,11 @@ using MwabuLearn.Application.Identity;
 
 namespace MwabuLearn.Api.Security;
 
-public enum PermissionScope { Organisation, Platform }
+public enum PermissionScope { Organisation, Platform, Catalogue }
 public sealed class RequirePermissionAttribute : AuthorizeAttribute
 {
-    public RequirePermissionAttribute(string code, PermissionScope scope = PermissionScope.Organisation) => Policy = $"permission:{scope}:{code}";
+    public RequirePermissionAttribute(string code, PermissionScope scope = PermissionScope.Organisation) => Policy = PolicyName(code, scope);
+    public static string PolicyName(string code, PermissionScope scope) => $"permission:{scope}:{code}";
 }
 public sealed record PermissionRequirement(string Code, PermissionScope Scope) : IAuthorizationRequirement;
 public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> options) : DefaultAuthorizationPolicyProvider(options)
@@ -15,7 +16,7 @@ public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> opti
     public override Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
         var parts = policyName.Split(':');
-        if (parts.Length != 3 || parts[0] != "permission" || !Enum.TryParse<PermissionScope>(parts[1], out var scope) || !PermissionCodes.All.Contains(parts[2]))
+        if (parts.Length != 3 || parts[0] != "permission" || !Enum.TryParse<PermissionScope>(parts[1], out var scope) || !Enum.IsDefined(scope) || !PermissionCodes.All.Contains(parts[2]))
             return base.GetPolicyAsync(policyName);
         return Task.FromResult<AuthorizationPolicy?>(new AuthorizationPolicyBuilder().RequireAuthenticatedUser()
             .AddRequirements(new PermissionRequirement(parts[2], scope)).Build());
@@ -31,6 +32,11 @@ public sealed class PermissionHandler(IPermissionEvaluator evaluator, ICurrentUs
     {
         var http = accessor.HttpContext;
         if (http is null || current.UserId is not Guid userId) return;
+        if (requirement.Scope == PermissionScope.Catalogue)
+        {
+            if (await evaluator.CanReadCatalogueAsync(userId, requirement.Code, http.RequestAborted)) context.Succeed(requirement);
+            return;
+        }
         Guid? organisation = null;
         if (requirement.Scope == PermissionScope.Organisation)
         {

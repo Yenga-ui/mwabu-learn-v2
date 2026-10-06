@@ -204,6 +204,7 @@ public sealed class ContentApiTests
             var client = CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
             using var scope = Services.CreateScope();
             scope.ServiceProvider.GetRequiredService<MwabuDbContext>().Database.EnsureCreated();
+            TestAuthentication.SignInPlatformAdministratorAsync(client, Services).GetAwaiter().GetResult();
             return client;
         }
 

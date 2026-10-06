@@ -33,6 +33,7 @@ public interface IOrganisationService
 public interface IPermissionEvaluator
 {
     Task<bool> HasPlatformAuthorityAsync(Guid userId, CancellationToken ct);
+    Task<bool> CanReadCatalogueAsync(Guid userId, string permission, CancellationToken ct);
     Task<bool> CanAsync(Guid userId, string permission, Guid? organisationId, bool platformOnly, CancellationToken ct);
 }
 public static class PermissionCodes

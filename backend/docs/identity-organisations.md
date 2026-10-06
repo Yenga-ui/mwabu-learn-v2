@@ -114,15 +114,9 @@ Set Enabled explicitly to true for the controlled initialization. Supply a real 
 
 Once any platform authority assignment exists, subsequent runs do nothing: passwords are never reset, accounts/memberships are never reactivated and another administrator is never created. If users already exist without a platform authority assignment, startup refuses bootstrap takeover and requires operator review. Disabled bootstrap needs no credentials. After successful creation, set Enabled=false and remove bootstrap secrets from the environment/secret provider; keep JWT configuration. Verify login and provision another trusted administrator through the authenticated APIs. Bootstrap never runs an EF database migration. It is not a recovery/backdoor mechanism for an existing database.
 
-## Next Curriculum/Content integration step
+## Curriculum/Content integration
 
-Existing Curriculum and Content endpoints retain their existing authorization behavior in this feature and remain unprotected by these new permission policies. **Protect them before exposing management endpoints publicly.** They currently manage a shared global catalogue, not organisation-owned data. The next integration change should:
-
-1. Add `[Authorize]` and the chosen read policy to Curriculum/Content reads (decide whether published learner reads remain public).
-2. Protect shared global Curriculum writes with `RequirePermission(PermissionCodes.CurriculumManage, PermissionScope.Platform)`.
-3. Protect shared global Content mutations/uploads/asset changes/archive with `ContentManage` in Platform scope; protect publication transitions with `ContentPublish` in Platform scope (central service checks if one status endpoint supports both editing and publishing).
-4. If organisation-scoped content editing is desired, first add a persisted ownership/access rule. Then apply organisation policies and validate ownership against the route/header context in the Application/Infrastructure service. A supplied header alone must never grant permission to modify arbitrary global content.
-5. Add authenticated/unauthenticated/scoped ownership and publication tests without changing content storage or curriculum relationships. Reuse the current policy handler/evaluator and Swagger filter.
+Catalogue authorization is now implemented. See [catalogue-authorization.md](catalogue-authorization.md) for authenticated catalogue reads, platform management and separate publication permission requirements. Organisation-owned content and licensing remain future features.
 
 ## Verification and review decisions
 
