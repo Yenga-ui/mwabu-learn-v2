@@ -1,3 +1,4 @@
+using MwabuLearn.Api.Operations;
 
 using Microsoft.EntityFrameworkCore;
 using MwabuLearn.Infrastructure.Persistence;
@@ -32,10 +33,20 @@ builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLi
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = uploadLimit + 1024 * 1024);
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddMwabuAuthentication(builder.Configuration);
-builder.Services.AddProblemDetails();
+builder.Services.AddScoped<MwabuLearn.Application.Auditing.IAuditContext, HttpAuditContext>();
+builder.Services.AddScoped<MwabuLearn.Application.Auditing.IAuditService, MwabuLearn.Infrastructure.Auditing.AuditService>();
+builder.AddHttpSecurity();
+builder.Logging.ClearProviders();
+builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
+{
+    context.ProblemDetails.Extensions["traceId"] = System.Diagnostics.Activity.Current?.Id ?? context.HttpContext.TraceIdentifier;
+    context.ProblemDetails.Extensions["correlationId"] = context.HttpContext.Items["CorrelationId"];
+});
 builder.Services.AddExceptionHandler<CurriculumExceptionHandler>();
 builder.Services.AddExceptionHandler<ContentExceptionHandler>();
 builder.Services.AddExceptionHandler<IdentityExceptionHandler>();
+builder.Services.AddExceptionHandler<SafeExceptionHandler>();
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -58,22 +69,12 @@ var connectionString =
         "Connection string 'MwabuLearnDb' was not found.");
 
 builder.Services.AddDbContext<MwabuDbContext>(options =>
-    options.UseNpgsql(connectionString));
-// CORS will allow our React and Flutter clients to access the API.
-// We will tighten this policy for production.
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("DevelopmentCors", policy =>
-    {
-        policy
-            .AllowAnyOrigin()
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-    });
-});
-
+    options.UseNpgsql(connectionString, postgres => postgres.CommandTimeout(30)));
 var app = builder.Build();
-app.UseExceptionHandler();
+app.UseForwardedHeaders();
+app.UseMiddleware<RequestTelemetryMiddleware>();
+app.UseExceptionHandler(new ExceptionHandlerOptions { SuppressDiagnosticsCallback = _ => true });
+if (!app.Environment.IsDevelopment()) app.UseHsts();
 
 // -------------------------------------------------------
 // HTTP pipeline
@@ -93,13 +94,14 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+app.UseWhen(context => !context.Request.Path.StartsWithSegments("/health"), branch => branch.UseHttpsRedirection());
 
-app.UseCors("DevelopmentCors");
+app.UseCors("ConfiguredOrigins");
 
 app.UseAuthentication();
-app.UseAuthorization();
+app.UseMiddleware<AuthenticationPartitionMiddleware>();
 app.UseRateLimiter();
+app.UseAuthorization();
 
 app.MapControllers();
 
@@ -107,19 +109,7 @@ app.MapControllers();
 // Health endpoint
 // -------------------------------------------------------
 
-app.MapGet("/api/health", () =>
-{
-    return Results.Ok(new
-    {
-        status = "healthy",
-        application = "Mwabu Learn API",
-        version = "2.0.0",
-        environment = app.Environment.EnvironmentName,
-        timestamp = DateTime.UtcNow
-    });
-})
-.WithName("HealthCheck")
-.WithTags("System");
+app.MapOperationalHealth();
 
 app.Run();
 

@@ -12,7 +12,7 @@ public sealed class IdentityModelTests
     [Fact]
     public void PostgreSql_migration_is_additive_preserves_identity_schema_and_matches_snapshot()
     {
-        using var db = new MwabuDbContextFactory().CreateDbContext([]);
+        using var db = new MwabuDbContextFactory().CreateDbContext(["--offline"]);
         Assert.False(db.Database.HasPendingModelChanges());
         var assembly = db.GetService<IMigrationsAssembly>();
         Assert.True(assembly.Migrations.Count >= 4);
@@ -85,4 +85,3 @@ public sealed class IdentityModelTests
         await Assert.ThrowsAsync<DbUpdateException>(() => env.Db.SaveChangesAsync());
     }
 }
-

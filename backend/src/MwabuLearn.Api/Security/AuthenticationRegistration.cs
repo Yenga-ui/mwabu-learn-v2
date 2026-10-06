@@ -61,9 +61,18 @@ public static class AuthenticationRegistration
         services.AddRateLimiter(options =>
         {
             options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(
-                context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+                (context.Connection.RemoteIpAddress?.ToString() ?? "unknown") + ":" + (context.Items["AuthPartition"] as string ?? "unknown"), _ => new FixedWindowRateLimiterOptions
                 { PermitLimit = loginLimit, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true }));
-            options.OnRejected = (context, _) => new ValueTask(WriteProblem(context.HttpContext, 429, "Too many login attempts. Try again later."));
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            {
+                if (context.Request.Path.StartsWithSegments("/health")) return RateLimitPartition.GetNoLimiter("health");
+                var auth = context.Request.Path.StartsWithSegments("/api/auth");
+                var principal = context.User.FindFirst("sub")?.Value;
+                var key = (auth ? "auth-ip:" : "api:") + (auth ? context.Connection.RemoteIpAddress?.ToString() : principal ?? context.Connection.RemoteIpAddress?.ToString());
+                return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
+                { PermitLimit = auth ? Math.Max(100, loginLimit * 10) : 600, Window = TimeSpan.FromMinutes(1), QueueLimit = 0, AutoReplenishment = true });
+            });
+            options.OnRejected = (context, _) => new ValueTask(WriteProblem(context.HttpContext, 429, "Too many requests. Try again later."));
         });
         services.AddHostedService<BootstrapStartup>();
         return services;
@@ -84,4 +93,3 @@ public sealed class BootstrapStartup(IServiceScopeFactory scopes) : IHostedServi
     }
     public Task StopAsync(CancellationToken ct) => Task.CompletedTask;
 }
-

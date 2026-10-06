@@ -8,8 +8,9 @@ using MwabuLearn.Domain.Entities.Identity;
 
 namespace MwabuLearn.Infrastructure.Persistence;
 
-public class MwabuDbContext(DbContextOptions<MwabuDbContext> options) : IdentityUserContext<ApplicationUser, Guid>(options)
+public partial class MwabuDbContext(DbContextOptions<MwabuDbContext> options, MwabuLearn.Application.Auditing.IAuditContext? auditContext = null) : IdentityUserContext<ApplicationUser, Guid>(options)
 {
+    public DbSet<MwabuLearn.Domain.Entities.Auditing.AuditEvent> AuditEvents => Set<MwabuLearn.Domain.Entities.Auditing.AuditEvent>();
     public DbSet<Curriculum> Curricula => Set<Curriculum>();
     public DbSet<CurriculumVersion> CurriculumVersions => Set<CurriculumVersion>();
     public DbSet<Grade> Grades => Set<Grade>();

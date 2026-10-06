@@ -46,7 +46,7 @@ public sealed partial class ContentService
                 using var cleanup = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                 await storage.DeleteAsync(entity.StorageKey, cleanup.Token);
             }
-            catch (Exception ex) { logger.LogError(ex, "Failed to clean up uncommitted asset {AssetId}", entity.Id); }
+            catch (Exception ex) { logger.LogError("Failed to clean up uncommitted asset {AssetId}: {ExceptionType}", entity.Id, ex.GetType().Name); }
             throw;
         }
         return Map(entity);

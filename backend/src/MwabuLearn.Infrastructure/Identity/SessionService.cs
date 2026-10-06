@@ -68,6 +68,7 @@ public sealed class SessionService(MwabuDbContext db, UserManager<ApplicationUse
             if (old.RevokedAt is not null || old.ReplacedBySessionId is not null)
             {
                 await RevokeFamily(old.FamilyId, "reuse_detected", ct);
+                await MwabuLearn.Infrastructure.Auditing.SecurityAudit.WriteAsync(db, "authentication.refresh_reuse", old.UserId, ct);
                 return null; // Commit family revocation before returning the generic authentication failure.
             }
             if (old.ExpiresAt <= DateTime.UtcNow || old.AbsoluteExpiresAt <= DateTime.UtcNow || user is null || !user.IsActive ||
@@ -92,7 +93,11 @@ public sealed class SessionService(MwabuDbContext db, UserManager<ApplicationUse
         await Transaction(db, async () =>
         {
             var session = await db.RefreshSessions.AsNoTracking().SingleOrDefaultAsync(x => x.UserId == userId && x.TokenHash == hash, ct);
-            if (session is not null) await RevokeFamily(session.FamilyId, "logout", ct);
+            if (session is not null)
+            {
+                await RevokeFamily(session.FamilyId, "logout", ct);
+                await MwabuLearn.Infrastructure.Auditing.SecurityAudit.WriteAsync(db, "authentication.logout", userId, ct);
+            }
             return true;
         }, ct);
     }
@@ -108,6 +113,7 @@ public sealed class SessionService(MwabuDbContext db, UserManager<ApplicationUse
         await db.RefreshSessions.Where(x => x.UserId == user.Id && x.RevokedAt == null).ExecuteUpdateAsync(s => s
             .SetProperty(x => x.RevokedAt, DateTime.UtcNow).SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
             .SetProperty(x => x.RevocationReason, reason), ct);
+        await MwabuLearn.Infrastructure.Auditing.SecurityAudit.WriteAsync(db, "authentication." + reason, user.Id, ct);
     }
     public async Task LogoutAllAsync(Guid userId, CancellationToken ct) => await Transaction(db, async () =>
     {
@@ -138,6 +144,7 @@ public sealed class SessionService(MwabuDbContext db, UserManager<ApplicationUse
     public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct)
     {
         if (!notifications.IsAvailable) throw new IdentityException(IdentityError.Unavailable, "Account recovery delivery is not configured.");
+        if (string.IsNullOrEmpty(request.Token) || request.Token.Length > 4096 || string.IsNullOrEmpty(request.NewPassword) || request.NewPassword.Length > 128) throw Invalid("The reset request is invalid.");
         await Transaction(db, async () =>
         {
             var user = await users.FindByEmailAsync(Email(request.Email));
@@ -147,4 +154,3 @@ public sealed class SessionService(MwabuDbContext db, UserManager<ApplicationUse
         }, ct);
     }
 }
-

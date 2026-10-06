@@ -55,4 +55,3 @@ public sealed class JwtTokenIssuer(IOptions<JwtOptions> options)
         return new LoginResponse(new JwtSecurityTokenHandler().WriteToken(token), "Bearer", expires);
     }
 }
-

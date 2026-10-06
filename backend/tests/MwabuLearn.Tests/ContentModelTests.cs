@@ -11,7 +11,7 @@ public sealed class ContentModelTests
     [Fact]
     public void PostgreSql_model_matches_snapshot_and_migration_only_adds_content_objects()
     {
-        using var db = new MwabuDbContextFactory().CreateDbContext([]);
+        using var db = new MwabuDbContextFactory().CreateDbContext(["--offline"]);
         Assert.False(db.Database.HasPendingModelChanges());
         var assembly = db.GetService<IMigrationsAssembly>();
         var entry = assembly.Migrations.Single(x => x.Key.EndsWith("_ContentManagement", StringComparison.Ordinal));

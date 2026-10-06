@@ -11,7 +11,7 @@ public sealed class CurriculumModelTests
     [Fact]
     public void PostgreSql_model_matches_snapshot_and_restricts_every_hierarchy_relationship()
     {
-        using var db = new MwabuDbContextFactory().CreateDbContext([]);
+        using var db = new MwabuDbContextFactory().CreateDbContext(["--offline"]);
         Assert.False(db.Database.HasPendingModelChanges());
         var foreignKeys = db.Model.GetEntityTypes()
             .Where(x => x.ClrType.Namespace == "MwabuLearn.Domain.Entities")
@@ -26,7 +26,7 @@ public sealed class CurriculumModelTests
     [Fact]
     public void PostgreSql_migration_script_backfills_legacy_versions_before_enforcing_new_foreign_key()
     {
-        using var db = new MwabuDbContextFactory().CreateDbContext([]);
+        using var db = new MwabuDbContextFactory().CreateDbContext(["--offline"]);
         var script = db.GetService<IMigrator>().GenerateScript("20261006122114_InitialCreate", "20261006142354_CurriculumManagement");
         var backfill = script.IndexOf("INSERT INTO \"CurriculumVersions\"", StringComparison.Ordinal);
         var constraint = script.IndexOf("ADD CONSTRAINT \"FK_Grades_CurriculumVersions_CurriculumVersionId\"", StringComparison.Ordinal);

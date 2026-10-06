@@ -44,3 +44,5 @@ No TODO/FIXME or Task.Result/.Wait found in production source. Existing controll
 Implementation verification and remaining risks will be recorded per coherent step. Do not treat this document as a claim of production readiness while work remains.
 
 Session lifecycle: restore/build clean; full suite 152 passed, 0 failed/skipped. Additive SessionLifecycle migration inspected, not applied. Refresh credentials SHA-256 hashed, strict reuse revokes family, Identity password change/reset invalidate sessions. Recovery returns 503 until a real notification adapter is configured.
+
+Audit/request phase: 165 tests passed; build had zero warnings/errors. AuditTrail migration adds identifier-only audit table/indexes and PostgreSQL append-only trigger, not applied. Runtime rollback and append-only tests use relational SQLite; PostgreSQL trigger execution is not yet verified. CORS/proxy startup validation, safe response headers/correlation/JSON logs, DB/schema readiness and explicit offline factory added. Storage readiness/exporters/endpoint-specific rate limits remain pending.

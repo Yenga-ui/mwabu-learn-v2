@@ -215,7 +215,7 @@ public sealed class CatalogueAuthorizationTests
         foreach (var path in schema.RootElement.GetProperty("paths").EnumerateObject())
         {
             if (path.Name.StartsWith("/api/auth", StringComparison.Ordinal) || path.Name.StartsWith("/api/users", StringComparison.Ordinal) ||
-                path.Name.StartsWith("/api/organisations", StringComparison.Ordinal) || path.Name is "/api/roles" or "/api/permissions" or "/api/health") continue;
+                path.Name.StartsWith("/api/organisations", StringComparison.Ordinal) || path.Name.StartsWith("/health/", StringComparison.Ordinal) || path.Name is "/api/roles" or "/api/permissions" or "/api/health" or "/api/audit-events") continue;
             foreach (var operation in path.Value.EnumerateObject())
             {
                 Assert.Contains(operation.Value.GetProperty("security").EnumerateArray(), x => x.TryGetProperty("Bearer", out _));

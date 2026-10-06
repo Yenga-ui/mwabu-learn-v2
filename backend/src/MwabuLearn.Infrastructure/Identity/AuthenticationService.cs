@@ -27,15 +27,22 @@ public sealed class AuthenticationService(MwabuDbContext db, UserManager<Applica
         if (user is null || !user.IsActive || await users.IsLockedOutAsync(user))
         {
             unknown.Verify(request.Password);
+            await MwabuLearn.Infrastructure.Auditing.SecurityAudit.WriteAsync(db, "authentication.login_failed", null, ct);
             throw Failure();
         }
         var result = await signIn.CheckPasswordSignInAsync(user, request.Password, lockoutOnFailure: true);
-        if (!result.Succeeded) throw Failure();
+        if (!result.Succeeded)
+        {
+            await MwabuLearn.Infrastructure.Auditing.SecurityAudit.WriteAsync(db, "authentication.login_failed", null, ct);
+            throw Failure();
+        }
         user.LastLoginAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
         if (!(await users.UpdateAsync(user)).Succeeded) throw Failure();
         ct.ThrowIfCancellationRequested();
-        return await sessions.CreateAsync(user.Id, ct);
+        var response = await sessions.CreateAsync(user.Id, ct);
+        await MwabuLearn.Infrastructure.Auditing.SecurityAudit.WriteAsync(db, "authentication.login_succeeded", user.Id, ct);
+        return response;
     }
     public async Task<UserResponse> MeAsync(Guid userId, CancellationToken ct) =>
         await db.Users.AsNoTracking().Where(x => x.Id == userId && x.IsActive).Select(UserService.Projection).SingleOrDefaultAsync(ct) ?? throw Failure();
