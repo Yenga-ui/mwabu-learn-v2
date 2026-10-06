@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MwabuLearn.Api/MwabuLearn.Api.csproj" />
+    <Project Path="src/MwabuLearn.Application/MwabuLearn.Application.csproj" />
+    <Project Path="src/MwabuLearn.Domain/MwabuLearn.Domain.csproj" />
+    <Project Path="src/MwabuLearn.Infrastructure/MwabuLearn.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MwabuLearn.Tests/MwabuLearn.Tests.csproj" />
+  </Folder>
+</Solution>

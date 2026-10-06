@@ -1,0 +1,11 @@
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\bin\Debug\net10.0\MwabuLearn.Domain.deps.json
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\bin\Debug\net10.0\MwabuLearn.Domain.dll
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\bin\Debug\net10.0\MwabuLearn.Domain.pdb
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\obj\Debug\net10.0\MwabuLearn.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\obj\Debug\net10.0\MwabuLearn.Domain.AssemblyInfoInputs.cache
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\obj\Debug\net10.0\MwabuLearn.Domain.AssemblyInfo.cs
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\obj\Debug\net10.0\MwabuLearn.Domain.csproj.CoreCompileInputs.cache
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\obj\Debug\net10.0\MwabuLearn.Domain.dll
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\obj\Debug\net10.0\refint\MwabuLearn.Domain.dll
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\obj\Debug\net10.0\MwabuLearn.Domain.pdb
+C:\Development\mwabu-learn-v2\backend\src\MwabuLearn.Domain\obj\Debug\net10.0\ref\MwabuLearn.Domain.dll

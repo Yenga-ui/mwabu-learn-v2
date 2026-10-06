@@ -1,0 +1,6 @@
+@MwabuLearn.Api_HostAddress = http://localhost:5101
+
+GET {{MwabuLearn.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
