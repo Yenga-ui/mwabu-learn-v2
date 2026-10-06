@@ -1,6 +1,9 @@
 
 using Microsoft.EntityFrameworkCore;
 using MwabuLearn.Infrastructure.Persistence;
+using MwabuLearn.Application.Curricula;
+using MwabuLearn.Infrastructure.Curricula;
+using MwabuLearn.Api.Errors;
 var builder = WebApplication.CreateBuilder(args);
 
 // -------------------------------------------------------
@@ -8,6 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 // -------------------------------------------------------
 
 builder.Services.AddControllers();
+builder.Services.AddScoped<ICurriculumService, CurriculumService>();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<CurriculumExceptionHandler>();
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -42,6 +48,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+app.UseExceptionHandler();
 
 // -------------------------------------------------------
 // HTTP pipeline
@@ -88,3 +95,5 @@ app.MapGet("/api/health", () =>
 .WithTags("System");
 
 app.Run();
+
+public partial class Program;
