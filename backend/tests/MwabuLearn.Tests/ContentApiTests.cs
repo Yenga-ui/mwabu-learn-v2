@@ -185,6 +185,7 @@ public sealed class ContentApiTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            TestSecurityConfiguration.Configure(builder);
             connection.Open();
             builder.UseEnvironment(environment);
             builder.UseSetting("ConnectionStrings:MwabuLearnDb", "Host=localhost;Database=unused_test_configuration");

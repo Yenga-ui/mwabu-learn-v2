@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Http.Features;
 using MwabuLearn.Application.Content;
 using MwabuLearn.Infrastructure.Content;
 using MwabuLearn.Infrastructure.Content.Storage;
+using MwabuLearn.Api.Security;
+using Microsoft.OpenApi;
 var builder = WebApplication.CreateBuilder(args);
 
 // -------------------------------------------------------
@@ -29,14 +31,19 @@ var uploadLimit = builder.Configuration.GetValue<long?>("Content:MaxUploadBytes"
 builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = uploadLimit + 1024 * 1024);
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = uploadLimit + 1024 * 1024);
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
+builder.Services.AddMwabuAuthentication(builder.Configuration);
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<CurriculumExceptionHandler>();
 builder.Services.AddExceptionHandler<ContentExceptionHandler>();
+builder.Services.AddExceptionHandler<IdentityExceptionHandler>();
 
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
 {
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    { Type = SecuritySchemeType.Http, Scheme = "bearer", BearerFormat = "JWT", Description = "Enter an access token obtained from /api/auth/login." });
+    options.OperationFilter<BearerOperationFilter>();
     options.SwaggerDoc("v1", new()
     {
         Title = "Mwabu Learn API",
@@ -90,7 +97,9 @@ app.UseHttpsRedirection();
 
 app.UseCors("DevelopmentCors");
 
+app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

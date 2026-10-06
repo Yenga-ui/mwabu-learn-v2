@@ -79,6 +79,7 @@ public sealed class CurriculumApiTests
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            TestSecurityConfiguration.Configure(builder);
             builder.UseEnvironment("Testing");
             builder.UseSetting("ConnectionStrings:MwabuLearnDb", "Host=localhost;Database=unused_test_configuration");
             builder.ConfigureServices(services =>
