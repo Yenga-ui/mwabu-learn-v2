@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using MwabuLearn.Domain.Entities;
+using MwabuLearn.Domain.Entities.Content;
 
 namespace MwabuLearn.Infrastructure.Persistence;
 
@@ -13,6 +14,13 @@ public class MwabuDbContext(DbContextOptions<MwabuDbContext> options) : DbContex
     public DbSet<Topic> Topics => Set<Topic>();
     public DbSet<Competency> Competencies => Set<Competency>();
     public DbSet<LearningOutcome> LearningOutcomes => Set<LearningOutcome>();
+    public DbSet<ContentItem> ContentItems => Set<ContentItem>();
+    public DbSet<ContentAsset> ContentAssets => Set<ContentAsset>();
+    public DbSet<Collection> Collections => Set<Collection>();
+    public DbSet<Tag> Tags => Set<Tag>();
+    public DbSet<ContentCollection> ContentCollections => Set<ContentCollection>();
+    public DbSet<ContentTag> ContentTags => Set<ContentTag>();
+    public DbSet<ContentCurriculumMapping> ContentCurriculumMappings => Set<ContentCurriculumMapping>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

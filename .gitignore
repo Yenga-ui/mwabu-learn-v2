@@ -9,6 +9,8 @@
 *.rsuser
 TestResults/
 artifacts/
+# Local development content objects (external to the database).
+.local/
 *.nupkg
 *.snupkg
 

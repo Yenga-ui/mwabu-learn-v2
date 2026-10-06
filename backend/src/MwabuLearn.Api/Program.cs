@@ -4,16 +4,34 @@ using MwabuLearn.Infrastructure.Persistence;
 using MwabuLearn.Application.Curricula;
 using MwabuLearn.Infrastructure.Curricula;
 using MwabuLearn.Api.Errors;
+using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Http.Features;
+using MwabuLearn.Application.Content;
+using MwabuLearn.Infrastructure.Content;
+using MwabuLearn.Infrastructure.Content.Storage;
 var builder = WebApplication.CreateBuilder(args);
 
 // -------------------------------------------------------
 // Services
 // -------------------------------------------------------
 
-builder.Services.AddControllers();
+builder.Services.AddControllers().AddJsonOptions(options =>
+    options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false)));
+builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddSingleton<IContentStorage, LocalContentStorage>();
+builder.Services.AddOptions<ContentOptions>().BindConfiguration("Content")
+    .Validate(x => x.MaxUploadBytes is > 0 and <= 1073741824, "Upload limit must be between 1 byte and 1 GiB.").ValidateOnStart();
+builder.Services.AddOptions<LocalContentStorageOptions>().Configure(options =>
+{
+    options.RootPath = Path.GetFullPath(builder.Configuration["ContentStorage:RootPath"] ?? ".local/content", builder.Environment.ContentRootPath);
+});
+var uploadLimit = builder.Configuration.GetValue<long?>("Content:MaxUploadBytes") ?? 100 * 1024 * 1024;
+builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = uploadLimit + 1024 * 1024);
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = uploadLimit + 1024 * 1024);
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<CurriculumExceptionHandler>();
+builder.Services.AddExceptionHandler<ContentExceptionHandler>();
 
 builder.Services.AddEndpointsApiExplorer();
 

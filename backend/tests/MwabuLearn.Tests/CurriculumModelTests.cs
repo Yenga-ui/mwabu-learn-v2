@@ -13,7 +13,9 @@ public sealed class CurriculumModelTests
     {
         using var db = new MwabuDbContextFactory().CreateDbContext([]);
         Assert.False(db.Database.HasPendingModelChanges());
-        var foreignKeys = db.Model.GetEntityTypes().SelectMany(x => x.GetForeignKeys()).ToList();
+        var foreignKeys = db.Model.GetEntityTypes()
+            .Where(x => x.ClrType.Namespace == "MwabuLearn.Domain.Entities")
+            .SelectMany(x => x.GetForeignKeys()).ToList();
         Assert.Equal(7, foreignKeys.Count);
         Assert.All(foreignKeys, fk => Assert.Equal(DeleteBehavior.Restrict, fk.DeleteBehavior));
         var gradeParent = db.Model.FindEntityType(typeof(Grade))!.GetForeignKeys().Single();
