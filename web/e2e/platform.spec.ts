@@ -273,23 +273,24 @@ test("content manager uploads, tags, maps, reviews and publishes a resource", as
     .click();
   await page
     .getByRole("combobox", { name: "Add collection", exact: true })
-    .selectOption({ index: 1 });
+    .selectOption({ label: "Everyday mathematics" });
   await page
     .getByRole("button", { name: "Add selected collection", exact: true })
     .click();
-  for (const label of [
-    "Curriculum",
-    "Versions",
-    "Grades",
-    "Subjects",
-    "Terms",
-    "Topics",
-    "Competencies",
-    "Learning outcomes",
+  // Another test creates an empty framework. Never rely on random GUID ordering.
+  for (const [label, name] of [
+    ["Curriculum", "Demonstration Learning Framework"],
+    ["Versions", "Demonstration 2026"],
+    ["Grades", "Grade 4"],
+    ["Subjects", "Mathematics"],
+    ["Terms", "Term 1"],
+    ["Topics", "Fractions in everyday life"],
+    ["Competencies", "Recognise equal parts"],
+    ["Learning outcomes", "Represent one half using familiar objects"],
   ]) {
     await page
       .getByRole("combobox", { name: label, exact: true })
-      .selectOption({ index: 1 });
+      .selectOption({ label: name });
   }
   await page
     .getByRole("button", { name: /Connect Represent one half/ })
