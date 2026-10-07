@@ -1,0 +1,30 @@
+# Live web delivery gap register
+
+Base `f23584eae59ee661951db8ab2e6be98944b23aba`; branch `feature/production-live-site`.
+Closed implementation gaps below have local executable evidence. Release acceptance remains pending until the complete GitHub workflow passes. See [traceability](requirements-traceability.md) and [operating guide](live-web-platform.md).
+
+| Gap | Severity / release relevance | Resolution | Evidence / state |
+| --- | --- | --- | --- |
+| Browser application absent | Blocking, required | Real typed React application, domain screens, responsive accessible components | Closed locally: lint/typecheck/build, 25 unit/component tests, 21 real API Chromium scenarios |
+| Browser credential transport and CSRF | Blocking, required | HttpOnly Secure cookies; ASP.NET antiforgery on cookie writes including legacy routes; no browser token storage | Closed locally: BrowserSessionTests, client tests, login/me/logout/rotation E2E |
+| Concurrent/lost refresh safety | Blocking, required | Single-flight/Web Locks; inside-lock recheck; ambiguous response blocks further automatic renewal | Closed locally: client conflict test, two-tab Chromium test proving one rotation; existing PostgreSQL refresh tests |
+| Anonymous route stuck loading | Blocking, discovered during E2E | Preserve current-user query when removing private cache on expiry | Closed locally: anonymous redirect + 401 browser scenario |
+| Effective permissions and global catalogue writers | Blocking, required | Effective access DTO; explicit Platform-organisation catalogue grant independent of platform user authority | Closed locally: permission unit tests, EducationWorkspaceTests, ContentManager/Teacher browser scenarios |
+| Published-only discovery and legacy bypass | Blocking, required | Published facade plus legacy visibility filter, safe asset DTOs | Closed locally: LearningCatalogueTests, server authorization tests, teacher/learner/PDF scenarios |
+| Full curriculum-level discovery | Blocking, required | Paged parent-filtered explorer and picker, all descendant filters, ancestor text search | Closed locally: DirectoryTests, full hierarchy browser scenario, mapped-subject search regression |
+| EF projected-record query translation | Blocking, discovered by existing tests | Apply filters/order to translatable member-initialized projection before final DTO constructor | Closed locally: all DirectoryTests and full eight-level Chromium traversal |
+| Relational project capability | Blocking, required | Projects/sites/membership participants/published resources, bounded assignments, explicit site consent | Closed locally: EducationWorkspaceTests, EducationPostgreSqlTests, ProjectManager browser boundary |
+| Guardian relationships | Blocking, required | Composite same-org FKs; active roles and links; isolated learner reads; paged human-readable management | Closed locally: SQLite/PostgreSQL constraint tests and guardian browser isolation |
+| Scoped account provisioning | Blocking, required | Atomic new account + membership, no global account lookup by organisation admin | Closed locally: EducationWorkspaceTests and scoped provisioning browser scenario |
+| Operational reports | Blocking, required | Actual scoped SQL aggregates, published shared-catalogue counts, no achievement claims | Closed locally: reporting service tests and HeadTeacher/DataAnalyst browser boundaries |
+| Device support permission mismatch | Blocking, discovered in review | Controller and service both use reports.read; scoped checkpoint projection omits user/proof/cursor data | Closed locally: Device_support test; original device/sync tests retained |
+| Authoring workflow acceptance | Blocking, required | Metadata, PDF upload, tags, collection, deepest curriculum mapping, review and publication | Closed locally: complete ContentManager Chromium workflow, original content tests |
+| Audio and unsafe media handling | Required | Native non-autoplay controls/restart/errors; executable uploads download-only | Closed locally: Resource.test.ts, LearningCatalogueTests; real PDF browser test |
+| Large membership/taxonomy selectors | Required | Paged membership accumulation without implicit context switching; paged tag/collection/parent/member selectors | Implemented; lint/typecheck/build and browser context checks; extreme-cardinality UX requires operator load acceptance |
+| Explicit demonstration environment | Required | Development-only explicit idempotent seed, distinct supplied strong passwords, original CC0 documents | Closed locally: DevelopmentSeedTests and real E2E seed usage; no production/demo passwords in migrations |
+| Linux deployment and full CI acceptance | Blocking release gate | Web gates added; original backend/migration/RID-bundle/advisory/Docker/non-root checks preserved | Pending GitHub Ubuntu run; Docker unavailable locally |
+| Migration application | Human deployment action | New additive LiveWebEducation migration; old ten migrations preserved | Reviewed locally, PostgreSQL test databases only; human application/backup/locking review required |
+| Password-recovery delivery | Operator dependency, future infrastructure | Existing adapter intentionally unavailable until real delivery configured | Honest unavailable UI; no simulated email; not claimed delivered |
+| Secure device credential transfer | Future client provisioning workflow | Retain paired-device API; browser supports revocation without exposing proofs | Deliberately no browser secret display or discarded-secret rotation |
+| Large-scale search and operational retention | Operator acceptance | Bounded response sizes and explicit filters; personal recents pruned on subsequent visits | Load-test LIKE/join queries at intended scale; dormant history retention policy requires operator decision |
+| Assessments, attainment, payments, AI, Flutter/offline web sync, SSO/MFA | Outside release | Architecture preserved; no fake dashboard metrics or placeholder features | Explicitly not claimed implemented |

@@ -18,7 +18,8 @@ public sealed class DirectoryService(MwabuDbContext db, ICurrentUser user) : IDi
     }
     public Task<Page<CurriculumSummary>> CurriculaAsync(PageRequest page, CancellationToken ct) => Read(db.Curricula.AsNoTracking().OrderBy(x => x.SortOrder).ThenBy(x => x.Id)
         .Select(x => new CurriculumSummary(x.Id, x.Name, x.CountryCode, x.Code, x.Description, x.SortOrder, x.IsActive)), page, ct);
-    public Task<Page<OrganisationResponse>> OrganisationsAsync(PageRequest page, CancellationToken ct) => Read(db.Organisations.AsNoTracking().OrderBy(x => x.Id)
+    public Task<Page<OrganisationResponse>> OrganisationsAsync(PageRequest page, CancellationToken ct) => Read(db.Organisations.AsNoTracking()
+        .Where(x => string.IsNullOrWhiteSpace(page.Text) || x.Name.ToLower().Contains(page.Text.Trim().ToLower()) || x.Code.ToLower().Contains(page.Text.Trim().ToLower())).OrderBy(x => x.Name).ThenBy(x => x.Id)
         .Select(x => new OrganisationResponse(x.Id, x.Name, x.Code, x.OrganisationType, x.ParentOrganisationId, x.IsActive, x.CreatedAt, x.UpdatedAt)), page, ct);
     public async Task<Page<MembershipResponse>> MembersAsync(Guid organisationId, PageRequest page, CancellationToken ct)
     {
@@ -26,9 +27,9 @@ public sealed class DirectoryService(MwabuDbContext db, ICurrentUser user) : IDi
         return await Read(db.OrganisationMemberships.AsNoTracking().Where(x => x.OrganisationId == organisationId).OrderBy(x => x.Id)
             .Select(x => new MembershipResponse(x.Id, x.UserId, x.OrganisationId, x.IsActive, x.JoinedAt, x.CreatedAt, x.UpdatedAt)), page, ct);
     }
-    public Task<Page<CollectionResponse>> CollectionsAsync(PageRequest page, CancellationToken ct) => Read(db.Collections.AsNoTracking().OrderBy(x => x.Id)
+    public Task<Page<CollectionResponse>> CollectionsAsync(PageRequest page, CancellationToken ct) => Read(db.Collections.AsNoTracking().Where(x => string.IsNullOrWhiteSpace(page.Text) || x.Name.ToLower().Contains(page.Text.Trim().ToLower())).OrderBy(x => x.SortOrder).ThenBy(x => x.Id)
         .Select(x => new CollectionResponse(x.Id, x.Name, x.Slug, x.Description, x.SortOrder, x.IsActive, x.CreatedAt, x.UpdatedAt)), page, ct);
-    public Task<Page<TagResponse>> TagsAsync(PageRequest page, CancellationToken ct) => Read(db.Tags.AsNoTracking().OrderBy(x => x.Id)
+    public Task<Page<TagResponse>> TagsAsync(PageRequest page, CancellationToken ct) => Read(db.Tags.AsNoTracking().Where(x => string.IsNullOrWhiteSpace(page.Text) || x.Name.ToLower().Contains(page.Text.Trim().ToLower())).OrderBy(x => x.Name).ThenBy(x => x.Id)
         .Select(x => new TagResponse(x.Id, x.Name, x.Slug, x.CreatedAt, x.UpdatedAt)), page, ct);
     public Task<Page<UserMembershipResponse>> MyMembershipsAsync(PageRequest page, CancellationToken ct)
     {
@@ -40,17 +41,30 @@ public sealed class DirectoryService(MwabuDbContext db, ICurrentUser user) : IDi
     public async Task<Page<StructureResponse>> NodesAsync(Guid curriculumId, CurriculumNodeType type, PageRequest page, CancellationToken ct)
     {
         if (!await db.Curricula.AnyAsync(x => x.Id == curriculumId, ct)) throw Missing("Curriculum");
-        IQueryable<StructureResponse> query = type switch
+        IQueryable<NodeRow> query = type switch
         {
-            CurriculumNodeType.CurriculumVersion => db.CurriculumVersions.AsNoTracking().Where(x => x.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new StructureResponse(x.Id, x.CurriculumId, x.Name, x.Code, x.Description, x.SortOrder, x.IsActive, x.CreatedAt, x.UpdatedAt)),
-            CurriculumNodeType.Grade => db.Grades.AsNoTracking().Where(x => x.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new StructureResponse(x.Id, x.CurriculumVersionId, x.Name, x.Code, x.Description, x.SortOrder, x.IsActive, x.CreatedAt, x.UpdatedAt)),
-            CurriculumNodeType.Subject => db.Subjects.AsNoTracking().Where(x => x.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new StructureResponse(x.Id, x.GradeId, x.Name, x.Code, x.Description, x.SortOrder, x.IsActive, x.CreatedAt, x.UpdatedAt)),
-            CurriculumNodeType.Term => db.Terms.AsNoTracking().Where(x => x.Subject.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new StructureResponse(x.Id, x.SubjectId, x.Name, x.Code, x.Description, x.SortOrder, x.IsActive, x.CreatedAt, x.UpdatedAt)),
-            CurriculumNodeType.Topic => db.Topics.AsNoTracking().Where(x => x.Term.Subject.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new StructureResponse(x.Id, x.TermId, x.Name, x.Code, x.Description, x.SortOrder, x.IsActive, x.CreatedAt, x.UpdatedAt)),
-            CurriculumNodeType.Competency => db.Competencies.AsNoTracking().Where(x => x.Topic.Term.Subject.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new StructureResponse(x.Id, x.TopicId, x.Name, x.Code, x.Description, x.SortOrder, x.IsActive, x.CreatedAt, x.UpdatedAt)),
-            CurriculumNodeType.LearningOutcome => db.LearningOutcomes.AsNoTracking().Where(x => x.Competency.Topic.Term.Subject.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new StructureResponse(x.Id, x.CompetencyId, x.Name, x.Code, x.Description, x.SortOrder, x.IsActive, x.CreatedAt, x.UpdatedAt)),
+            CurriculumNodeType.CurriculumVersion => db.CurriculumVersions.AsNoTracking().Where(x => x.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new NodeRow { Id = x.Id, ParentId = x.CurriculumId, Name = x.Name, Code = x.Code, Description = x.Description, SortOrder = x.SortOrder, IsActive = x.IsActive, CreatedAt = x.CreatedAt, UpdatedAt = x.UpdatedAt }),
+            CurriculumNodeType.Grade => db.Grades.AsNoTracking().Where(x => x.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new NodeRow { Id = x.Id, ParentId = x.CurriculumVersionId, Name = x.Name, Code = x.Code, Description = x.Description, SortOrder = x.SortOrder, IsActive = x.IsActive, CreatedAt = x.CreatedAt, UpdatedAt = x.UpdatedAt }),
+            CurriculumNodeType.Subject => db.Subjects.AsNoTracking().Where(x => x.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new NodeRow { Id = x.Id, ParentId = x.GradeId, Name = x.Name, Code = x.Code, Description = x.Description, SortOrder = x.SortOrder, IsActive = x.IsActive, CreatedAt = x.CreatedAt, UpdatedAt = x.UpdatedAt }),
+            CurriculumNodeType.Term => db.Terms.AsNoTracking().Where(x => x.Subject.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new NodeRow { Id = x.Id, ParentId = x.SubjectId, Name = x.Name, Code = x.Code, Description = x.Description, SortOrder = x.SortOrder, IsActive = x.IsActive, CreatedAt = x.CreatedAt, UpdatedAt = x.UpdatedAt }),
+            CurriculumNodeType.Topic => db.Topics.AsNoTracking().Where(x => x.Term.Subject.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new NodeRow { Id = x.Id, ParentId = x.TermId, Name = x.Name, Code = x.Code, Description = x.Description, SortOrder = x.SortOrder, IsActive = x.IsActive, CreatedAt = x.CreatedAt, UpdatedAt = x.UpdatedAt }),
+            CurriculumNodeType.Competency => db.Competencies.AsNoTracking().Where(x => x.Topic.Term.Subject.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new NodeRow { Id = x.Id, ParentId = x.TopicId, Name = x.Name, Code = x.Code, Description = x.Description, SortOrder = x.SortOrder, IsActive = x.IsActive, CreatedAt = x.CreatedAt, UpdatedAt = x.UpdatedAt }),
+            CurriculumNodeType.LearningOutcome => db.LearningOutcomes.AsNoTracking().Where(x => x.Competency.Topic.Term.Subject.Grade.CurriculumVersion.CurriculumId == curriculumId).OrderBy(x => x.Id).Select(x => new NodeRow { Id = x.Id, ParentId = x.CompetencyId, Name = x.Name, Code = x.Code, Description = x.Description, SortOrder = x.SortOrder, IsActive = x.IsActive, CreatedAt = x.CreatedAt, UpdatedAt = x.UpdatedAt }),
             _ => throw Invalid("Invalid curriculum node type.")
         };
-        return await Read(query, page, ct);
+        if (page.ParentId.HasValue) query = query.Where(x => x.ParentId == page.ParentId);
+        if (!string.IsNullOrWhiteSpace(page.Text)) query = query.Where(x => x.Name.ToLower().Contains(page.Text.Trim().ToLower()));
+        return await Read(query.OrderBy(x => x.SortOrder).ThenBy(x => x.Id).Select(x => new StructureResponse(x.Id, x.ParentId, x.Name, x.Code, x.Description, x.SortOrder, x.IsActive, x.CreatedAt, x.UpdatedAt)), page, ct);
     }
-}
+    private sealed class NodeRow
+    {
+        public Guid Id { get; init; }
+        public Guid ParentId { get; init; }
+        public string Name { get; init; } = string.Empty;
+        public string? Code { get; init; }
+        public string? Description { get; init; }
+        public int SortOrder { get; init; }
+        public bool IsActive { get; init; }
+        public DateTime CreatedAt { get; init; }
+        public DateTime? UpdatedAt { get; init; }
+    }}

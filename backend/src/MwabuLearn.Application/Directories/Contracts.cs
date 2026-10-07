@@ -7,6 +7,8 @@ namespace MwabuLearn.Application.Directories;
 
 public sealed class PageRequest
 {
+    [StringLength(200)] public string? Text { get; set; }
+    public Guid? ParentId { get; set; }
     [Range(1, 100000)] public int Page { get; set; } = 1;
     [Range(1, 100)] public int PageSize { get; set; } = 50;
 }

@@ -26,6 +26,8 @@ public sealed partial class ContentService
         Order(request.SortOrder);
         var content = await Tracked(id, ct);
         Editable(content);
+        if (await db.ContentAssets.CountAsync(x => x.ContentItemId == id, ct) >= 100)
+            throw Conflict("A resource supports up to 100 files. Split larger collections into separate resources.");
         if (request.IsPrimary && await db.ContentAssets.AnyAsync(x => x.ContentItemId == id && x.IsPrimary, ct)) throw Conflict("Content already has a primary asset.");
         var entity = new ContentAsset
         {

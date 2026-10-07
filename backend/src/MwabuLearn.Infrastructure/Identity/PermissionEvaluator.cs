@@ -12,6 +12,19 @@ public sealed class PermissionEvaluator(MwabuDbContext db) : IPermissionEvaluato
     private readonly Dictionary<(Guid User, Guid? Organisation), Snapshot> cache = new();
     private readonly Dictionary<(Guid User, string Permission), bool> catalogueCache = new();
     public async Task<bool> HasPlatformAuthorityAsync(Guid userId, CancellationToken ct) => (await Load(userId, null, ct)).PlatformAuthority;
+    public async Task<bool> CanManageCatalogueAsync(Guid userId, string permission, CancellationToken ct)
+    {
+        if (permission is not (PermissionCodes.CurriculumManage or PermissionCodes.ContentManage or PermissionCodes.ContentPublish)) return false;
+        var key = (userId, "manage:" + permission);
+        if (catalogueCache.TryGetValue(key, out var allowed)) return allowed;
+        allowed = await (from assignment in db.OrganisationMembershipRoles.AsNoTracking()
+            join mapping in db.RolePermissions.AsNoTracking() on assignment.RoleId equals mapping.RoleId
+            where assignment.Membership.UserId == userId && assignment.Membership.IsActive && assignment.Membership.Organisation.IsActive &&
+                assignment.Membership.Organisation.OrganisationType == OrganisationType.Platform &&
+                db.Users.Any(u => u.Id == userId && u.IsActive) && mapping.Permission.Code == permission
+            select assignment.Id).AnyAsync(ct);
+        catalogueCache.Add(key, allowed); return allowed;
+    }
     public async Task<bool> CanReadCatalogueAsync(Guid userId, string permission, CancellationToken ct)
     {
         if (permission is not (PermissionCodes.CurriculumRead or PermissionCodes.ContentRead)) return false;

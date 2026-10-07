@@ -26,7 +26,7 @@ public sealed class CollectionsController(IContentService service) : ControllerB
     [ProducesResponseType<CollectionResponse>(200)]
     public async Task<ActionResult<CollectionResponse>> Get(Guid id, CancellationToken ct) => Ok(await service.GetCollectionAsync(id, ct));
 
-    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.CatalogueManagement)]
     [HttpPost]
     [ProducesResponseType<CollectionResponse>(201)]
     public async Task<ActionResult<CollectionResponse>> Create(CollectionRequest request, CancellationToken ct)
@@ -35,7 +35,7 @@ public sealed class CollectionsController(IContentService service) : ControllerB
         return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
     }
 
-    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.CatalogueManagement)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<CollectionResponse>(200)]
     public async Task<ActionResult<CollectionResponse>> Update(Guid id, CollectionRequest request, CancellationToken ct) => Ok(await service.UpdateCollectionAsync(id, request, ct));

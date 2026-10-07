@@ -70,7 +70,7 @@ public sealed class IdentityApiTests
             Assert.DoesNotContain(internalField, body, StringComparison.OrdinalIgnoreCase);
         Assert.Single((await client.GetFromJsonAsync<List<UserMembershipResponse>>("/api/auth/me/memberships"))!);
         Assert.Equal(9, (await client.GetFromJsonAsync<List<RoleResponse>>("/api/roles"))!.Count);
-        Assert.Equal(11, (await client.GetFromJsonAsync<List<PermissionResponse>>("/api/permissions"))!.Count);
+        Assert.Equal(13, (await client.GetFromJsonAsync<List<PermissionResponse>>("/api/permissions"))!.Count);
         var password = TestSecurityConfiguration.StrongPassword();
         var create = await client.PostAsJsonAsync("/api/users", new CreateUserRequest { Email = "staff@identity.test", FirstName = "Staff", LastName = "Member", InitialPassword = password });
         Assert.Equal(HttpStatusCode.Created, create.StatusCode);

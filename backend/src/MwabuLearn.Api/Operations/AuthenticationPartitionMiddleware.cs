@@ -14,7 +14,7 @@ public sealed class AuthenticationPartitionMiddleware(RequestDelegate next)
     }
     public async Task InvokeAsync(HttpContext http)
     {
-        if (http.Request.Path.StartsWithSegments("/api/auth") && http.Request.Method == "POST")
+        if ((http.Request.Path.StartsWithSegments("/api/auth") || http.Request.Path.StartsWithSegments("/api/browser/session")) && http.Request.Method == "POST")
         {
             const int limit = 16384;
             var feature = http.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpMaxRequestBodySizeFeature>();

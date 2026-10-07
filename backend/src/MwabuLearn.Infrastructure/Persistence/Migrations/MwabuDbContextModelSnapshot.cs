@@ -777,6 +777,254 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.ToTable("Devices");
                 });
 
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.EducationProject", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("CurriculumVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)");
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("StartsAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .IsConcurrencyToken()
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurriculumVersionId");
+
+                    b.HasIndex("OrganisationId", "Code")
+                        .IsUnique();
+
+                    b.ToTable("EducationProjects", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Project_Dates", "\"EndsAt\" IS NULL OR \"StartsAt\" IS NULL OR \"EndsAt\" >= \"StartsAt\"");
+                        });
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.GuardianLearner", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("GuardianMembershipId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("LearnerMembershipId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .IsConcurrencyToken()
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationId");
+
+                    b.HasIndex("GuardianMembershipId", "LearnerMembershipId")
+                        .IsUnique();
+
+                    b.HasIndex("GuardianMembershipId", "OrganisationId");
+
+                    b.HasIndex("LearnerMembershipId", "OrganisationId");
+
+                    b.ToTable("GuardianLearners", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Guardian_NotSelf", "\"GuardianMembershipId\" <> \"LearnerMembershipId\"");
+                        });
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.OrganisationCurriculum", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("CurriculumVersionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .IsConcurrencyToken()
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CurriculumVersionId");
+
+                    b.HasIndex("OrganisationId", "CurriculumVersionId")
+                        .IsUnique();
+
+                    b.ToTable("OrganisationCurricula");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.ProjectParticipant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrganisationMembershipId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationMembershipId");
+
+                    b.HasIndex("ProjectId", "OrganisationMembershipId")
+                        .IsUnique();
+
+                    b.ToTable("ProjectParticipants");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.ProjectResource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ContentItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentItemId");
+
+                    b.HasIndex("ProjectId", "ContentItemId")
+                        .IsUnique();
+
+                    b.ToTable("ProjectResources");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.ProjectSite", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationId");
+
+                    b.HasIndex("ProjectId", "OrganisationId")
+                        .IsUnique();
+
+                    b.ToTable("ProjectSites");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.ResourceVisit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ContentItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("LastOpenedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrganisationMembershipId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentItemId");
+
+                    b.HasIndex("OrganisationMembershipId", "ContentItemId")
+                        .IsUnique();
+
+                    b.HasIndex("OrganisationMembershipId", "LastOpenedAt");
+
+                    b.ToTable("ResourceVisits");
+                });
+
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Grade", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1331,6 +1579,20 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                             Code = "reports.read",
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             Name = "reports read"
+                        },
+                        new
+                        {
+                            Id = new Guid("52000000-0000-0000-0000-000000000012"),
+                            Code = "projects.read",
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "projects read"
+                        },
+                        new
+                        {
+                            Id = new Guid("52000000-0000-0000-0000-000000000013"),
+                            Code = "projects.manage",
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "projects manage"
                         });
                 });
 
@@ -1441,6 +1703,20 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Id = new Guid("53000000-0000-0000-0001-000000000012"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000012"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000001")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0001-000000000013"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000013"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000001")
+                        },
+                        new
+                        {
                             Id = new Guid("53000000-0000-0000-0002-000000000001"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000001"),
@@ -1518,6 +1794,20 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Id = new Guid("53000000-0000-0000-0002-000000000012"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000012"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000002")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0002-000000000013"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000013"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000002")
+                        },
+                        new
+                        {
                             Id = new Guid("53000000-0000-0000-0003-000000000001"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000001"),
@@ -1560,6 +1850,20 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Id = new Guid("53000000-0000-0000-0003-000000000012"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000012"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000003")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0003-000000000013"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000013"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000003")
+                        },
+                        new
+                        {
                             Id = new Guid("53000000-0000-0000-0004-000000000001"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000001"),
@@ -1591,6 +1895,13 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                             Id = new Guid("53000000-0000-0000-0004-000000000011"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000011"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000004")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0004-000000000012"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000012"),
                             RoleId = new Guid("51000000-0000-0000-0000-000000000004")
                         },
                         new
@@ -2195,6 +2506,148 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .HasForeignKey("RegisteredByUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.EducationProject", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.CurriculumVersion", "CurriculumVersion")
+                        .WithMany()
+                        .HasForeignKey("CurriculumVersionId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.Organisation", "Organisation")
+                        .WithMany()
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CurriculumVersion");
+
+                    b.Navigation("Organisation");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.GuardianLearner", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.Organisation", "Organisation")
+                        .WithMany()
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.OrganisationMembership", "Guardian")
+                        .WithMany()
+                        .HasForeignKey("GuardianMembershipId", "OrganisationId")
+                        .HasPrincipalKey("Id", "OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.OrganisationMembership", "Learner")
+                        .WithMany()
+                        .HasForeignKey("LearnerMembershipId", "OrganisationId")
+                        .HasPrincipalKey("Id", "OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Guardian");
+
+                    b.Navigation("Learner");
+
+                    b.Navigation("Organisation");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.OrganisationCurriculum", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.CurriculumVersion", "CurriculumVersion")
+                        .WithMany()
+                        .HasForeignKey("CurriculumVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.Organisation", "Organisation")
+                        .WithMany()
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CurriculumVersion");
+
+                    b.Navigation("Organisation");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.ProjectParticipant", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.OrganisationMembership", "Membership")
+                        .WithMany()
+                        .HasForeignKey("OrganisationMembershipId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Education.EducationProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Membership");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.ProjectResource", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentItem", "ContentItem")
+                        .WithMany()
+                        .HasForeignKey("ContentItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Education.EducationProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentItem");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.ProjectSite", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.Organisation", "Organisation")
+                        .WithMany()
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Education.EducationProject", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Organisation");
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Education.ResourceVisit", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentItem", "ContentItem")
+                        .WithMany()
+                        .HasForeignKey("ContentItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.OrganisationMembership", "Membership")
+                        .WithMany()
+                        .HasForeignKey("OrganisationMembershipId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentItem");
+
+                    b.Navigation("Membership");
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Grade", b =>

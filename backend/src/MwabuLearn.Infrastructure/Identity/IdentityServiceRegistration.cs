@@ -44,10 +44,13 @@ public static class IdentityServiceRegistration
         services.AddScoped<ISessionService, SessionService>();
         services.AddSingleton(sp => new UnknownAccountPasswordWork(new PasswordHasher<ApplicationUser>(sp.GetRequiredService<IOptions<PasswordHasherOptions>>())));
         services.AddScoped<PlatformAdministratorGuard>();
-        services.AddScoped<IUserService, UserService>();
+        services.AddScoped<UserService>();
+        services.AddScoped<IUserService>(sp => sp.GetRequiredService<UserService>());
+        services.AddScoped<IOrganisationProvisioning, OrganisationProvisioning>();
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<IOrganisationService, OrganisationService>();
         services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
+        services.AddScoped<IAccessService, AccessService>();
         services.AddScoped<BootstrapAdministrator>();
         return services;
     }

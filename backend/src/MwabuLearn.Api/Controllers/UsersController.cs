@@ -13,8 +13,11 @@ namespace MwabuLearn.Api.Controllers;
 [ProducesResponseType<ProblemDetails>(403)]
 [ProducesResponseType<ProblemDetails>(404)]
 [ProducesResponseType<ProblemDetails>(409)]
-public sealed class UsersController(IUserService service) : ControllerBase
+public sealed class UsersController(IUserService service, IAuthenticationService authentication) : ControllerBase
 {
+    [HttpGet("{id:guid}/memberships"), RequirePermission(PermissionCodes.UsersRead, PermissionScope.Platform)]
+    public async Task<IActionResult> Memberships(Guid id, CancellationToken ct)
+    { await service.GetAsync(id, ct); return Ok(await authentication.MyMembershipsAsync(id, ct)); }
     [HttpGet, RequirePermission(PermissionCodes.UsersRead, PermissionScope.Platform)]
     [ProducesResponseType<UserPage>(200)]
     public async Task<ActionResult<UserPage>> List([FromQuery] UserSearchRequest request, CancellationToken ct) => Ok(await service.ListAsync(request, ct));

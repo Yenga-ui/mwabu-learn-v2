@@ -31,6 +31,12 @@ public static class AuthenticationRegistration
             options.TokenValidationParameters = JwtOptions.ValidationParameters(jwt.Value);
             options.Events = new JwtBearerEvents
             {
+                OnMessageReceived = context =>
+                {
+                    if (!context.Request.Headers.ContainsKey("Authorization") && context.Request.Cookies.TryGetValue(BrowserCookies.Access, out var token))
+                        context.Token = token;
+                    return Task.CompletedTask;
+                },
                 OnTokenValidated = async context =>
                 {
                     if (!Guid.TryParse(context.Principal?.FindFirst("sub")?.Value, out var id) ||
@@ -71,7 +77,7 @@ public static class AuthenticationRegistration
             options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
             {
                 if (context.Request.Path.StartsWithSegments("/health")) return RateLimitPartition.GetNoLimiter("health");
-                var auth = context.Request.Path.StartsWithSegments("/api/auth");
+                var auth = context.Request.Path.StartsWithSegments("/api/auth") || context.Request.Path.StartsWithSegments("/api/browser/session");
                 var principal = context.User.FindFirst("sub")?.Value;
                 var key = (auth ? "auth-ip:" : "api:") + (auth ? context.Connection.RemoteIpAddress?.ToString() : principal ?? context.Connection.RemoteIpAddress?.ToString());
                 return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions

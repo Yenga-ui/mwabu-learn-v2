@@ -16,6 +16,9 @@ artifacts/
 
 # React / Node dependencies, caches and generated output
 node_modules/
+.pnpm-store/
+playwright-report/
+test-results/
 dist/
 build/
 coverage/

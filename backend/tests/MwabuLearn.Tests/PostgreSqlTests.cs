@@ -24,7 +24,7 @@ public sealed class PostgreSqlTests
         await using var fixture = await PostgreSqlFixture.CreateAsync(); await using var db = fixture.Context();
         Assert.Empty(await db.Database.GetPendingMigrationsAsync());
         Assert.False(db.Database.HasPendingModelChanges());
-        Assert.Equal(9, await db.OrganisationRoles.CountAsync()); Assert.Equal(11, await db.Permissions.CountAsync());
+        Assert.Equal(9, await db.OrganisationRoles.CountAsync()); Assert.Equal(13, await db.Permissions.CountAsync());
         var user = new ApplicationUser { Email = "unique@example.test", NormalizedEmail = "UNIQUE@EXAMPLE.TEST", UserName = "unique@example.test", NormalizedUserName = "UNIQUE@EXAMPLE.TEST", FirstName = "Test", LastName = "User" };
         db.Users.Add(user); await db.SaveChangesAsync();
         db.Users.Add(new ApplicationUser { Email = "unique@example.test", NormalizedEmail = user.NormalizedEmail, UserName = "another@example.test", NormalizedUserName = "ANOTHER@EXAMPLE.TEST", FirstName = "Test", LastName = "User" });
