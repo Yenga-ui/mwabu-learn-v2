@@ -10,8 +10,11 @@ public sealed partial class ContentService
     public async Task<IReadOnlyList<MappingResponse>> ListMappingsAsync(Guid id, CancellationToken ct)
     {
         await RequireContent(id, ct);
-        var entities = await db.ContentCurriculumMappings.AsNoTracking().Where(x => x.ContentItemId == id).OrderBy(x => x.Id).ToLegacyListAsync(ct);
-        return entities.Select(Map).ToList();
+        var entities = await db.ContentCurriculumMappings.AsNoTracking().Where(x => x.ContentItemId == id).OrderBy(x => x.Id)
+            .Select(x => new { Entity = x, Name = x.CurriculumVersion != null ? x.CurriculumVersion.Name : x.Grade != null ? x.Grade.Name :
+                x.Subject != null ? x.Subject.Name : x.Term != null ? x.Term.Name : x.Topic != null ? x.Topic.Name :
+                x.Competency != null ? x.Competency.Name : x.LearningOutcome!.Name }).ToLegacyListAsync(ct);
+        return entities.Select(x => Map(x.Entity) with { NodeName = x.Name }).ToList();
     }
 
     public async Task<MappingResponse> AddMappingAsync(Guid id, MappingRequest request, CancellationToken ct)

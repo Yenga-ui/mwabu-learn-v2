@@ -18,13 +18,18 @@ public sealed class UserService(MwabuDbContext db, UserManager<ApplicationUser> 
         if (request.Page < 1 || request.PageSize is < 1 or > 100 || (long)(request.Page - 1) * request.PageSize > int.MaxValue)
             throw Invalid("Invalid pagination; page size must be between 1 and 100.");
         var query = db.Users.AsNoTracking();
+        var text = request.Text?.Trim().ToUpperInvariant();
+        if (text is { Length: > 200 }) throw Invalid("Search text is too long.");
+        if (!string.IsNullOrEmpty(text)) query = query.Where(x => x.NormalizedEmail!.Contains(text) || x.FirstName.ToUpper().Contains(text) || x.LastName.ToUpper().Contains(text));
+        if (request.IsActive.HasValue) query = query.Where(x => x.IsActive == request.IsActive);
         var count = await query.CountAsync(ct);
         var items = await query.OrderBy(x => x.Id).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).Select(Projection).ToListAsync(ct);
         return new UserPage(items, request.Page, request.PageSize, count);
     }
     public async Task<UserResponse> GetAsync(Guid id, CancellationToken ct) =>
         await db.Users.AsNoTracking().Where(x => x.Id == id).Select(Projection).SingleOrDefaultAsync(ct) ?? throw Missing("User");
-    public async Task<UserResponse> CreateAsync(CreateUserRequest request, CancellationToken ct) => await Transaction(db, async () =>
+    public Task<UserResponse> CreateAsync(CreateUserRequest request, CancellationToken ct) => Transaction(db, () => CreateCoreAsync(request, ct), ct);
+    internal async Task<UserResponse> CreateCoreAsync(CreateUserRequest request, CancellationToken ct)
     {
         var email = Email(request.Email);
         var entity = new ApplicationUser
@@ -38,7 +43,7 @@ public sealed class UserService(MwabuDbContext db, UserManager<ApplicationUser> 
         Result(await users.CreateAsync(entity, request.InitialPassword));
         ct.ThrowIfCancellationRequested();
         return Map(entity);
-    }, ct);
+    }
     public async Task SetActiveAsync(Guid id, bool isActive, CancellationToken ct) => await Transaction(db, async () =>
     {
         var entity = await db.Users.SingleOrDefaultAsync(x => x.Id == id, ct) ?? throw Missing("User");

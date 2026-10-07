@@ -101,6 +101,13 @@ public sealed class SessionService(MwabuDbContext db, UserManager<ApplicationUse
             return true;
         }, ct);
     }
+    public async Task LogoutBrowserAsync(string token, CancellationToken ct)
+    {
+        var hash = Hash(token);
+        if (hash is null) return;
+        var owner = await db.RefreshSessions.AsNoTracking().Where(x => x.TokenHash == hash).Select(x => (Guid?)x.UserId).SingleOrDefaultAsync(ct);
+        if (owner.HasValue) await LogoutAsync(owner.Value, token, ct);
+    }
     private Task<int> RevokeFamily(Guid family, string reason, CancellationToken ct) => db.RefreshSessions
         .Where(x => x.FamilyId == family && x.RevokedAt == null).ExecuteUpdateAsync(s => s
             .SetProperty(x => x.RevokedAt, DateTime.UtcNow).SetProperty(x => x.UpdatedAt, DateTime.UtcNow)

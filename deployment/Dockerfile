@@ -1,3 +1,11 @@
+FROM node:24-bookworm-slim AS web
+WORKDIR /web
+RUN npm install --global pnpm@11.25.0
+COPY web/package.json web/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY web/ ./
+RUN pnpm build
+
 FROM mcr.microsoft.com/dotnet/sdk:10.0-noble AS build
 WORKDIR /src
 COPY backend/src/MwabuLearn.Domain/MwabuLearn.Domain.csproj backend/src/MwabuLearn.Domain/
@@ -14,6 +22,7 @@ USER root
 RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /app/.local/content /app/.local/uploads && chown -R "$APP_UID:$APP_UID" /app/.local
 COPY --from=build /out/ ./
+COPY --from=web /web/dist/ ./wwwroot/
 ENV ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_HTTP_PORTS=8080 \
     HEALTHCHECK_URL=http://127.0.0.1:8080/health/live \

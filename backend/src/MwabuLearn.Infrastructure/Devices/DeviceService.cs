@@ -56,7 +56,7 @@ public sealed class DeviceService(MwabuDbContext db, ICurrentUser current, IPerm
     }
     public async Task<DevicePage> ListAsync(Guid organisationId, int page, int pageSize, CancellationToken ct)
     {
-        await Permit(organisationId, PermissionCodes.MembershipsManage, ct);
+        await Permit(organisationId, PermissionCodes.ReportsRead, ct);
         if (page is < 1 or > 100000 || pageSize is < 1 or > 100) throw Invalid("Use a page size from 1 to 100.");
         var devices = await db.Devices.AsNoTracking().Where(x => x.OrganisationId == organisationId).OrderBy(x => x.Id)
             .Skip((page - 1) * pageSize).Take(pageSize + 1).ToListAsync(ct);

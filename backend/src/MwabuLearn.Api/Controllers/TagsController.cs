@@ -26,7 +26,7 @@ public sealed class TagsController(IContentService service) : ControllerBase
     [ProducesResponseType<TagResponse>(200)]
     public async Task<ActionResult<TagResponse>> Get(Guid id, CancellationToken ct) => Ok(await service.GetTagAsync(id, ct));
 
-    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.CatalogueManagement)]
     [HttpPost]
     [ProducesResponseType<TagResponse>(201)]
     public async Task<ActionResult<TagResponse>> Create(TagRequest request, CancellationToken ct)
@@ -35,7 +35,7 @@ public sealed class TagsController(IContentService service) : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = result.Id }, result);
     }
 
-    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.Platform)]
+    [RequirePermission(PermissionCodes.ContentManage, PermissionScope.CatalogueManagement)]
     [HttpPut("{id:guid}")]
     [ProducesResponseType<TagResponse>(200)]
     public async Task<ActionResult<TagResponse>> Update(Guid id, TagRequest request, CancellationToken ct) => Ok(await service.UpdateTagAsync(id, request, ct));

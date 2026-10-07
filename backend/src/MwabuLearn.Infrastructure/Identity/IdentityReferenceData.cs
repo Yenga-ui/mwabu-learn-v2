@@ -24,8 +24,8 @@ public static class IdentityReferenceData
         [
             PermissionCodes.All,
             PermissionCodes.All,
-            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.UsersRead, PermissionCodes.OrganisationsRead, PermissionCodes.MembershipsManage, PermissionCodes.ReportsRead],
-            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.UsersRead, PermissionCodes.OrganisationsRead, PermissionCodes.ReportsRead],
+            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.UsersRead, PermissionCodes.OrganisationsRead, PermissionCodes.MembershipsManage, PermissionCodes.ReportsRead, PermissionCodes.ProjectsRead, PermissionCodes.ProjectsManage],
+            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.UsersRead, PermissionCodes.OrganisationsRead, PermissionCodes.ReportsRead, PermissionCodes.ProjectsRead],
             [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.OrganisationsRead],
             [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead],
             [PermissionCodes.ContentRead],

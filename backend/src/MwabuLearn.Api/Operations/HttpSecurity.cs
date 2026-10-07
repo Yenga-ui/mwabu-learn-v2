@@ -61,7 +61,7 @@ public sealed class RequestTelemetryMiddleware(RequestDelegate next, ILogger<Req
         {
             context.Response.Headers["X-Correlation-Id"] = correlation;
             context.Response.Headers.XContentTypeOptions = "nosniff";
-            context.Response.Headers.XFrameOptions = "DENY";
+            if (!context.Response.Headers.ContainsKey("X-Frame-Options")) context.Response.Headers.XFrameOptions = "DENY";
             context.Response.Headers["Referrer-Policy"] = "no-referrer";
             if (context.Request.Path.StartsWithSegments("/api/auth")) context.Response.Headers.CacheControl = "no-store";
             return Task.CompletedTask;

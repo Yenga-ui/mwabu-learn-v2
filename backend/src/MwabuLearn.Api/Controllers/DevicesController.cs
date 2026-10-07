@@ -19,7 +19,7 @@ public sealed class DevicesController(IDeviceService service) : ControllerBase
     }
     [HttpGet("{id:guid}"), RequirePermission(PermissionCodes.ContentRead)]
     public async Task<ActionResult<DeviceResponse>> Get(Guid organisationId, Guid id, CancellationToken ct) => Ok(await service.GetAsync(organisationId, id, ct));
-    [HttpGet, RequirePermission(PermissionCodes.MembershipsManage)]
+    [HttpGet, RequirePermission(PermissionCodes.ReportsRead)]
     public async Task<ActionResult<DevicePage>> List(Guid organisationId, CancellationToken ct, [FromQuery] int page = 1, [FromQuery] int pageSize = 50) =>
         Ok(await service.ListAsync(organisationId, page, pageSize, ct));
     [HttpPost("{id:guid}/credential"), RequirePermission(PermissionCodes.ContentRead)]

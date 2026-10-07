@@ -13,14 +13,22 @@ using MwabuLearn.Infrastructure.Content.Storage;
 using MwabuLearn.Api.Security;
 using Microsoft.OpenApi;
 var builder = WebApplication.CreateBuilder(args);
+if (builder.Environment.IsProduction() && builder.Configuration.GetValue<bool>("BootstrapAdministrator:Enabled"))
+    throw new InvalidOperationException("Administrator bootstrap must be disabled in Production.");
 
 // -------------------------------------------------------
 // Services
 // -------------------------------------------------------
 
-builder.Services.AddControllers().AddJsonOptions(options =>
+builder.Services.AddScoped<CatalogueVisibilityFilter>();
+builder.Services.AddControllers(options => options.Filters.AddService<CatalogueVisibilityFilter>()).AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false)));
 builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<ILearningCatalogue, LearningCatalogue>();
+builder.Services.AddScoped<MwabuLearn.Application.Education.IProjectService, MwabuLearn.Infrastructure.Education.ProjectService>();
+builder.Services.AddScoped<MwabuLearn.Application.Education.IDevelopmentSeed, MwabuLearn.Infrastructure.Education.DevelopmentSeed>();
+builder.Services.AddScoped<MwabuLearn.Application.Education.ISchoolService, MwabuLearn.Infrastructure.Education.SchoolService>();
+builder.Services.AddScoped<MwabuLearn.Application.Education.IReportingService, MwabuLearn.Infrastructure.Education.ReportingService>();
 builder.Services.AddContentStorage(builder.Configuration);
 builder.Services.AddOptions<MwabuLearn.Infrastructure.Operations.BackgroundWorkOptions>().BindConfiguration("BackgroundWork")
     .Validate(MwabuLearn.Infrastructure.Operations.BackgroundWorkOptions.IsValid, "Invalid background work settings.").ValidateOnStart();
@@ -38,6 +46,15 @@ builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
 builder.Services.AddScoped<MwabuLearn.Application.Directories.IDirectoryService, MwabuLearn.Infrastructure.Directories.DirectoryService>();
 builder.Services.AddMwabuAuthentication(builder.Configuration);
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-Mwabu-CSRF";
+    options.Cookie.Name = "__Host-MwabuCsrf";
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+    options.Cookie.HttpOnly = true;
+    options.Cookie.Path = "/";
+});
 builder.Services.AddOptions<MwabuLearn.Infrastructure.Devices.DeviceOptions>().BindConfiguration("Devices")
     .Validate(MwabuLearn.Infrastructure.Devices.DeviceOptions.IsValid, "Invalid device credential lifetime.").ValidateOnStart();
 builder.Services.AddOptions<MwabuLearn.Infrastructure.Sync.SyncOptions>().BindConfiguration("Sync")
@@ -114,10 +131,12 @@ if (app.Environment.IsDevelopment())
 app.UseWhen(context => !context.Request.Path.StartsWithSegments("/health"), branch => branch.UseHttpsRedirection());
 
 app.UseCors("ConfiguredOrigins");
+app.UseMwabuWeb();
 
 app.UseAuthentication();
 app.UseMiddleware<AuthenticationPartitionMiddleware>();
 app.UseRateLimiter();
+app.UseMiddleware<BrowserCsrfMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

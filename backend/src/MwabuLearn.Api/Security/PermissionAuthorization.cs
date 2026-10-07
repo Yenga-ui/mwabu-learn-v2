@@ -4,7 +4,7 @@ using MwabuLearn.Application.Identity;
 
 namespace MwabuLearn.Api.Security;
 
-public enum PermissionScope { Organisation, Platform, Catalogue }
+public enum PermissionScope { Organisation, Platform, Catalogue, CatalogueManagement }
 public sealed class RequirePermissionAttribute : AuthorizeAttribute
 {
     public RequirePermissionAttribute(string code, PermissionScope scope = PermissionScope.Organisation) => Policy = PolicyName(code, scope);
@@ -32,6 +32,11 @@ public sealed class PermissionHandler(IPermissionEvaluator evaluator, ICurrentUs
     {
         var http = accessor.HttpContext;
         if (http is null || current.UserId is not Guid userId) return;
+        if (requirement.Scope == PermissionScope.CatalogueManagement)
+        {
+            if (await evaluator.CanManageCatalogueAsync(userId, requirement.Code, http.RequestAborted)) context.Succeed(requirement);
+            return;
+        }
         if (requirement.Scope == PermissionScope.Catalogue)
         {
             if (await evaluator.CanReadCatalogueAsync(userId, requirement.Code, http.RequestAborted)) context.Succeed(requirement);

@@ -24,6 +24,8 @@ public sealed record LoginResponse(string AccessToken, string TokenType, DateTim
 public sealed record ActiveRequest([property: JsonRequired] bool IsActive);
 public sealed class UserSearchRequest
 {
+    [StringLength(200)] public string? Text { get; init; }
+    public bool? IsActive { get; init; }
     [Range(1, int.MaxValue)] public int Page { get; init; } = 1;
     [Range(1, 100)] public int PageSize { get; init; } = 20;
 }

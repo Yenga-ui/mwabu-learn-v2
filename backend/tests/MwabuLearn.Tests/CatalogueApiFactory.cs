@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
@@ -34,6 +35,7 @@ internal sealed class CatalogueApiFactory(bool development = false, Action<IWebH
         builder.UseSetting("ConnectionStrings:MwabuLearnDb", "Host=localhost;Database=unused_test_configuration");
         builder.ConfigureServices(services =>
         {
+            services.AddDataProtection().UseEphemeralDataProtectionProvider();
             services.RemoveAll<DbContextOptions<MwabuDbContext>>();
             services.RemoveAll<IDbContextOptionsConfiguration<MwabuDbContext>>();
             services.AddDbContext<MwabuDbContext>(options => options.UseSqlite(connection));

@@ -40,7 +40,7 @@ public sealed class OrganisationsController(IOrganisationService service) : Cont
     [HttpGet("{organisationId:guid}/members"), RequirePermission(PermissionCodes.UsersRead)]
     [ProducesResponseType<IReadOnlyList<MembershipResponse>>(200)]
     public async Task<ActionResult<IReadOnlyList<MembershipResponse>>> Members(Guid organisationId, CancellationToken ct) => Ok(await service.MembersAsync(organisationId, ct));
-    [HttpPost("{organisationId:guid}/members"), RequirePermission(PermissionCodes.MembershipsManage)]
+    [HttpPost("{organisationId:guid}/members"), RequirePermission(PermissionCodes.MembershipsManage, PermissionScope.Platform)]
     [ProducesResponseType<MembershipResponse>(201)]
     public async Task<ActionResult<MembershipResponse>> AddMember(Guid organisationId, MembershipRequest request, CancellationToken ct)
     {

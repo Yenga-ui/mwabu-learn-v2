@@ -14,7 +14,19 @@ public sealed partial class ContentService
         var text = Optional(request.Text, 200, "Search text")?.ToLowerInvariant();
         if (text is not null) query = query.Where(x => x.Title.ToLower().Contains(text) ||
             (x.Summary != null && x.Summary.ToLower().Contains(text)) ||
-            (x.Description != null && x.Description.ToLower().Contains(text)));
+            (x.Description != null && x.Description.ToLower().Contains(text)) ||
+            x.Tags.Any(t => t.Tag.Name.ToLower().Contains(text)) ||
+            x.Collections.Any(c => c.Collection.Name.ToLower().Contains(text)) ||
+            x.CurriculumMappings.Any(m => m.CurriculumVersion!.Name.ToLower().Contains(text) || m.Grade!.Name.ToLower().Contains(text) ||
+                m.Subject!.Name.ToLower().Contains(text) || m.Term!.Name.ToLower().Contains(text) || m.Topic!.Name.ToLower().Contains(text) ||
+                m.Competency!.Name.ToLower().Contains(text) || m.LearningOutcome!.Name.ToLower().Contains(text) ||
+                (m.CurriculumVersion != null && m.CurriculumVersion.Curriculum.Name.ToLower().Contains(text)) ||
+                (m.Grade != null && (m.Grade.CurriculumVersion.Name + "/" + m.Grade.CurriculumVersion.Curriculum.Name).ToLower().Contains(text)) ||
+                (m.Subject != null && (m.Subject.Grade.Name + "/" + m.Subject.Grade.CurriculumVersion.Name + "/" + m.Subject.Grade.CurriculumVersion.Curriculum.Name).ToLower().Contains(text)) ||
+                (m.Term != null && (m.Term.Subject.Name + "/" + m.Term.Subject.Grade.Name + "/" + m.Term.Subject.Grade.CurriculumVersion.Name + "/" + m.Term.Subject.Grade.CurriculumVersion.Curriculum.Name).ToLower().Contains(text)) ||
+                (m.Topic != null && (m.Topic.Term.Name + "/" + m.Topic.Term.Subject.Name + "/" + m.Topic.Term.Subject.Grade.Name + "/" + m.Topic.Term.Subject.Grade.CurriculumVersion.Name + "/" + m.Topic.Term.Subject.Grade.CurriculumVersion.Curriculum.Name).ToLower().Contains(text)) ||
+                (m.Competency != null && (m.Competency.Topic.Name + "/" + m.Competency.Topic.Term.Name + "/" + m.Competency.Topic.Term.Subject.Name + "/" + m.Competency.Topic.Term.Subject.Grade.Name + "/" + m.Competency.Topic.Term.Subject.Grade.CurriculumVersion.Name + "/" + m.Competency.Topic.Term.Subject.Grade.CurriculumVersion.Curriculum.Name).ToLower().Contains(text)) ||
+                (m.LearningOutcome != null && (m.LearningOutcome.Competency.Name + "/" + m.LearningOutcome.Competency.Topic.Name + "/" + m.LearningOutcome.Competency.Topic.Term.Name + "/" + m.LearningOutcome.Competency.Topic.Term.Subject.Name + "/" + m.LearningOutcome.Competency.Topic.Term.Subject.Grade.Name + "/" + m.LearningOutcome.Competency.Topic.Term.Subject.Grade.CurriculumVersion.Name + "/" + m.LearningOutcome.Competency.Topic.Term.Subject.Grade.CurriculumVersion.Curriculum.Name).ToLower().Contains(text))));
         if (!string.IsNullOrWhiteSpace(request.ContentType))
         {
             var type = Slug(request.ContentType, 64);
@@ -53,8 +65,13 @@ public sealed partial class ContentService
                 m.Topic!.Term.SubjectId == s || m.Competency!.Topic.Term.SubjectId == s ||
                 m.LearningOutcome!.Competency.Topic.Term.SubjectId == s));
         }
+        if (request.TermId is Guid term) query = query.Where(x => x.CurriculumMappings.Any(m => m.TermId == term || m.Topic!.TermId == term || m.Competency!.Topic.TermId == term || m.LearningOutcome!.Competency.Topic.TermId == term));
+        if (request.TopicId is Guid topic) query = query.Where(x => x.CurriculumMappings.Any(m => m.TopicId == topic || m.Competency!.TopicId == topic || m.LearningOutcome!.Competency.TopicId == topic));
+        if (request.CompetencyId is Guid competency) query = query.Where(x => x.CurriculumMappings.Any(m => m.CompetencyId == competency || m.LearningOutcome!.CompetencyId == competency));
+        if (request.LearningOutcomeId is Guid outcome) query = query.Where(x => x.CurriculumMappings.Any(m => m.LearningOutcomeId == outcome));
         var count = await query.CountAsync(ct);
-        var items = await query.OrderBy(x => x.SortOrder).ThenBy(x => x.Id)
+        var ordered = request.NewestPublished ? query.OrderByDescending(x => x.PublishedAt).ThenBy(x => x.Id) : query.OrderBy(x => x.SortOrder).ThenBy(x => x.Id);
+        var items = await ordered
             .Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).Select(ContentProjection).ToListAsync(ct);
         return new PagedResponse<ContentResponse>(items, request.Page, request.PageSize, count);
     }

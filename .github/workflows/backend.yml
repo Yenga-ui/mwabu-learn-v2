@@ -2,9 +2,9 @@ name: Backend validation
 on:
   push:
     branches: [main, 'feature/**']
-    paths: ['backend/**', 'deployment/**', '.dockerignore', '.github/workflows/backend.yml']
+    paths: ['backend/**', 'web/**', 'deployment/**', '.dockerignore', '.github/workflows/backend.yml']
   pull_request:
-    paths: ['backend/**', 'deployment/**', '.dockerignore', '.github/workflows/backend.yml']
+    paths: ['backend/**', 'web/**', 'deployment/**', '.dockerignore', '.github/workflows/backend.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,7 +14,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     env:
       DOTNET_NOLOGO: true
       DOTNET_CLI_TELEMETRY_OPTOUT: true
@@ -27,6 +27,18 @@ jobs:
         with:
           dotnet-version: '10.0.x'
           dotnet-quality: ga
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+      - name: Install and verify web application
+        working-directory: web
+        run: |
+          npm install --global pnpm@11.25.0
+          pnpm install --frozen-lockfile
+          pnpm lint
+          pnpm typecheck
+          pnpm test
+          pnpm build
       - name: Preserve original migrations
         shell: bash
         run: |
@@ -91,6 +103,21 @@ jobs:
                               bad.append(package.get('id'))
           assert not bad, 'High/critical package advisories require review: ' + ', '.join(bad)
           PY
+      - name: Web dependency advisory report
+        working-directory: web
+        run: pnpm audit --audit-level high
+      - name: Real browser workflows against isolated PostgreSQL and HTTPS
+        timeout-minutes: 15
+        working-directory: web
+        env:
+          MWABU_EF_PATH: ${{ runner.temp }}/ef/dotnet-ef
+        run: |
+          # The hosted runner's Azure mirror stalled during APT index retrieval.
+          # Keep the runner's suites/components/signature verification and use Ubuntu's HTTPS archive.
+          test -f /etc/apt/apt-mirrors.txt
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          pnpm exec playwright install --with-deps chromium
+          pnpm test:e2e
       - name: Build Linux runtime image
         run: docker build --file deployment/Dockerfile --tag mwabu-learn-api:ci .
       - name: Smoke test production non-root liveness and schema-not-ready behaviour

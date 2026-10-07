@@ -13,6 +13,7 @@ public interface ISessionService
     Task<LoginResponse> CreateAsync(Guid userId, CancellationToken ct);
     Task<LoginResponse> RefreshAsync(string token, CancellationToken ct);
     Task LogoutAsync(Guid userId, string token, CancellationToken ct);
+    Task LogoutBrowserAsync(string token, CancellationToken ct);
     Task LogoutAllAsync(Guid userId, CancellationToken ct);
     Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken ct);
     Task ForgotPasswordAsync(string email, CancellationToken ct);

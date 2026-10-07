@@ -34,6 +34,7 @@ public interface IPermissionEvaluator
 {
     Task<bool> HasPlatformAuthorityAsync(Guid userId, CancellationToken ct);
     Task<bool> CanReadCatalogueAsync(Guid userId, string permission, CancellationToken ct);
+    Task<bool> CanManageCatalogueAsync(Guid userId, string permission, CancellationToken ct);
     Task<bool> CanAsync(Guid userId, string permission, Guid? organisationId, bool platformOnly, CancellationToken ct);
 }
 public static class PermissionCodes
@@ -43,6 +44,7 @@ public static class PermissionCodes
     public const string UsersRead = "users.read", UsersManage = "users.manage";
     public const string OrganisationsRead = "organisations.read", OrganisationsManage = "organisations.manage";
     public const string MembershipsManage = "memberships.manage", ReportsRead = "reports.read";
+    public const string ProjectsRead = "projects.read", ProjectsManage = "projects.manage";
     public static readonly string[] All = [CurriculumRead, CurriculumManage, ContentRead, ContentManage, ContentPublish,
-        UsersRead, UsersManage, OrganisationsRead, OrganisationsManage, MembershipsManage, ReportsRead];
+        UsersRead, UsersManage, OrganisationsRead, OrganisationsManage, MembershipsManage, ReportsRead, ProjectsRead, ProjectsManage];
 }
