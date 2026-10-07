@@ -71,7 +71,9 @@ jobs:
           dotnet tool install --tool-path "$RUNNER_TEMP/ef" dotnet-ef --version 10.0.12
           "$RUNNER_TEMP/ef/dotnet-ef" migrations has-pending-model-changes --configuration Release --no-build --project backend/src/MwabuLearn.Infrastructure --startup-project backend/src/MwabuLearn.Api -- --offline
           "$RUNNER_TEMP/ef/dotnet-ef" migrations script --idempotent --configuration Release --no-build --project backend/src/MwabuLearn.Infrastructure --startup-project backend/src/MwabuLearn.Api --output artifacts/migrations.sql -- --offline
-          "$RUNNER_TEMP/ef/dotnet-ef" migrations bundle --configuration Release --self-contained --runtime linux-x64 --project backend/src/MwabuLearn.Infrastructure --startup-project backend/src/MwabuLearn.Api --output artifacts/efbundle -- --offline
+          # EF tooling builds the startup/project graph for this RID without restoring it.
+          dotnet restore backend/src/MwabuLearn.Api/MwabuLearn.Api.csproj --runtime linux-x64
+          "$RUNNER_TEMP/ef/dotnet-ef" migrations bundle --configuration Release --self-contained --runtime linux-x64 --target-runtime linux-x64 --project backend/src/MwabuLearn.Infrastructure --startup-project backend/src/MwabuLearn.Api --output artifacts/efbundle -- --offline
       - name: Dependency advisory report
         shell: bash
         run: |
