@@ -74,3 +74,12 @@ appsettings.*.Local.json
 Thumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+# Ignored local deployment keys/certificates and databases
+*.pfx
+*.p12
+*.key
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-wal
+*.sqlite-shm

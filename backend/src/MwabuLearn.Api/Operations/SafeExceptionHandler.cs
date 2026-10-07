@@ -13,6 +13,12 @@ public sealed class SafeExceptionHandler(IProblemDetailsService problems, ILogge
             await problems.WriteAsync(new() { HttpContext = http, ProblemDetails = new ProblemDetails { Status = bad.StatusCode, Title = "Invalid or oversized request." } });
             return true;
         }
+        if (exception is MwabuLearn.Application.Directories.LegacyResultLimitException)
+        {
+            http.Response.StatusCode = 409;
+            await problems.WriteAsync(new() { HttpContext = http, ProblemDetails = new ProblemDetails { Status = 409, Title = exception.Message } });
+            return true;
+        }
         logger.LogError("Unhandled request failure {ExceptionType}", exception.GetType().Name);
         http.Response.StatusCode = 500;
         await problems.WriteAsync(new() { HttpContext = http, ProblemDetails = new ProblemDetails { Status = 500, Title = "An unexpected server error occurred." } });

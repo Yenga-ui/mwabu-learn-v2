@@ -1,3 +1,4 @@
+using MwabuLearn.Infrastructure.Persistence;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
@@ -56,7 +57,7 @@ public sealed partial class ContentService
     {
         await RequireContent(id, ct);
         return await db.ContentAssets.AsNoTracking().Where(x => x.ContentItemId == id && !x.IsPendingDeletion)
-            .OrderBy(x => x.SortOrder).ThenBy(x => x.Id).Select(AssetProjection).ToListAsync(ct);
+            .OrderBy(x => x.SortOrder).ThenBy(x => x.Id).Select(AssetProjection).ToLegacyListAsync(ct);
     }
 
     public async Task<AssetDownload> OpenAssetAsync(Guid id, Guid assetId, CancellationToken ct)

@@ -36,6 +36,7 @@ var uploadLimit = builder.Configuration.GetValue<long?>("Content:MaxUploadBytes"
 builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = uploadLimit + 1024 * 1024);
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = uploadLimit + 1024 * 1024);
 builder.Services.AddScoped<ICurriculumService, CurriculumService>();
+builder.Services.AddScoped<MwabuLearn.Application.Directories.IDirectoryService, MwabuLearn.Infrastructure.Directories.DirectoryService>();
 builder.Services.AddMwabuAuthentication(builder.Configuration);
 builder.Services.AddOptions<MwabuLearn.Infrastructure.Devices.DeviceOptions>().BindConfiguration("Devices")
     .Validate(MwabuLearn.Infrastructure.Devices.DeviceOptions.IsValid, "Invalid device credential lifetime.").ValidateOnStart();
@@ -50,8 +51,14 @@ builder.Services.AddAuthorization(options => options.AddPolicy("registered-devic
 builder.Services.AddScoped<MwabuLearn.Application.Auditing.IAuditContext, HttpAuditContext>();
 builder.Services.AddScoped<MwabuLearn.Application.Auditing.IAuditService, MwabuLearn.Infrastructure.Auditing.AuditService>();
 builder.AddHttpSecurity();
+builder.AddBackendObservability();
 builder.AddDurableDataProtection();
 builder.Logging.ClearProviders();
+// Framework database/client diagnostics may include SQL, URLs or provider exception details.
+// SafeExceptionHandler and operational spans supply sanitized failure diagnostics.
+builder.Logging.AddFilter("Microsoft.EntityFrameworkCore", LogLevel.Critical);
+builder.Logging.AddFilter("Npgsql", LogLevel.Critical);
+builder.Logging.AddFilter("System.Net.Http.HttpClient", LogLevel.Warning);
 builder.Logging.AddJsonConsole(options => options.IncludeScopes = true);
 builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
 {
@@ -78,13 +85,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-var connectionString =
-    builder.Configuration.GetConnectionString("MwabuLearnDb")
-    ?? throw new InvalidOperationException(
-        "Connection string 'MwabuLearnDb' was not found.");
+builder.Services.AddMwabuDatabase(builder.Configuration, builder.Environment.IsProduction());
 
-builder.Services.AddDbContext<MwabuDbContext>(options =>
-    options.UseNpgsql(connectionString, postgres => postgres.CommandTimeout(30)));
 var app = builder.Build();
 app.UseForwardedHeaders();
 app.UseMiddleware<RequestTelemetryMiddleware>();

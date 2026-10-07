@@ -1,3 +1,4 @@
+using MwabuLearn.Infrastructure.Persistence;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using MwabuLearn.Application.Identity;
@@ -19,7 +20,7 @@ public sealed partial class OrganisationService
     {
         await GetAsync(organisationId, ct);
         return await db.OrganisationMemberships.AsNoTracking().Where(x => x.OrganisationId == organisationId)
-            .OrderBy(x => x.JoinedAt).ThenBy(x => x.Id).Select(MembershipProjection).ToListAsync(ct);
+            .OrderBy(x => x.JoinedAt).ThenBy(x => x.Id).Select(MembershipProjection).ToLegacyListAsync(ct);
     }
     public async Task<MembershipResponse> AddMemberAsync(Guid organisationId, MembershipRequest request, CancellationToken ct) => await Transaction(db, async () =>
     {
@@ -51,7 +52,7 @@ public sealed partial class OrganisationService
     {
         if (!await db.OrganisationMemberships.AnyAsync(x => x.Id == membershipId && x.OrganisationId == organisationId, ct)) throw Missing("Membership");
         return await db.OrganisationRoles.AsNoTracking().Where(r => db.OrganisationMembershipRoles.Any(x => x.RoleId == r.Id && x.OrganisationMembershipId == membershipId))
-            .OrderBy(x => x.Code).Select(RoleProjection).ToListAsync(ct);
+            .OrderBy(x => x.Code).Select(RoleProjection).ToLegacyListAsync(ct);
     }
     public async Task<RoleResponse> AssignRoleAsync(Guid organisationId, Guid membershipId, Guid roleId, CancellationToken ct) => await Transaction(db, async () =>
     {
@@ -87,7 +88,7 @@ public sealed partial class OrganisationService
         else if (!await IsPlatformAdmin(ct))
         {
             if (current.UserId is not Guid actor) throw Forbidden();
-            var codes = await db.RolePermissions.AsNoTracking().Where(x => x.RoleId == roleId).Select(x => x.Permission.Code).ToListAsync(ct);
+            var codes = await db.RolePermissions.AsNoTracking().Where(x => x.RoleId == roleId).Select(x => x.Permission.Code).ToLegacyListAsync(ct);
             foreach (var code in codes)
                 if (!await permissions.CanAsync(actor, code, organisationId, false, ct)) throw Forbidden();
         }
@@ -97,7 +98,7 @@ public sealed partial class OrganisationService
         return true;
     }, ct);
     public async Task<IReadOnlyList<RoleResponse>> RolesAsync(CancellationToken ct) =>
-        await db.OrganisationRoles.AsNoTracking().OrderBy(x => x.Code).Select(RoleProjection).ToListAsync(ct);
+        await db.OrganisationRoles.AsNoTracking().OrderBy(x => x.Code).Select(RoleProjection).ToLegacyListAsync(ct);
     public async Task<IReadOnlyList<PermissionResponse>> PermissionsAsync(CancellationToken ct) =>
-        await db.Permissions.AsNoTracking().OrderBy(x => x.Code).Select(x => new PermissionResponse(x.Id, x.Code, x.Name)).ToListAsync(ct);
+        await db.Permissions.AsNoTracking().OrderBy(x => x.Code).Select(x => new PermissionResponse(x.Id, x.Code, x.Name)).ToLegacyListAsync(ct);
 }

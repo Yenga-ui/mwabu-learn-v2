@@ -1,0 +1,19 @@
+# Isolated local development infrastructure only; production must use managed backup/TLS policies.
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: mwabu_learn_dev
+      POSTGRES_USER: mwabu_dev
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Supply a random local password through an ignored env file}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mwabu_dev -d mwabu_learn_dev"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  postgres-data:

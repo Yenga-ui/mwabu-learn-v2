@@ -1,3 +1,4 @@
+using MwabuLearn.Infrastructure.Persistence;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using MwabuLearn.Application.Content;
@@ -14,7 +15,7 @@ public sealed partial class ContentService
     private static TagResponse Map(Tag x) => new(x.Id, x.Name, x.Slug, x.CreatedAt, x.UpdatedAt);
 
     public async Task<IReadOnlyList<CollectionResponse>> ListCollectionsAsync(CancellationToken ct) =>
-        await db.Collections.AsNoTracking().OrderBy(x => x.SortOrder).ThenBy(x => x.Id).Select(CollectionProjection).ToListAsync(ct);
+        await db.Collections.AsNoTracking().OrderBy(x => x.SortOrder).ThenBy(x => x.Id).Select(CollectionProjection).ToLegacyListAsync(ct);
     public async Task<CollectionResponse> GetCollectionAsync(Guid id, CancellationToken ct) =>
         await db.Collections.AsNoTracking().Where(x => x.Id == id).Select(CollectionProjection).SingleOrDefaultAsync(ct) ?? throw Missing("Collection");
 
@@ -60,7 +61,7 @@ public sealed partial class ContentService
     }
 
     public async Task<IReadOnlyList<TagResponse>> ListTagsAsync(CancellationToken ct) =>
-        await db.Tags.AsNoTracking().OrderBy(x => x.Name).ThenBy(x => x.Id).Select(TagProjection).ToListAsync(ct);
+        await db.Tags.AsNoTracking().OrderBy(x => x.Name).ThenBy(x => x.Id).Select(TagProjection).ToLegacyListAsync(ct);
     public async Task<TagResponse> GetTagAsync(Guid id, CancellationToken ct) =>
         await db.Tags.AsNoTracking().Where(x => x.Id == id).Select(TagProjection).SingleOrDefaultAsync(ct) ?? throw Missing("Tag");
 
@@ -105,7 +106,7 @@ public sealed partial class ContentService
         return await db.ContentCollections.AsNoTracking().Where(x => x.ContentItemId == id).OrderBy(x => x.SortOrder).ThenBy(x => x.Id)
             .Select(x => new CollectionAssignmentResponse(x.Id,
                 new CollectionResponse(x.Collection.Id, x.Collection.Name, x.Collection.Slug, x.Collection.Description,
-                    x.Collection.SortOrder, x.Collection.IsActive, x.Collection.CreatedAt, x.Collection.UpdatedAt), x.SortOrder)).ToListAsync(ct);
+                    x.Collection.SortOrder, x.Collection.IsActive, x.Collection.CreatedAt, x.Collection.UpdatedAt), x.SortOrder)).ToLegacyListAsync(ct);
     }
 
     public async Task<CollectionAssignmentResponse> AddCollectionAsync(Guid id, CollectionAssignmentRequest request, CancellationToken ct)
@@ -136,7 +137,7 @@ public sealed partial class ContentService
     {
         await RequireContent(id, ct);
         return await db.Tags.AsNoTracking().Where(x => x.Contents.Any(a => a.ContentItemId == id))
-            .OrderBy(x => x.Name).ThenBy(x => x.Id).Select(TagProjection).ToListAsync(ct);
+            .OrderBy(x => x.Name).ThenBy(x => x.Id).Select(TagProjection).ToLegacyListAsync(ct);
     }
 
     public async Task<TagResponse> AddTagAsync(Guid id, Guid tagId, CancellationToken ct)

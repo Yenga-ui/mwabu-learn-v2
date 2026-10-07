@@ -1,3 +1,4 @@
+using MwabuLearn.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using MwabuLearn.Application.Content;
 using MwabuLearn.Domain.Entities.Content;
@@ -9,7 +10,7 @@ public sealed partial class ContentService
     public async Task<IReadOnlyList<MappingResponse>> ListMappingsAsync(Guid id, CancellationToken ct)
     {
         await RequireContent(id, ct);
-        var entities = await db.ContentCurriculumMappings.AsNoTracking().Where(x => x.ContentItemId == id).OrderBy(x => x.Id).ToListAsync(ct);
+        var entities = await db.ContentCurriculumMappings.AsNoTracking().Where(x => x.ContentItemId == id).OrderBy(x => x.Id).ToLegacyListAsync(ct);
         return entities.Select(Map).ToList();
     }
 

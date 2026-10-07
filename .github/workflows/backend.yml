@@ -1,0 +1,123 @@
+name: Backend validation
+on:
+  push:
+    branches: [main, 'feature/**']
+    paths: ['backend/**', 'deployment/**', '.dockerignore', '.github/workflows/backend.yml']
+  pull_request:
+    paths: ['backend/**', 'deployment/**', '.dockerignore', '.github/workflows/backend.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+          dotnet-quality: ga
+      - name: Preserve original migrations
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git rev-parse --verify origin/main >/dev/null 2>&1; then
+            git diff --exit-code origin/main -- backend/src/MwabuLearn.Infrastructure/Persistence/Migrations/20261006122114_InitialCreate* backend/src/MwabuLearn.Infrastructure/Persistence/Migrations/20261006142354_CurriculumManagement* backend/src/MwabuLearn.Infrastructure/Persistence/Migrations/20261006150214_ContentManagement* backend/src/MwabuLearn.Infrastructure/Persistence/Migrations/20261006200525_IdentityOrganisations*
+          fi
+      - name: Restore and build
+        run: |
+          dotnet restore backend/MwabuLearn.slnx
+          dotnet build backend/MwabuLearn.slnx --configuration Release --no-restore -warnaserror
+      - name: Start isolated PostgreSQL with ephemeral credentials
+        shell: bash
+        run: |
+          set -euo pipefail
+          export POSTGRES_PASSWORD="$(openssl rand -hex 32)"
+          echo "::add-mask::$POSTGRES_PASSWORD"
+          docker run --detach --name mwabu-ci-postgres --publish 127.0.0.1:5432:5432 --env POSTGRES_PASSWORD --health-cmd 'pg_isready -U postgres' --health-interval 2s --health-timeout 2s --health-retries 30 postgres:17 >/dev/null
+          for attempt in $(seq 1 40); do
+            if [ "$(docker inspect --format '{{.State.Health.Status}}' mwabu-ci-postgres)" = healthy ]; then break; fi
+            sleep 2
+          done
+          test "$(docker inspect --format '{{.State.Health.Status}}' mwabu-ci-postgres)" = healthy
+          printf 'MWABU_RUN_POSTGRES_TESTS=true\nMWABU_POSTGRES_TEST_SERVER=Host=127.0.0.1;Port=5432;Database=postgres;Username=postgres;Password=%s;Include Error Detail=false\n' "$POSTGRES_PASSWORD" >> "$GITHUB_ENV"
+      - name: Run all tests including PostgreSQL provider tests
+        run: dotnet test backend/MwabuLearn.slnx --configuration Release --no-build --no-restore --logger trx --results-directory artifacts/TestResults
+      - name: Reject skipped integration verification
+        shell: python
+        run: |
+          import glob, xml.etree.ElementTree as ET
+          files = glob.glob('artifacts/TestResults/*.trx')
+          assert files, 'Missing test results'
+          for file in files:
+              root = ET.parse(file).getroot()
+              for result in root.iter():
+                  if result.tag.endswith('UnitTestResult'):
+                      assert result.attrib.get('outcome') == 'Passed', 'A required test did not pass'
+      - name: Model drift and reviewable migration artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet tool install --tool-path "$RUNNER_TEMP/ef" dotnet-ef --version 10.0.12
+          "$RUNNER_TEMP/ef/dotnet-ef" migrations has-pending-model-changes --configuration Release --no-build --project backend/src/MwabuLearn.Infrastructure --startup-project backend/src/MwabuLearn.Api -- --offline
+          "$RUNNER_TEMP/ef/dotnet-ef" migrations script --idempotent --configuration Release --no-build --project backend/src/MwabuLearn.Infrastructure --startup-project backend/src/MwabuLearn.Api --output artifacts/migrations.sql -- --offline
+          "$RUNNER_TEMP/ef/dotnet-ef" migrations bundle --configuration Release --self-contained --runtime linux-x64 --project backend/src/MwabuLearn.Infrastructure --startup-project backend/src/MwabuLearn.Api --output artifacts/efbundle -- --offline
+      - name: Dependency advisory report
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet list backend/MwabuLearn.slnx package --vulnerable --include-transitive --format json > artifacts/vulnerabilities.json
+          python3 - <<'PY'
+          import json
+          report = json.load(open('artifacts/vulnerabilities.json'))
+          bad = []
+          for project in report.get('projects', []):
+              for framework in project.get('frameworks', []):
+                  for group in ('topLevelPackages', 'transitivePackages'):
+                      for package in framework.get(group, []):
+                          if any(v.get('severity', '').lower() in ('high', 'critical') for v in package.get('vulnerabilities', [])):
+                              bad.append(package.get('id'))
+          assert not bad, 'High/critical package advisories require review: ' + ', '.join(bad)
+          PY
+      - name: Build Linux runtime image
+        run: docker build --file deployment/Dockerfile --tag mwabu-learn-api:ci .
+      - name: Smoke test production non-root liveness and schema-not-ready behaviour
+        shell: bash
+        run: |
+          set -euo pipefail
+          uid="$(docker inspect --format '{{.Config.User}}' mwabu-learn-api:ci)"
+          test -n "$uid" && test "$uid" != 0 && test "$uid" != root
+          export CERT_PASSWORD="$(openssl rand -hex 32)"
+          echo "::add-mask::$CERT_PASSWORD"
+          openssl req -x509 -newkey rsa:2048 -nodes -keyout "$RUNNER_TEMP/protection.key" -out "$RUNNER_TEMP/protection.crt" -days 1 -subj /CN=mwabu-ci >/dev/null 2>&1
+          openssl pkcs12 -export -inkey "$RUNNER_TEMP/protection.key" -in "$RUNNER_TEMP/protection.crt" -out "$RUNNER_TEMP/protection.pfx" -passout env:CERT_PASSWORD
+          chmod 644 "$RUNNER_TEMP/protection.pfx"
+          export DataProtection__Certificate__Password="$CERT_PASSWORD"
+          export Jwt__SigningKeyBase64="$(openssl rand -base64 64 | tr -d '\n')"
+          docker run --detach --name mwabu-ci-api --publish 127.0.0.1:8080:8080 --env DataProtection__Certificate__Password --env Jwt__SigningKeyBase64 --env Jwt__Issuer=https://ci.example.test --env Jwt__Audience=mwabu-ci --env HttpSecurity__AllowedOrigins__0=https://ci.example.test --env DataProtection__PersistKeysInDatabase=true --env DataProtection__Certificate__Path=/run/secrets/protection.pfx --env 'ConnectionStrings__MwabuLearnDb=Host=127.0.0.1;Database=unused;Username=unused;SslMode=VerifyFull' --env BackgroundWork__Enabled=false --mount type=bind,source="$RUNNER_TEMP/protection.pfx",target=/run/secrets/protection.pfx,readonly mwabu-learn-api:ci >/dev/null
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/health/live >/dev/null; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://127.0.0.1:8080/health/live >/dev/null
+          test "$(curl --silent --max-time 10 --output /dev/null --write-out '%{http_code}' http://127.0.0.1:8080/health/ready)" = 503
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: backend-verification
+          path: artifacts/
+          retention-days: 7
+      - name: Remove isolated CI containers
+        if: always()
+        run: |
+          docker rm --force mwabu-ci-api mwabu-ci-postgres >/dev/null 2>&1 || true

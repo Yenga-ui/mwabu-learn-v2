@@ -23,6 +23,8 @@ public sealed partial class SyncService(MwabuDbContext db, ICurrentUser user, ID
     private Task<long> Head(CancellationToken ct) => db.SyncClock.AsNoTracking().Where(x => x.Id == 1).Select(x => x.Version).SingleAsync(ct);
     public async Task<SyncBatch> BootstrapAsync(string? cursor, int pageSize, CancellationToken ct)
     {
+        using var activity = MwabuLearn.Infrastructure.Operations.BackendTelemetry.Activities.StartActivity("sync.bootstrap");
+        MwabuLearn.Infrastructure.Operations.BackendTelemetry.SyncBatches.Add(1, new KeyValuePair<string, object?>("stage", "bootstrap"));
         Context(); PageSize(pageSize);
         var position = cursor is null ? cursors.New(await Head(ct)) : cursors.Read(cursor);
         if (position.Stage != "bootstrap") throw Invalid("Use the changes endpoint after bootstrap completes.");
@@ -50,6 +52,8 @@ public sealed partial class SyncService(MwabuDbContext db, ICurrentUser user, ID
     }
     public async Task<SyncBatch> ChangesAsync(string cursor, int pageSize, CancellationToken ct)
     {
+        using var activity = MwabuLearn.Infrastructure.Operations.BackendTelemetry.Activities.StartActivity("sync.changes");
+        MwabuLearn.Infrastructure.Operations.BackendTelemetry.SyncBatches.Add(1, new KeyValuePair<string, object?>("stage", "changes"));
         Context(); PageSize(pageSize); var position = cursors.Read(cursor);
         if (position.Stage != "changes") throw Invalid("Complete bootstrap before reading changes.");
         var head = await Head(ct); var upper = position.UpperBound == 0 ? head : position.UpperBound;

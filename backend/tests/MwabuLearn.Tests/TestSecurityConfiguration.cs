@@ -15,6 +15,7 @@ internal static class TestSecurityConfiguration
             ["Jwt:AccessTokenMinutes"] = "15",
             ["BootstrapAdministrator:Enabled"] = "false",
             ["BackgroundWork:Enabled"] = "false",
+            ["Observability:Enabled"] = "false",
             ["Authentication:LoginAttemptsPerMinute"] = "100"
         }));
     public static string StrongPassword() => "A7!" + Convert.ToBase64String(RandomNumberGenerator.GetBytes(24)) + "z";

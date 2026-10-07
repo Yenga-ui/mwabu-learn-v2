@@ -20,6 +20,10 @@ public sealed partial class CurriculumService(MwabuDbContext db) : ICurriculumSe
 
     public async Task<IReadOnlyList<CurriculumResponse>> ListAsync(CancellationToken cancellationToken)
     {
+        await using var snapshot = await ReadSnapshot(cancellationToken);
+        if (await db.Curricula.Select(x => x.Id).Take(1001).CountAsync(cancellationToken) > 1000 ||
+            await db.CurriculumVersions.Select(x => x.Id).Take(5001).CountAsync(cancellationToken) > 5000)
+            throw new MwabuLearn.Application.Directories.LegacyResultLimitException();
         var curricula = await db.Curricula.AsNoTracking().AsSplitQuery().Include(x => x.CurriculumVersions)
             .OrderBy(x => x.SortOrder).ThenBy(x => x.Name).ThenBy(x => x.Id)
             .ToListAsync(cancellationToken);
@@ -28,6 +32,9 @@ public sealed partial class CurriculumService(MwabuDbContext db) : ICurriculumSe
 
     public async Task<CurriculumResponse> GetAsync(Guid id, CancellationToken cancellationToken)
     {
+        await using var snapshot = await ReadSnapshot(cancellationToken);
+        if (await db.CurriculumVersions.Where(x => x.CurriculumId == id).Select(x => x.Id).Take(1001).CountAsync(cancellationToken) > 1000)
+            throw new MwabuLearn.Application.Directories.LegacyResultLimitException();
         var curriculum = await db.Curricula.AsNoTracking().Include(x => x.CurriculumVersions)
             .SingleOrDefaultAsync(x => x.Id == id, cancellationToken) ?? throw Missing("Curriculum");
         return MapCurriculum(curriculum);
@@ -35,6 +42,8 @@ public sealed partial class CurriculumService(MwabuDbContext db) : ICurriculumSe
 
     public async Task<CurriculumHierarchyResponse> GetHierarchyAsync(Guid id, CancellationToken cancellationToken)
     {
+        await using var snapshot = await ReadSnapshot(cancellationToken);
+        await EnsureBoundedHierarchy(id, cancellationToken);
         var curriculum = await db.Curricula.AsNoTracking().AsSplitQuery()
             .Include(x => x.CurriculumVersions).ThenInclude(x => x.Grades).ThenInclude(x => x.Subjects)
             .ThenInclude(x => x.Terms).ThenInclude(x => x.Topics).ThenInclude(x => x.Competencies)

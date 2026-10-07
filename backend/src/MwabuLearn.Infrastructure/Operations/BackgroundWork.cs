@@ -39,6 +39,8 @@ public sealed class BackgroundJobRunner(MwabuDbContext db, IContentStorage stora
                 .SetProperty(x => x.LeaseId, lease).SetProperty(x => x.LeaseUntil, until).SetProperty(x => x.State, "processing")
                 .SetProperty(x => x.Attempts, x => x.Attempts + 1).SetProperty(x => x.UpdatedAt, DateTime.UtcNow), ct) != 1) continue;
             claimed++;
+            BackendTelemetry.JobsClaimed.Add(1);
+            using var activity = BackendTelemetry.Activities.StartActivity("background.asset-delete");
             var job = await db.BackgroundJobs.SingleAsync(x => x.Id == id && x.LeaseId == lease, ct);
             await db.Entry(job).ReloadAsync(ct);
             try
@@ -58,6 +60,7 @@ public sealed class BackgroundJobRunner(MwabuDbContext db, IContentStorage stora
             catch (DbUpdateConcurrencyException) { db.ChangeTracker.Clear(); }
             catch (Exception ex)
             {
+                BackendTelemetry.JobsFailed.Add(1);
                 logger.LogWarning("Background job {JobId} failed with {ExceptionType}", job.Id, ex.GetType().Name);
                 // Never retain provider messages, storage paths or secrets in error metadata.
                 var terminal = job.Attempts >= options.Value.MaximumAttempts;

@@ -74,7 +74,9 @@ public sealed class RequestTelemetryMiddleware(RequestDelegate next, ILogger<Req
             var route = (context.GetEndpoint() as RouteEndpoint)?.RoutePattern.RawText ?? "unmatched";
             Duration.Record(seconds, new("http.route", route), new("http.response.status_code", context.Response.StatusCode));
             // Route templates only: paths, query values, headers, bodies and exception messages may contain secrets/PII.
-            logger.LogInformation("HTTP {Method} {Route} completed {StatusCode} in {ElapsedMs}ms", context.Request.Method, route, context.Response.StatusCode, seconds * 1000);
+            var userId = Guid.TryParse(context.User.FindFirst("sub")?.Value, out var actor) ? (Guid?)actor : null;
+            var device = context.Items[typeof(MwabuLearn.Application.Devices.DeviceResponse)] as MwabuLearn.Application.Devices.DeviceResponse;
+            logger.LogInformation("HTTP {Method} {Route} completed {StatusCode} in {ElapsedMs}ms user {UserId} device {DeviceId}", context.Request.Method, route, context.Response.StatusCode, seconds * 1000, userId, device?.Id);
         }
     }
 }

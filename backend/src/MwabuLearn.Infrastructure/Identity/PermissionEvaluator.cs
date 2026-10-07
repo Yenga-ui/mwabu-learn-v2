@@ -55,7 +55,7 @@ public sealed class PermissionEvaluator(MwabuDbContext db) : IPermissionEvaluato
             {
                 mapping.Permission.Code,
                 Platform = assignment.Role.GrantsPlatformAuthority && assignment.Membership.Organisation.OrganisationType == OrganisationType.Platform
-            }).ToListAsync(ct);
+            }).Distinct().ToListAsync(ct);
         var active = organisationId.HasValue
             ? await db.Organisations.AsNoTracking().Where(x => x.Id == organisationId).Select(x => (bool?)x.IsActive).SingleOrDefaultAsync(ct)
             : null;

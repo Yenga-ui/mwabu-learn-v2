@@ -49,5 +49,5 @@ public sealed class AuthenticationService(MwabuDbContext db, UserManager<Applica
     public async Task<IReadOnlyList<UserMembershipResponse>> MyMembershipsAsync(Guid userId, CancellationToken ct) =>
         await db.OrganisationMemberships.AsNoTracking().Where(x => x.UserId == userId).OrderBy(x => x.OrganisationId)
             .Select(x => new UserMembershipResponse(new MembershipResponse(x.Id, x.UserId, x.OrganisationId, x.IsActive, x.JoinedAt, x.CreatedAt, x.UpdatedAt),
-                x.Organisation.Name, x.Organisation.IsActive, x.Roles.OrderBy(r => r.Role.Code).Select(r => r.Role.Code).ToList())).ToListAsync(ct);
+                x.Organisation.Name, x.Organisation.IsActive, x.Roles.OrderBy(r => r.Role.Code).Select(r => r.Role.Code).ToList())).ToLegacyListAsync(ct);
 }

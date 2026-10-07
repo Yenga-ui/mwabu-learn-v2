@@ -1,0 +1,25 @@
+.git
+**/.vs
+**/.idea
+**/.vscode
+**/bin
+**/obj
+**/TestResults
+**/artifacts
+**/node_modules
+**/.local
+**/.env
+**/.env.*
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.pem
+**/*.db
+**/*.sqlite*
+Claude outputs
+backend/tests
+
+**/appsettings.Local.json
+**/appsettings.*.Local.json
+**/*.user
+**/*.suo

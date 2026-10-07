@@ -64,4 +64,26 @@ public sealed class BackgroundWorkTests
         Assert.Equal(0, await Runner(env).RunOnceAsync(default));
         Assert.True(await env.Db.ContentAssets.AnyAsync(x => x.Id == id));
     }
+    private sealed class CancelDelete(IContentStorage inner, CancellationTokenSource shutdown) : IContentStorage
+    {
+        public Task DeleteAsync(string key, CancellationToken ct) { shutdown.Cancel(); return Task.FromCanceled(ct); }
+        public Task<bool> ExistsAsync(string key, CancellationToken ct) => inner.ExistsAsync(key, ct);
+        public Task<Stream> OpenReadAsync(string key, CancellationToken ct) => inner.OpenReadAsync(key, ct);
+        public Task<StoredObject> StoreAsync(string key, Stream source, long maxBytes, CancellationToken ct) => inner.StoreAsync(key, source, maxBytes, ct);
+    }
+    [Fact]
+    public async Task Shutdown_preserves_claimed_job_and_metadata_for_expired_lease_recovery()
+    {
+        using var env = new ContentTestEnvironment(); var id = await Pending(env);
+        using var shutdown = new CancellationTokenSource();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => Runner(env, new CancelDelete(env.Storage, shutdown)).RunOnceAsync(shutdown.Token));
+        env.Db.ChangeTracker.Clear();
+        var job = await env.Db.BackgroundJobs.AsNoTracking().SingleAsync();
+        Assert.Equal("processing", job.State); Assert.NotNull(job.LeaseId);
+        Assert.True(await env.Db.ContentAssets.AnyAsync(x => x.Id == id));
+        await env.Db.BackgroundJobs.ExecuteUpdateAsync(s => s.SetProperty(x => x.LeaseUntil, DateTime.UtcNow.AddMinutes(-1)));
+        Assert.Equal(1, await Runner(env).RunOnceAsync(default));
+        Assert.False(await env.Db.ContentAssets.AnyAsync(x => x.Id == id));
+        Assert.Equal("completed", (await env.Db.BackgroundJobs.AsNoTracking().SingleAsync()).State);
+    }
 }

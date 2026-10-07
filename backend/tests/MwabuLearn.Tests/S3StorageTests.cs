@@ -87,4 +87,11 @@ public sealed class S3StorageTests
         await fixture.Storage.DeleteAsync(key, default); await fixture.Storage.DeleteAsync(key, default);
         Assert.False(await fixture.Storage.ExistsAsync(key, default));
     }
+    [Fact]
+    public async Task Cancelled_upload_leaves_no_object_or_private_spool()
+    {
+        using var fixture = new Fixture(); using var cancelled = new CancellationTokenSource(); cancelled.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => fixture.Storage.StoreAsync(Key(), new MemoryStream(new byte[100]), 100, cancelled.Token));
+        Assert.Empty(fixture.Client.Objects); fixture.AssertNoSpool();
+    }
 }

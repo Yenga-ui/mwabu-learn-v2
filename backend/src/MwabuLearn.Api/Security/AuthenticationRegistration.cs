@@ -59,10 +59,10 @@ public static class AuthenticationRegistration
         services.AddOptions<MwabuLearn.Api.Operations.TrafficOptions>().BindConfiguration("Traffic").Validate(MwabuLearn.Api.Operations.TrafficOptions.IsValid).ValidateOnStart();
         services.AddRateLimiter(options =>
         {
-        var loginLimit = configuration.GetValue<int?>("Authentication:LoginAttemptsPerMinute") ?? 10;
-        if (loginLimit is < 1 or > 100) throw new InvalidOperationException("Login rate limit must be between 1 and 100 per minute.");
-        var traffic = configuration.GetSection("Traffic").Get<MwabuLearn.Api.Operations.TrafficOptions>() ?? new();
-        if (!MwabuLearn.Api.Operations.TrafficOptions.IsValid(traffic)) throw new InvalidOperationException("Invalid Traffic limits.");
+            var loginLimit = configuration.GetValue<int?>("Authentication:LoginAttemptsPerMinute") ?? 10;
+            if (loginLimit is < 1 or > 100) throw new InvalidOperationException("Login rate limit must be between 1 and 100 per minute.");
+            var traffic = configuration.GetSection("Traffic").Get<MwabuLearn.Api.Operations.TrafficOptions>() ?? new();
+            if (!MwabuLearn.Api.Operations.TrafficOptions.IsValid(traffic)) throw new InvalidOperationException("Invalid Traffic limits.");
 
             traffic.Policies(options);
             options.AddPolicy("login", context => RateLimitPartition.GetFixedWindowLimiter(

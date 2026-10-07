@@ -17,7 +17,7 @@ public sealed partial class OrganisationService(MwabuDbContext db, IPermissionEv
     private static OrganisationResponse Map(Organisation x) => new(x.Id, x.Name, x.Code, x.OrganisationType,
         x.ParentOrganisationId, x.IsActive, x.CreatedAt, x.UpdatedAt);
     public async Task<IReadOnlyList<OrganisationResponse>> ListAsync(CancellationToken ct) =>
-        await db.Organisations.AsNoTracking().OrderBy(x => x.Name).ThenBy(x => x.Id).Select(Projection).ToListAsync(ct);
+        await db.Organisations.AsNoTracking().OrderBy(x => x.Name).ThenBy(x => x.Id).Select(Projection).ToLegacyListAsync(ct);
     public async Task<OrganisationResponse> GetAsync(Guid id, CancellationToken ct) =>
         await db.Organisations.AsNoTracking().Where(x => x.Id == id).Select(Projection).SingleOrDefaultAsync(ct) ?? throw Missing("Organisation");
     public async Task<OrganisationResponse> CreateAsync(OrganisationRequest request, CancellationToken ct) => await Transaction(db, async () =>

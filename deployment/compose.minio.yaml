@@ -1,0 +1,18 @@
+# Optional local MinIO profile. Supply a vetted/patched image: upstream community repository is archived.
+# This is not a production provider recommendation or a default vulnerable historical image.
+services:
+  minio:
+    image: ${MINIO_IMAGE:?Supply a reviewed MinIO-compatible image built with applicable security fixes}
+    user: "1000:1000"
+    command: ["server", "/data", "--console-address", ":9001", "--certs-dir", "/certs"]
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?Supply an operator-selected local account}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Supply a random local password}
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio-data:/data
+      - ${MINIO_CERTS_DIR:?Supply TLS public.crt and private.key readable by UID 1000}:/certs:ro
+volumes:
+  minio-data:
