@@ -79,6 +79,8 @@ public sealed class EducationWorkspaceTests
         Assert.DoesNotContain(request.InitialPassword, await result.Content.ReadAsStringAsync());
         Assert.Equal(HttpStatusCode.Conflict, (await admin.Client.PostAsJsonAsync(path, request)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await admin.Client.GetAsync("/api/users")).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await admin.Client.PostAsJsonAsync($"/api/organisations/{org}/members", new MembershipRequest(teacher.Memberships[0].UserId))).StatusCode);
+        Assert.Equal(HttpStatusCode.Forbidden, (await admin.Client.PostAsJsonAsync($"/api/organisations/{org}/members", new MembershipRequest(Guid.NewGuid()))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await teacher.Client.PostAsJsonAsync(path, request)).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden, (await admin.Client.PostAsJsonAsync($"/api/organisations/{teacher.Memberships[0].OrganisationId}/users", request)).StatusCode);
         var platformRole = (await f.Admin.GetFromJsonAsync<List<RoleResponse>>("/api/roles"))!.Single(x => x.Code == "PlatformAdmin");

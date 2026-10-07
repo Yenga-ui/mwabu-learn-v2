@@ -17,6 +17,7 @@ A = added; M = modified. No prior migration, csproj, NuGet source, credential or
 | A | backend/src/MwabuLearn.Api/Controllers/EducationController.cs |
 | A | backend/src/MwabuLearn.Api/Controllers/LearningController.cs |
 | A | backend/src/MwabuLearn.Api/Controllers/OrganisationProvisioningController.cs |
+| M | backend/src/MwabuLearn.Api/Controllers/OrganisationsController.cs |
 | M | backend/src/MwabuLearn.Api/Controllers/TagsController.cs |
 | M | backend/src/MwabuLearn.Api/Controllers/UsersController.cs |
 | A | backend/src/MwabuLearn.Api/Controllers/WorkspaceAccessController.cs |
@@ -73,6 +74,7 @@ A = added; M = modified. No prior migration, csproj, NuGet source, credential or
 | A | backend/tests/MwabuLearn.Tests/LearningCatalogueTests.cs |
 | M | backend/tests/MwabuLearn.Tests/PostgreSqlTests.cs |
 | M | deployment/Dockerfile |
+| A | docs/live-web-files.md |
 | A | docs/live-web-platform.md |
 | A | docs/production-gap-register.md |
 | A | docs/requirements-traceability.md |
@@ -115,4 +117,3 @@ A = added; M = modified. No prior migration, csproj, NuGet source, credential or
 | A | web/src/test/setup.ts |
 | A | web/tsconfig.json |
 | A | web/vite.config.ts |
-| A | docs/live-web-files.md |
