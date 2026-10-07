@@ -58,7 +58,18 @@ internal static class IdentityValidation
         catch (DbUpdateException ex) when (Postgres(ex) is { SqlState: PostgresErrorCodes.ForeignKeyViolation })
         { throw Conflict("A referenced record changed. Reload and retry."); }
     }
-    private static PostgresException? Postgres(Exception error) => error as PostgresException ?? error.InnerException as PostgresException;
+    private static PostgresException? Postgres(Exception error)
+    {
+        // Npgsql's non-retrying execution strategy wraps transient SaveChanges failures:
+        // InvalidOperationException -> DbUpdateException -> PostgresException (e.g. 40001).
+        // Unwrap only known EF/provider wrappers; the caller still matches exact SQLSTATEs.
+        for (Exception? current = error; current is not null; current = current.InnerException)
+        {
+            if (current is PostgresException postgres) return postgres;
+            if (current is not (InvalidOperationException or DbUpdateException)) return null;
+        }
+        return null;
+    }
 }
 
 public sealed class PlatformAdministratorGuard(MwabuDbContext db)

@@ -27,13 +27,17 @@ internal sealed class IdentityTestEnvironment : IDisposable
         Enabled = true, Email = AdminEmail, Password = AdminPassword, FirstName = "Initial", LastName = "Administrator",
         OrganisationName = "Platform boundary", OrganisationCode = "PLATFORM"
     };
-    public IdentityTestEnvironment()
+    public IdentityTestEnvironment(Microsoft.EntityFrameworkCore.Diagnostics.SaveChangesInterceptor? interceptor = null)
     {
         connection.Open();
         var services = new ServiceCollection();
         services.AddLogging(); services.AddDataProtection(); services.AddAuthentication(); services.AddHttpContextAccessor();
         services.AddSingleton<ICurrentUser>(Actor);
-        services.AddDbContext<MwabuDbContext>(o => o.UseSqlite(connection));
+        services.AddDbContext<MwabuDbContext>(o =>
+        {
+            o.UseSqlite(connection);
+            if (interceptor is not null) o.AddInterceptors(interceptor);
+        });
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
             ["Jwt:Issuer"] = "https://identity.mwabu.test", ["Jwt:Audience"] = "mwabu-test-api",
