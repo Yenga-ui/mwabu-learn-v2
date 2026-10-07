@@ -107,10 +107,15 @@ jobs:
         working-directory: web
         run: pnpm audit --audit-level high
       - name: Real browser workflows against isolated PostgreSQL and HTTPS
+        timeout-minutes: 15
         working-directory: web
         env:
           MWABU_EF_PATH: ${{ runner.temp }}/ef/dotnet-ef
         run: |
+          # The hosted runner's Azure mirror stalled during APT index retrieval.
+          # Keep the runner's suites/components/signature verification and use Ubuntu's HTTPS archive.
+          test -f /etc/apt/apt-mirrors.txt
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
           pnpm exec playwright install --with-deps chromium
           pnpm test:e2e
       - name: Build Linux runtime image
