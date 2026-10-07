@@ -5,7 +5,7 @@ Closed implementation gaps below have local executable evidence. Release accepta
 
 | Gap | Severity / release relevance | Resolution | Evidence / state |
 | --- | --- | --- | --- |
-| Browser application absent | Blocking, required | Real typed React application, domain screens, responsive accessible components | Closed locally: lint/typecheck/build, 25 unit/component tests, 21 real API Chromium scenarios |
+| Browser application absent | Blocking, required | Real typed React application, domain screens, responsive accessible components | Closed locally: lint/typecheck/build, 26 unit/component tests, 21 real API Chromium scenarios |
 | Browser credential transport and CSRF | Blocking, required | HttpOnly Secure cookies; ASP.NET antiforgery on cookie writes including legacy routes; no browser token storage | Closed locally: BrowserSessionTests, client tests, login/me/logout/rotation E2E |
 | Concurrent/lost refresh safety | Blocking, required | Single-flight/Web Locks; inside-lock recheck; ambiguous response blocks further automatic renewal | Closed locally: client conflict test, two-tab Chromium test proving one rotation; existing PostgreSQL refresh tests |
 | Anonymous route stuck loading | Blocking, discovered during E2E | Preserve current-user query when removing private cache on expiry | Closed locally: anonymous redirect + 401 browser scenario |
@@ -19,6 +19,7 @@ Closed implementation gaps below have local executable evidence. Release accepta
 | Operational reports | Blocking, required | Actual scoped SQL aggregates, published shared-catalogue counts, no achievement claims | Closed locally: reporting service tests and HeadTeacher/DataAnalyst browser boundaries |
 | Device support permission mismatch | Blocking, discovered in review | Controller and service both use reports.read; scoped checkpoint projection omits user/proof/cursor data | Closed locally: Device_support test; original device/sync tests retained |
 | Authoring workflow acceptance | Blocking, required | Metadata, PDF upload, tags, collection, deepest curriculum mapping, review and publication | Closed locally: complete ContentManager Chromium workflow, original content tests |
+| Upload cancellation during navigation/preflight | Required, discovered in review | Abort on workspace unmount and check cancellation before/after authentication preflight | Closed locally: client cancellation test; 26 frontend tests pass |
 | Audio and unsafe media handling | Required | Native non-autoplay controls/restart/errors; executable uploads download-only | Closed locally: Resource.test.ts, LearningCatalogueTests; real PDF browser test |
 | Large membership/taxonomy selectors | Required | Paged membership accumulation without implicit context switching; paged tag/collection/parent/member selectors | Implemented; lint/typecheck/build and browser context checks; extreme-cardinality UX requires operator load acceptance |
 | Explicit demonstration environment | Required | Development-only explicit idempotent seed, distinct supplied strong passwords, original CC0 documents | Closed locally: DevelopmentSeedTests and real E2E seed usage; no production/demo passwords in migrations |

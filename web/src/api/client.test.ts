@@ -23,6 +23,46 @@ beforeEach(() => {
   });
 });
 describe("same-origin session transport", () => {
+  it("does not start an upload cancelled before or during authentication checks", async () => {
+    const xhr = vi.fn();
+    vi.stubGlobal("XMLHttpRequest", xhr);
+    const controller = new AbortController();
+    controller.abort();
+    const fetch = vi.fn(async (path: string) => {
+      if (path.endsWith("/csrf")) {
+        controller.abort();
+        return json({ requestToken: "csrf" });
+      }
+      return json({});
+    });
+    vi.stubGlobal("fetch", fetch);
+    const { upload } = await import("./client");
+    await expect(
+      upload(
+        "/api/content/id/assets",
+        new File(["file"], "lesson.pdf"),
+        "Document",
+        vi.fn(),
+        controller.signal,
+      ),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    expect(fetch).not.toHaveBeenCalled();
+    const later = new AbortController();
+    fetch.mockImplementation(async (path) => {
+      if (path.endsWith("/csrf")) later.abort();
+      return json({ requestToken: "csrf" });
+    });
+    await expect(
+      upload(
+        "/api/content/id/assets",
+        new File(["file"], "lesson.pdf"),
+        "Document",
+        vi.fn(),
+        later.signal,
+      ),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    expect(xhr).not.toHaveBeenCalled();
+  });
   it("shares one refresh among simultaneous expired requests", async () => {
     let valid = false;
     let rotations = 0;

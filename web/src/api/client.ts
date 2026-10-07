@@ -207,8 +207,10 @@ export async function upload(
   onProgress: (percent: number) => void,
   signal: AbortSignal,
 ) {
+  signal.throwIfAborted();
   await ensureSession();
   const token = await csrf();
+  signal.throwIfAborted();
   return new Promise<void>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", path);

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Upload, File, Trash2 } from "lucide-react";
@@ -393,6 +393,7 @@ function Assets({ id, editable }: { id: string; editable: boolean }) {
   const [error, setError] = useState<unknown>();
   const [type, setType] = useState("Document");
   const abort = useRef<AbortController | null>(null);
+  useEffect(() => () => abort.current?.abort(), []);
   const assets = useQuery({
     queryKey: ["studio-assets", id],
     queryFn: ({ signal }) =>
