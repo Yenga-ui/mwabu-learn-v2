@@ -1729,11 +1729,13 @@
   .button.secondary {
     border-color: var(--control-border);
   }
+  .button.light:hover:not(:disabled),
   .button.secondary:hover:not(:disabled),
   .button.text:hover:not(:disabled) {
     color: var(--primary);
     background: var(--primary-surface);
   }
+  .button.light:active:not(:disabled),
   .button.secondary:active:not(:disabled),
   .button.text:active:not(:disabled) {
     background: var(--border);
