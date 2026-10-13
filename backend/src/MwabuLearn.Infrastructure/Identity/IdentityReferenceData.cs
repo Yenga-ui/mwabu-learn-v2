@@ -24,12 +24,12 @@ public static class IdentityReferenceData
         [
             PermissionCodes.All,
             PermissionCodes.All,
-            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.UsersRead, PermissionCodes.OrganisationsRead, PermissionCodes.MembershipsManage, PermissionCodes.ReportsRead, PermissionCodes.ProjectsRead, PermissionCodes.ProjectsManage],
-            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.UsersRead, PermissionCodes.OrganisationsRead, PermissionCodes.ReportsRead, PermissionCodes.ProjectsRead],
-            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.OrganisationsRead],
+            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.UsersRead, PermissionCodes.OrganisationsRead, PermissionCodes.MembershipsManage, PermissionCodes.ReportsRead, PermissionCodes.ProjectsRead, PermissionCodes.ProjectsManage, PermissionCodes.LessonsRead, PermissionCodes.LessonsManage, PermissionCodes.LessonsAi],
+            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.UsersRead, PermissionCodes.OrganisationsRead, PermissionCodes.ReportsRead, PermissionCodes.ProjectsRead, PermissionCodes.LessonsRead, PermissionCodes.LessonsManage, PermissionCodes.LessonsReview, PermissionCodes.LessonsPublish, PermissionCodes.LessonsAi],
+            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.OrganisationsRead, PermissionCodes.LessonsRead, PermissionCodes.LessonsManage, PermissionCodes.LessonsAi],
             [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead],
             [PermissionCodes.ContentRead],
-            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.ContentManage, PermissionCodes.ContentPublish],
+            [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.ContentManage, PermissionCodes.ContentPublish, PermissionCodes.LessonsRead, PermissionCodes.LessonsManage, PermissionCodes.LessonsReview, PermissionCodes.LessonsPublish, PermissionCodes.LessonsAi],
             [PermissionCodes.ReportsRead, PermissionCodes.OrganisationsRead]
         ];
         var mappings = roles.SelectMany((role, r) => permissions.Where(p => grants[r].Contains(p.Code)).Select(p => new RolePermission

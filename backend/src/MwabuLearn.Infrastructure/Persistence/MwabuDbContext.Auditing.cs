@@ -45,6 +45,8 @@ public partial class MwabuDbContext
         ChangeTracker.DetectChanges();
         PrepareJobs();
         var entries = ChangeTracker.Entries().ToArray();
+        if (entries.Any(x => x.Entity is MwabuLearn.Domain.Entities.Lessons.LessonRevision && x.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Lesson revision snapshots are immutable.");
         if (entries.Any(x => x.Entity is MwabuLearn.Domain.Entities.Sync.SyncChange && x.State is EntityState.Modified or EntityState.Deleted))
             throw new InvalidOperationException("Sync changes are append-only.");
         if (entries.Any(x => x.Entity is AuditEvent && x.State is EntityState.Modified or EntityState.Deleted))

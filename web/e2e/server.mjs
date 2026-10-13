@@ -173,6 +173,9 @@ try {
   const env = {
     ...process.env,
     MWABU_MIGRATIONS_CONNECTION: connection,
+    MWABU_BROWSER_TEST_HOST: "true",
+    MWABU_BROWSER_API_ROOT: resolve(root, "backend/src/MwabuLearn.Api"),
+    MWABU_BROWSER_WEB_ROOT: resolve("dist"),
     ASPNETCORE_ENVIRONMENT: "Development",
     ASPNETCORE_URLS: "https://127.0.0.1:7443",
     ConnectionStrings__MwabuLearnDb: connection,
@@ -190,6 +193,7 @@ try {
     BootstrapAdministrator__OrganisationCode: "MWABU",
     DevelopmentSeed__Enabled: "true",
     BackgroundWork__Enabled: "false",
+    LessonPlanner__Ai__MinimumRequestIntervalSeconds: "1",
     ContentStorage__RootPath: join(temporary, "content"),
     HttpSecurity__AllowedOrigins__0: "https://127.0.0.1:7443",
     DataProtection__PersistKeysInDatabase: "true",
@@ -225,7 +229,7 @@ try {
     [
       resolve(
         root,
-        "backend/src/MwabuLearn.Api/bin/Release/net10.0/MwabuLearn.Api.dll",
+        "backend/tests/MwabuLearn.BrowserHost/bin/Release/net10.0/MwabuLearn.BrowserHost.dll",
       ),
       "--webroot",
       resolve("dist"),
@@ -234,10 +238,15 @@ try {
       cwd: resolve(root, "backend/src/MwabuLearn.Api"),
       env,
       windowsHide: true,
-      stdio: ["ignore", "ignore", "pipe"],
+      stdio: ["ignore", "pipe", "pipe"],
     },
   );
-  server.stderr.on("data", () => {});
+  let startupOutput = "";
+  const captureStartup = (chunk) => {
+    startupOutput = (startupOutput + chunk.toString()).slice(-6000);
+  };
+  server.stdout.on("data", captureStartup);
+  server.stderr.on("data", captureStartup);
   const ca = await readFile(pem);
   async function request(path, body, token) {
     return await new Promise((done, fail) => {
@@ -273,8 +282,15 @@ try {
   }
   let ready = false;
   for (let attempt = 0; attempt < 120; attempt++) {
-    if (server.exitCode !== null)
-      throw new Error("Isolated test API exited before becoming ready.");
+    if (server.exitCode !== null) {
+      let safeOutput = startupOutput;
+      for (const [name, value] of Object.entries(env))
+        if (/password|key|token/i.test(name) && value)
+          safeOutput = safeOutput.replaceAll(value, "[redacted]");
+      throw new Error(
+        "Isolated test API exited before becoming ready. " + safeOutput,
+      );
+    }
     try {
       await request("/health/live");
       ready = true;

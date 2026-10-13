@@ -19,7 +19,7 @@ RUN dotnet publish backend/src/MwabuLearn.Api/MwabuLearn.Api.csproj --configurat
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble AS final
 WORKDIR /app
 USER root
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* \
+RUN apt-get update && apt-get install -y --no-install-recommends curl poppler-utils fonts-dejavu-core util-linux && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /app/.local/content /app/.local/uploads && chown -R "$APP_UID:$APP_UID" /app/.local
 COPY --from=build /out/ ./
 COPY --from=web /web/dist/ ./wwwroot/

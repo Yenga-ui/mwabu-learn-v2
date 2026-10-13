@@ -72,6 +72,12 @@ export function Shell() {
   }[] = [
     { to: "/app", label: "Your workspace", icon: LayoutDashboard },
     {
+      to: "/app/lessons",
+      label: "Lesson Planner",
+      icon: BookOpen,
+      permission: "lessons.read",
+    },
+    {
       to: "/app/resources",
       label: "Learning resources",
       icon: BookOpen,

@@ -125,6 +125,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     memberships: active,
     organisationId: selected,
     setOrganisation: (id) => {
+      if (
+        document.querySelector('[data-unsaved-work="true"]') &&
+        !window.confirm(
+          "Switch organisations and discard unsaved lesson changes?",
+        )
+      )
+        return;
       void client.cancelQueries();
       client.removeQueries({
         predicate: (query) =>

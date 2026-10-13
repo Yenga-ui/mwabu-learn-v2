@@ -45,6 +45,8 @@ public static class PermissionCodes
     public const string OrganisationsRead = "organisations.read", OrganisationsManage = "organisations.manage";
     public const string MembershipsManage = "memberships.manage", ReportsRead = "reports.read";
     public const string ProjectsRead = "projects.read", ProjectsManage = "projects.manage";
+    public const string LessonsRead = "lessons.read", LessonsManage = "lessons.manage", LessonsReview = "lessons.review", LessonsPublish = "lessons.publish", LessonsAi = "lessons.ai", LessonsConfigure = "lessons.configure";
     public static readonly string[] All = [CurriculumRead, CurriculumManage, ContentRead, ContentManage, ContentPublish,
-        UsersRead, UsersManage, OrganisationsRead, OrganisationsManage, MembershipsManage, ReportsRead, ProjectsRead, ProjectsManage];
+        UsersRead, UsersManage, OrganisationsRead, OrganisationsManage, MembershipsManage, ReportsRead, ProjectsRead, ProjectsManage,
+        LessonsRead, LessonsManage, LessonsReview, LessonsPublish, LessonsAi, LessonsConfigure];
 }

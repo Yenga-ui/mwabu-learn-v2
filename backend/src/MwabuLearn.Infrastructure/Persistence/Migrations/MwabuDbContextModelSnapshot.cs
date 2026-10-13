@@ -1197,6 +1197,481 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonGeneration", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("BaseRevision")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<decimal>("EstimatedCostUsd")
+                        .HasPrecision(14, 6)
+                        .HasColumnType("numeric(14,6)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("InputTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("LessonPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Model")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Operation")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("OutputTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<int>("ReservedTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ResultJson")
+                        .HasMaxLength(250000)
+                        .HasColumnType("character varying(250000)");
+
+                    b.Property<string>("SectionCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("UsageEstimated")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("LessonPlanId", "OrganisationId");
+
+                    b.HasIndex("OrganisationId", "CreatedAt");
+
+                    b.ToTable("LessonGenerations");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonPlan", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("DerivedFromId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("IsOrganisationTemplate")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid?>("LearningOutcomeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Mode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OwnerUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DerivedFromId");
+
+                    b.HasIndex("LearningOutcomeId");
+
+                    b.HasIndex("OwnerUserId");
+
+                    b.HasIndex("OrganisationId", "OwnerUserId", "UpdatedAt");
+
+                    b.HasIndex("OrganisationId", "Status", "IsOrganisationTemplate");
+
+                    b.ToTable("LessonPlans", t =>
+                        {
+                            t.HasCheckConstraint("CK_LessonPlan_Revision", "\"Revision\" > 0");
+                        });
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonPlannerSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DailyRequestLimit")
+                        .HasColumnType("integer");
+
+                    b.Property<bool>("ExternalAiApproved")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("MonthlyCostLimitUsd")
+                        .HasPrecision(14, 6)
+                        .HasColumnType("numeric(14,6)");
+
+                    b.Property<int>("MonthlyTokenLimit")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SourceRetentionDays")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .IsConcurrencyToken()
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("WebSearchApproved")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationId")
+                        .IsUnique();
+
+                    b.ToTable("LessonPlannerSettings");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonReview", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FromStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("LessonPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("ToStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("LessonPlanId", "CreatedAt");
+
+                    b.HasIndex("LessonPlanId", "OrganisationId");
+
+                    b.ToTable("LessonReviews");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DocumentJson")
+                        .IsRequired()
+                        .HasMaxLength(250000)
+                        .HasColumnType("character varying(250000)");
+
+                    b.Property<Guid>("LessonPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("LessonPlanId", "Number")
+                        .IsUnique();
+
+                    b.HasIndex("LessonPlanId", "OrganisationId");
+
+                    b.ToTable("LessonRevisions");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonShare", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("LessonPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("LessonPlanId", "OrganisationId");
+
+                    b.HasIndex("LessonPlanId", "UserId")
+                        .IsUnique();
+
+                    b.ToTable("LessonShares");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonSource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("AccessedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("ContentItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Credibility")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("character varying(20000)");
+
+                    b.Property<string>("EvidenceDescription")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsExcluded")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsSelected")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("LessonPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Licence")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("PermissionEvidence")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("Priority")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("PublicationDate")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Publisher")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("RetrievalStatus")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<bool>("ReusePermitted")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Url")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentItemId");
+
+                    b.HasIndex("ExpiresAt");
+
+                    b.HasIndex("LessonPlanId", "ContentItemId")
+                        .IsUnique();
+
+                    b.HasIndex("LessonPlanId", "OrganisationId");
+
+                    b.HasIndex("LessonPlanId", "Url")
+                        .IsUnique();
+
+                    b.ToTable("LessonSources");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonUsagePeriod", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal>("ChargedCostUsd")
+                        .HasPrecision(14, 6)
+                        .HasColumnType("numeric(14,6)");
+
+                    b.Property<int>("ChargedTokens")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Month")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganisationId", "Month")
+                        .IsUnique();
+
+                    b.ToTable("LessonUsagePeriods");
+                });
+
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Operations.BackgroundJob", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1593,6 +2068,48 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                             Code = "projects.manage",
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             Name = "projects manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("52000000-0000-0000-0000-000000000014"),
+                            Code = "lessons.read",
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "lessons read"
+                        },
+                        new
+                        {
+                            Id = new Guid("52000000-0000-0000-0000-000000000015"),
+                            Code = "lessons.manage",
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "lessons manage"
+                        },
+                        new
+                        {
+                            Id = new Guid("52000000-0000-0000-0000-000000000016"),
+                            Code = "lessons.review",
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "lessons review"
+                        },
+                        new
+                        {
+                            Id = new Guid("52000000-0000-0000-0000-000000000017"),
+                            Code = "lessons.publish",
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "lessons publish"
+                        },
+                        new
+                        {
+                            Id = new Guid("52000000-0000-0000-0000-000000000018"),
+                            Code = "lessons.ai",
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "lessons ai"
+                        },
+                        new
+                        {
+                            Id = new Guid("52000000-0000-0000-0000-000000000019"),
+                            Code = "lessons.configure",
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Name = "lessons configure"
                         });
                 });
 
@@ -1717,6 +2234,48 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Id = new Guid("53000000-0000-0000-0001-000000000014"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000014"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000001")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0001-000000000015"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000015"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000001")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0001-000000000016"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000016"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000001")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0001-000000000017"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000017"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000001")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0001-000000000018"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000018"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000001")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0001-000000000019"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000019"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000001")
+                        },
+                        new
+                        {
                             Id = new Guid("53000000-0000-0000-0002-000000000001"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000001"),
@@ -1808,6 +2367,48 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Id = new Guid("53000000-0000-0000-0002-000000000014"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000014"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000002")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0002-000000000015"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000015"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000002")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0002-000000000016"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000016"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000002")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0002-000000000017"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000017"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000002")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0002-000000000018"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000018"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000002")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0002-000000000019"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000019"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000002")
+                        },
+                        new
+                        {
                             Id = new Guid("53000000-0000-0000-0003-000000000001"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000001"),
@@ -1864,6 +2465,27 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Id = new Guid("53000000-0000-0000-0003-000000000014"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000014"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000003")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0003-000000000015"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000015"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000003")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0003-000000000018"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000018"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000003")
+                        },
+                        new
+                        {
                             Id = new Guid("53000000-0000-0000-0004-000000000001"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000001"),
@@ -1906,6 +2528,41 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            Id = new Guid("53000000-0000-0000-0004-000000000014"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000014"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000004")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0004-000000000015"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000015"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000004")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0004-000000000016"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000016"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000004")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0004-000000000017"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000017"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000004")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0004-000000000018"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000018"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000004")
+                        },
+                        new
+                        {
                             Id = new Guid("53000000-0000-0000-0005-000000000001"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000001"),
@@ -1923,6 +2580,27 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                             Id = new Guid("53000000-0000-0000-0005-000000000008"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000008"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000005")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0005-000000000014"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000014"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000005")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0005-000000000015"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000015"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000005")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0005-000000000018"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000018"),
                             RoleId = new Guid("51000000-0000-0000-0000-000000000005")
                         },
                         new
@@ -1972,6 +2650,41 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                             Id = new Guid("53000000-0000-0000-0008-000000000005"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000005"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000008")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0008-000000000014"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000014"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000008")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0008-000000000015"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000015"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000008")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0008-000000000016"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000016"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000008")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0008-000000000017"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000017"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000008")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0008-000000000018"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000018"),
                             RoleId = new Guid("51000000-0000-0000-0000-000000000008")
                         },
                         new
@@ -2684,6 +3397,128 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Competency");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonGeneration", b =>
+                {
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Lessons.LessonPlan", null)
+                        .WithMany()
+                        .HasForeignKey("LessonPlanId", "OrganisationId")
+                        .HasPrincipalKey("Id", "OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonPlan", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Lessons.LessonPlan", null)
+                        .WithMany()
+                        .HasForeignKey("DerivedFromId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MwabuLearn.Domain.Entities.LearningOutcome", null)
+                        .WithMany()
+                        .HasForeignKey("LearningOutcomeId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("OwnerUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonPlannerSettings", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonReview", b =>
+                {
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Lessons.LessonPlan", null)
+                        .WithMany()
+                        .HasForeignKey("LessonPlanId", "OrganisationId")
+                        .HasPrincipalKey("Id", "OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonRevision", b =>
+                {
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Lessons.LessonPlan", null)
+                        .WithMany()
+                        .HasForeignKey("LessonPlanId", "OrganisationId")
+                        .HasPrincipalKey("Id", "OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonShare", b =>
+                {
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Lessons.LessonPlan", null)
+                        .WithMany()
+                        .HasForeignKey("LessonPlanId", "OrganisationId")
+                        .HasPrincipalKey("Id", "OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonSource", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentItem", null)
+                        .WithMany()
+                        .HasForeignKey("ContentItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Lessons.LessonPlan", null)
+                        .WithMany()
+                        .HasForeignKey("LessonPlanId", "OrganisationId")
+                        .HasPrincipalKey("Id", "OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonUsagePeriod", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Organisations.Organisation", b =>

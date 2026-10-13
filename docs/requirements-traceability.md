@@ -1,5 +1,25 @@
 # Production live web requirements traceability
 
+## AI Lesson Planner — October 2026 additive feature
+
+Source: user-supplied master AI Lesson Planner implementation request. Branch `feature/ai-lesson-planner`, base `9ca5670570dcc5ba353aaf94a7660efc320178e9`. See [architecture, contracts and operating instructions](ai-lesson-planner.md). Historical live-web evidence below remains intact.
+
+| Requirement | Implementation | Executable evidence | Acceptance boundary |
+| --- | --- | --- | --- |
+| Curriculum and free-form planning | Existing eight-level grounding, explicit provenance, protected managed fields; configurable 28 sections and setup | LessonPlannerTests; lessons.test.tsx; aligned/free-form Chromium workflows | Official descriptions are not invented when managed records lack them |
+| Save, concurrency, history and restore | Immutable snapshot revisions, expected-revision saves, safe autosave and comparisons | SQLite/API tests, PostgreSQL trigger/concurrency tests, frontend in-flight/conflict tests, Chromium autosave | Future offline conflicts require explicit client merge |
+| Published Mwabu discovery | Existing published facade, specific curriculum/text/language/type ranking, readable reasons, authorized preview/reference | LessonSourceSecurityTests and published-resource Chromium workflow | Media without extracted/transcribed text remains metadata |
+| Broad public search | Real Brave adapter, multi-query search, bounded metadata cache, preferences without allowlist | LessonProviderTests transport/cache/language tests; controlled-provider Chromium workflow | Real live credentials/approval remain operator blocker |
+| Safe retrieval and documents | Pinned public DNS, guarded redirects/robots, restricted MIME/size/time, text/HTML/DOCX/Poppler extraction | PublicSourceRetrievalTests, LessonSourceSecurityTests, document and source scenarios | No OCR, paywall bypass or unknown-licence excerpt retention |
+| AI proposals and refinement | Real OpenAI Responses strict schema, grounded citation IDs, minimal context, selected passage boundaries, explicit apply | LessonGenerationTests, LessonProviderTests, generation/refinement/failure Chromium flows | Controlled test providers are not live external verification |
+| Privacy, quota and usage | Global + organisation processing approvals, teacher confirmation, PII pattern guard, serializable reservations, conservative uncertain charges | Approval/privacy/rate/usage/generation tests; PostgreSQL cross-request budgets | Provider/legal approval and comprehensive human privacy review required |
+| Review, publication and sharing | Scoped permissions, independent reviewer, named eligible staff, immutable published templates, revocation | LessonPlannerTests/API authorization and reviewer/share/learner Chromium scenarios | School usability/governance acceptance required |
+| PDF and print | Saved-revision A4 PDF and print preview; attributed sources and draft/historical labels | PDF API test, rendered three-page visual review, Chromium PDF/print/tablet | Non-Latin font acceptance and live school print review remain operator checks |
+| Offline-ready backend | GUIDs, UTC changes, revisions, content IDs, schema-1 approved download, bounded cached-ID reconcile/purge | Cache reconciliation/revocation test, approved-download workflow | Web/Flutter offline client not implemented or claimed |
+| Deployment/migrations/regression | Additive AiLessonPlanner migration, preserved previous migrations, extraction/font dependencies, test-only provider host | Full backend/frontend/browser suites and model drift; existing CI gates retained | Complete green branch workflow required before release |
+
+Brave language filtering uses the documented English enum; other BCP-47 languages remain explicit query context rather than sending unsupported enum values. It does not guarantee language-exclusive search results. [Provider contract](https://api-dashboard.search.brave.com/api-reference/web/search/get).
+
 Source: user-supplied live web platform request, 7 October 2026. Branch `feature/production-live-site`, base `f23584eae59ee661951db8ab2e6be98944b23aba`.
 
 Evidence below names executable tests, rather than assuming that a screen's existence proves acceptance. Local PostgreSQL tests use version 18; CI uses PostgreSQL 17. Full release acceptance also requires the complete GitHub workflow, manual migration review and configured deployment secrets. See [operating guide](live-web-platform.md).
