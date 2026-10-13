@@ -53,6 +53,9 @@ export default function AuthPages({
   return (
     <main className="auth-layout">
       <section className="auth-story">
+        <Link to="/" className="brand">
+          <Brand />
+        </Link>
         <div>
           <p className="eyebrow">FOR EVERY LEARNING DAY</p>
           <h1>
