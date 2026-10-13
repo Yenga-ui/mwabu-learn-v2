@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using MwabuLearn.Application.Lessons;
 using MwabuLearn.Infrastructure.Lessons.Sources;
 using MwabuLearn.Infrastructure.Lessons;
@@ -29,6 +30,8 @@ public static class BrowserHostMain
         factory.StartServer();
         Console.WriteLine("Real API/HTTPS browser fixture ready; external services use explicitly controlled TEST-ONLY providers.");
         using var stop = new CancellationTokenSource(); Console.CancelKeyPress += (_, eventArgs) => { eventArgs.Cancel = true; stop.Cancel(); };
+        // ConsoleLifetime handles SIGTERM on Linux. Main must observe the host's shutdown request too.
+        using var shutdown = factory.Services.GetRequiredService<IHostApplicationLifetime>().ApplicationStopping.Register(stop.Cancel);
         try { await Task.Delay(Timeout.InfiniteTimeSpan, stop.Token); } catch (OperationCanceledException) { }
     }
 }

@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import https from "node:https";
 import http from "node:http";
+import { clearTimeout } from "node:timers";
 
 const root = resolve("..");
 const source = process.env.MWABU_POSTGRES_TEST_SERVER;
@@ -94,10 +95,32 @@ async function cleanup() {
   if (stopping) return;
   stopping = true;
   readiness?.close();
-  if (server && server.exitCode === null) {
+  if (server && server.exitCode === null && server.signalCode === null) {
     const exited = new Promise((done) => server.once("exit", done));
     server.kill();
-    await exited;
+    let shutdownTimer;
+    const graceful = await Promise.race([
+      exited.then(() => true),
+      new Promise((done) => {
+        shutdownTimer = setTimeout(() => done(false), 15000);
+      }),
+    ]);
+    clearTimeout(shutdownTimer);
+    if (!graceful && server.exitCode === null && server.signalCode === null) {
+      server.kill("SIGKILL");
+      let forceTimer;
+      const forced = await Promise.race([
+        exited.then(() => true),
+        new Promise((done) => {
+          forceTimer = setTimeout(() => done(false), 5000);
+        }),
+      ]);
+      clearTimeout(forceTimer);
+      if (!forced)
+        throw new Error(
+          "Disposable browser host did not terminate; fixture cleanup requires review.",
+        );
+    }
   }
   if (created)
     await admin.query('DROP DATABASE "' + database + '" WITH (FORCE)');
