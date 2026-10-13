@@ -5,14 +5,14 @@
     gap: 24px;
     padding: 28px;
     border-radius: 20px;
-    background: var(--cream, #f6f3e9);
+    background: var(--surface-muted);
     margin-bottom: 24px;
   }
   .lesson-welcome > svg {
     flex-shrink: 0;
     width: 48px;
     height: 48px;
-    color: #286444;
+    color: var(--primary);
   }
   .lesson-welcome .button {
     flex-shrink: 0;
@@ -53,9 +53,9 @@
     position: sticky;
     top: 0;
     z-index: 3;
-    background: #fffdf6;
+    background: var(--surface-muted);
     padding: 12px;
-    border: 1px solid #d9e2d5;
+    border: 1px solid var(--border);
     border-radius: 14px;
   }
   .lesson-toolbar > span {
@@ -74,7 +74,7 @@
     margin-top: 10px;
   }
   .lesson-section {
-    border-top: 1px solid #dfe5dd;
+    border-top: 1px solid var(--border);
     padding: 18px 0;
   }
   .lesson-section summary,
@@ -107,7 +107,7 @@
   }
   .lesson-source,
   .source-results article {
-    border: 1px solid #dde5d9;
+    border: 1px solid var(--border);
     border-radius: 14px;
     padding: 18px;
     margin: 16px 0;
@@ -127,7 +127,7 @@
     font: inherit;
     line-height: 1.65;
     padding: 16px;
-    background: #f5f6f1;
+    background: var(--surface-muted);
     border-radius: 10px;
   }
   .lesson-workspace textarea,
@@ -137,7 +137,7 @@
     min-height: 90px;
   }
   .lesson-comparison details {
-    border: 1px solid #dbe3d7;
+    border: 1px solid var(--border);
     margin: 12px 0;
     padding: 15px;
     border-radius: 12px;
@@ -151,7 +151,7 @@
     gap: 15px;
   }
   .lesson-usage > div {
-    background: #f4f6ef;
+    background: var(--surface-muted);
     padding: 15px;
     border-radius: 12px;
   }
@@ -161,11 +161,11 @@
   }
   .lesson-print {
     background: white;
-    color: #17291d;
+    color: var(--text);
     padding: 36px;
     max-width: 850px;
     margin: 24px auto;
-    border: 1px solid #dae0d5;
+    border: 1px solid var(--border);
   }
   .lesson-print p {
     white-space: pre-wrap;

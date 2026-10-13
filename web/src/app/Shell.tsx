@@ -1,3 +1,4 @@
+import { Brand } from "../components/Brand";
 import { useState } from "react";
 import { Link, Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
 import {
@@ -195,10 +196,7 @@ export function Shell() {
         }}
       >
         <Link to="/app" className="brand">
-          <span className="brand-mark">m</span>
-          <span>
-            mwabu<span className="brand-sub">LEARN</span>
-          </span>
+          <Brand />
         </Link>
         <button
           className="mobile-close icon-button"
@@ -234,6 +232,9 @@ export function Shell() {
       </aside>
       <div className="workspace">
         <header className="topbar">
+          <Link to="/app" className="brand header-brand">
+            <Brand />
+          </Link>
           <div className="context">
             <label htmlFor="organisation">Your organisation</label>
             <select
