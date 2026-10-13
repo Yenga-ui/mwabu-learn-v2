@@ -27,9 +27,9 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
         if (!LessonRules.Operations.Contains(request.Operation) || request.Operation == "regenerate-section" && request.SectionCode is null || request.Operation == "generate" && request.SectionCode is not null ||
             request.SectionCode is not null && (!Sections.Any(x => x.Code == request.SectionCode) || Authoritative.Contains(request.SectionCode)))
             throw LessonRules.Invalid("Choose a supported action and an editable section. Managed curriculum fields cannot be regenerated.");
-        if (!provider.IsConfigured) throw new PlannerException(PlannerError.Unavailable, "AI generation is unconfigured or not approved. Continue editing manually.");
+        if (!provider.IsConfigured) throw new PlannerException(PlannerError.Unavailable, "AI assistance is unavailable. Continue editing manually or contact your organisation administrator.");
         var settings = await db.LessonPlannerSettings.AsNoTracking().SingleOrDefaultAsync(x => x.OrganisationId == org, ct);
-        if (settings?.ExternalAiApproved != true) throw new PlannerException(PlannerError.Forbidden, "Your organisation has not approved external AI data processing.");
+        if (settings?.ExternalAiApproved != true) throw new PlannerException(PlannerError.Forbidden, "Your organisation has not approved AI data processing.");
         var detail = await planner.GetAsync(org, plan, null, ct); var instructions = LessonRules.Text(request.Instructions, 2000, "Generation instructions");
         if (request.SectionCode is not null && !detail.Document.Sections.Any(x => x.Code == request.SectionCode)) throw LessonRules.Invalid("The selected section is not configured for this lesson.");
         var sources = await db.LessonSources.AsNoTracking().Where(x => x.LessonPlanId == plan && x.OrganisationId == org && x.IsSelected && !x.IsExcluded && x.ReusePermitted &&
@@ -56,7 +56,8 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
         if (serialized.Length > options.Value.MaxInputCharacters) throw LessonRules.Invalid("Reduce selected references or lesson text to fit the configured AI input limit.");
         var inputLimit = Encoding.UTF8.GetByteCount(serialized) + 4096;
         var tokens = checked((inputLimit + options.Value.MaxOutputTokens) * options.Value.MaximumAttempts);
-        var cost = (inputLimit * options.Value.InputUsdPerMillionTokens + options.Value.MaxOutputTokens * options.Value.OutputUsdPerMillionTokens) / 1000000m * options.Value.MaximumAttempts;
+        await provider.PrepareAsync(ct);
+        var cost = provider.IsFreeLocal ? 0 : (inputLimit * options.Value.InputUsdPerMillionTokens + options.Value.MaxOutputTokens * options.Value.OutputUsdPerMillionTokens) / 1000000m * options.Value.MaximumAttempts;
         var generation = new LessonGeneration { LessonPlanId = plan, OrganisationId = org, ActorUserId = access.User, BaseRevision = entity.Revision,
             Operation = request.Operation, SectionCode = request.SectionCode, Provider = provider.Name, Model = provider.Model, ReservedTokens = tokens,
             EstimatedCostUsd = cost, ExpiresAt = DateTime.UtcNow.AddDays(settings.SourceRetentionDays) };
@@ -87,7 +88,7 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
                     sections = CurriculumGrounding.Bind(sections, detail.Document.Curriculum);
                     Publishable(detail.Document with { Sections = sections });
                 }
-                if (result.InputTokens < 0 || result.OutputTokens < 0 || result.InputTokens + result.OutputTokens > tokens || result.OutputTokens > options.Value.MaxOutputTokens)
+                if (result.Attempts < 1 || result.Attempts > options.Value.MaximumAttempts || result.InputTokens < 0 || result.OutputTokens < 0 || result.InputTokens + result.OutputTokens > tokens || result.OutputTokens > options.Value.MaxOutputTokens * result.Attempts)
                     throw LessonRules.Invalid("Invalid provider usage metadata.");
                 var knownUrls = sources.Where(x => x.Url is not null).Select(x => x.Url!).ToHashSet(StringComparer.Ordinal);
                 foreach (var section in sections.Where(x => !Authoritative.Contains(x.Code)))
@@ -99,7 +100,7 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
             { throw new PlannerException(PlannerError.InvalidProviderOutput, "The generated proposal failed schema, citation, section or timing validation. No lesson changes were applied."); }
             generation.ResultJson = LessonJson.Write(validated); generation.InputTokens = result.InputTokens; generation.OutputTokens = result.OutputTokens;
             generation.State = "completed"; generation.UsageEstimated = result.UsageIncomplete;
-            if (!result.UsageIncomplete) generation.EstimatedCostUsd = (result.InputTokens * options.Value.InputUsdPerMillionTokens + result.OutputTokens * options.Value.OutputUsdPerMillionTokens) / 1000000m;
+            if (!result.UsageIncomplete) generation.EstimatedCostUsd = provider.IsFreeLocal ? 0 : (result.InputTokens * options.Value.InputUsdPerMillionTokens + result.OutputTokens * options.Value.OutputUsdPerMillionTokens) / 1000000m;
             settling = true; // A settlement failure must not trigger a second budget adjustment.
             await Finish(generation, result.UsageIncomplete ? tokens : result.InputTokens + result.OutputTokens);
             return Response(generation);

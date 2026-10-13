@@ -2,6 +2,8 @@ namespace MwabuLearn.Infrastructure.Lessons;
 
 public sealed class LessonAiOptions
 {
+    public string Provider { get; set; } = "Ollama";
+    public string OllamaUrl { get; set; } = "http://127.0.0.1:11434";
     public bool Enabled { get; set; }
     public bool DataProcessingApproved { get; set; }
     public string ApiKey { get; set; } = "";
@@ -13,10 +15,15 @@ public sealed class LessonAiOptions
     public int MinimumRequestIntervalSeconds { get; set; } = 10;
     public decimal InputUsdPerMillionTokens { get; set; }
     public decimal OutputUsdPerMillionTokens { get; set; }
-    public static bool Valid(LessonAiOptions x) => x.TimeoutSeconds is >= 5 and <= 180 && x.MaxInputCharacters is >= 1000 and <= 100000 &&
+    public static bool LocalEndpoint(string value) => Uri.TryCreate(value, UriKind.Absolute, out var uri) &&
+        uri.Scheme is "http" or "https" && uri.Host is "127.0.0.1" or "[::1]" &&
+        uri.UserInfo.Length == 0 && uri.AbsolutePath == "/" && uri.Query.Length == 0 && uri.Fragment.Length == 0;
+    public static bool Valid(LessonAiOptions x) => x.Provider is "Ollama" or "OpenAI" &&
+        x.TimeoutSeconds >= 5 && x.TimeoutSeconds <= (x.Provider == "Ollama" ? 600 : 180) && x.MaxInputCharacters is >= 1000 and <= 100000 &&
         x.MaxOutputTokens is >= 500 and <= 16000 && x.MaximumAttempts is >= 1 and <= 3 && x.MinimumRequestIntervalSeconds is >= 1 and <= 60 &&
-        (!x.Enabled || x.DataProcessingApproved && x.ApiKey.Length >= 20 && x.Model.Length is > 0 and <= 100 &&
-            x.InputUsdPerMillionTokens > 0 && x.OutputUsdPerMillionTokens > 0);
+        (!x.Enabled || x.DataProcessingApproved && (x.Provider == "Ollama"
+            ? LocalEndpoint(x.OllamaUrl) && x.Model.Length <= 100 && !x.Model.Contains("cloud", StringComparison.OrdinalIgnoreCase)
+            : x.ApiKey.Length >= 20 && x.Model.Length is > 0 and <= 100 && x.InputUsdPerMillionTokens > 0 && x.OutputUsdPerMillionTokens > 0));
 }
 public sealed class LessonSearchOptions
 {

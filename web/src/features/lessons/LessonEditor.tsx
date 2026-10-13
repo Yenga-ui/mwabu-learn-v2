@@ -588,7 +588,7 @@ export default function LessonEditor({
           {(!configuration.data?.aiConfigured ||
             !configuration.data.organisationAiApproved) && (
             <div className="alert" role="status">
-              AI is not configured or approved for this organisation. Your
+              AI assistance is unavailable for this organisation. Your
               manual editor remains available.
             </div>
           )}
@@ -667,7 +667,7 @@ export default function LessonEditor({
               />
               I reviewed this lesson and selected sources: they contain no
               identifiable learner or personal information, and are authorised
-              for external processing
+              for approved AI processing
             </label>
             <button
               className="button"
@@ -704,7 +704,7 @@ export default function LessonEditor({
                   "This proposal is unavailable or expired."}
               </p>
               <p>
-                {proposal.provider} / {proposal.model} · estimated charge USD{" "}
+                Estimated processing charge USD{" "}
                 {proposal.estimatedCostUsd.toFixed(6)}{" "}
                 {proposal.usageEstimated && "(conservative/uncertain)"}
               </p>

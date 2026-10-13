@@ -167,7 +167,7 @@ export default function LessonSetup({
       </small>
       <small>
         Use anonymous class-level needs. Do not enter identifiable learner
-        information in material intended for external AI.
+        information in material intended for AI assistance.
       </small>
     </fieldset>
   );

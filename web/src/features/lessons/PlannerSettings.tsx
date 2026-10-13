@@ -35,13 +35,16 @@ export default function PlannerSettings({
       <QueryState query={configuration}>
         {(data) => (
           <p>
-            AI provider: {data.aiConfigured ? "configured" : "unconfigured"};
-            organisation approval:{" "}
+            AI assistance:{" "}
+            {data.aiConfigured && data.organisationAiApproved
+              ? "enabled"
+              : "unavailable"}
+            ; organisation approval:{" "}
             {data.organisationAiApproved ? "approved" : "not approved"}. Public
-            search: {data.searchConfigured ? "configured" : "unconfigured"};
+            search: {data.searchConfigured ? "enabled" : "unavailable"};
             organisation approval:{" "}
             {data.organisationSearchApproved ? "approved" : "not approved"}.
-            Configuration does not prove live provider availability.
+            Availability may change while a request is running.
           </p>
         )}
       </QueryState>
@@ -134,9 +137,9 @@ function SettingsForm({
       <fieldset disabled={busy}>
         <legend>Organisation governance</legend>
         <p>
-          Enable only after your organisation's provider/privacy review. A
-          configured server key alone is not authorisation to send personal
-          data.
+          Enable only after your organisation's privacy review. Approval covers
+          non-personal teaching context; personal learner information must not
+          be included.
         </p>
         <label className="checkbox">
           <input
@@ -146,8 +149,7 @@ function SettingsForm({
               setValue({ ...value, externalAiApproved: e.target.checked })
             }
           />
-          Organisation approves external AI processing of non-personal teaching
-          context
+          Organisation approves AI processing of non-personal teaching context
         </label>
         <label className="checkbox">
           <input

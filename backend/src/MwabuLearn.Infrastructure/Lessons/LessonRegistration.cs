@@ -15,8 +15,12 @@ public static class LessonRegistration
         services.Configure<LessonPdfOptions>(configuration.GetSection("LessonPlanner:Pdf"));
         services.AddMemoryCache();
         services.AddSingleton<SearchResultCache>();
-        services.AddHttpClient<ILessonAiProvider, OpenAiLessonProvider>(client => client.Timeout = Timeout.InfiniteTimeSpan).RemoveAllLoggers()
+        services.AddHttpClient<OpenAiLessonProvider>(client => client.Timeout = Timeout.InfiniteTimeSpan).RemoveAllLoggers()
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false });
+        services.AddHttpClient<OllamaLessonProvider>(client => client.Timeout = Timeout.InfiniteTimeSpan).RemoveAllLoggers()
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false, UseProxy = false });
+        services.AddScoped<ILessonAiProvider>(sp => sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<LessonAiOptions>>().Value.Provider == "OpenAI"
+            ? sp.GetRequiredService<OpenAiLessonProvider>() : sp.GetRequiredService<OllamaLessonProvider>());
         services.AddHttpClient<IEducationSearchProvider, BraveEducationSearch>(client => client.Timeout = Timeout.InfiniteTimeSpan).RemoveAllLoggers()
             .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false });
         services.AddSingleton<IPublicDns, PublicDns>(); services.AddScoped<PublicUrlGuard>(); services.AddScoped<IPublicSourceRetriever, PublicSourceRetriever>();

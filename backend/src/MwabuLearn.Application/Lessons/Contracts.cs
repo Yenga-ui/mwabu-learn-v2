@@ -106,7 +106,15 @@ public sealed record ProviderContext(LessonDocument Lesson, string Operation, st
     IReadOnlyList<GroundingEvidence> Evidence, string? SelectedText = null);
 public sealed record GroundingEvidence(Guid SourceId, string Title, string Text, string Licence);
 public sealed record ProviderResult(GeneratedLesson Lesson, int InputTokens, int OutputTokens, int Attempts = 1, bool UsageIncomplete = false);
-public interface ILessonAiProvider { bool IsConfigured { get; } string Name { get; } string Model { get; } Task<ProviderResult> GenerateAsync(ProviderContext context, CancellationToken ct); }
+public interface ILessonAiProvider
+{
+    bool IsConfigured { get; }
+    string Name { get; }
+    string Model { get; }
+    bool IsFreeLocal => false;
+    Task PrepareAsync(CancellationToken ct) => Task.CompletedTask;
+    Task<ProviderResult> GenerateAsync(ProviderContext context, CancellationToken ct);
+}
 public interface IEducationSearchProvider { bool IsConfigured { get; } Task<IReadOnlyList<DiscoveredSource>> SearchAsync(string query, string language, CancellationToken ct); }
 public sealed record RetrievedSource(string Title, string? Publisher, string? Licence, string Text, bool ReusePermitted, string Description, string FinalUrl, DateTime? PublicationDate = null);
 public interface IPublicSourceRetriever { Task<RetrievedSource> RetrieveAsync(string url, CancellationToken ct); }

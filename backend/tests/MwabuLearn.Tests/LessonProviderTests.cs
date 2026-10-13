@@ -9,7 +9,7 @@ public sealed class LessonProviderTests
 {
     private sealed class Handler(Func<HttpRequestMessage, int, CancellationToken, Task<HttpResponseMessage>> send) : HttpMessageHandler
     { public int Calls { get; private set; } protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) => send(request, ++Calls, ct); }
-    private static LessonAiOptions Configuration() => new() { Enabled = true, DataProcessingApproved = true, ApiKey = "test-key-" + Guid.NewGuid().ToString("N"), Model = "configured-test-model", InputUsdPerMillionTokens = 1, OutputUsdPerMillionTokens = 2, TimeoutSeconds = 5 };
+    private static LessonAiOptions Configuration() => new() { Provider = "OpenAI", Enabled = true, DataProcessingApproved = true, ApiKey = "test-key-" + Guid.NewGuid().ToString("N"), Model = "configured-test-model", InputUsdPerMillionTokens = 1, OutputUsdPerMillionTokens = 2, TimeoutSeconds = 5 };
     private static ProviderContext Context() => new(new(LessonPlannerTests.Request().Setup, null, LessonRules.BlankSections(), []), "generate", null, "Teaching instructions", []);
     [Fact]
     public async Task Caller_cancellation_stops_provider_transport_without_retry_or_fabricated_output()
