@@ -1661,8 +1661,7 @@
     border-color: var(--primary);
     color: var(--on-primary);
   }
-  .sidebar .brand,
-  .auth-story .brand {
+  .sidebar .brand {
     background: var(--surface);
     padding: 12px 14px;
     border-radius: 12px;
@@ -1798,11 +1797,19 @@
   }
   .auth-story {
     background: linear-gradient(145deg, var(--primary), var(--primary-active));
+    justify-content: center;
+    padding: clamp(32px, 5vw, 72px);
+    gap: 32px;
+  }
+  .auth-story > div {
+    margin: 0;
+    max-width: 540px;
   }
   .auth-story h1 {
     font-family: inherit;
     font-weight: 600;
     letter-spacing: -0.035em;
+    font-size: clamp(2.5rem, 3.2vw, 3.6rem);
   }
   .auth-story em {
     font-style: normal;
@@ -1815,6 +1822,9 @@
   }
   .auth-panel {
     background: var(--surface-muted);
+  }
+  .auth-layout {
+    grid-template-columns: 44% 56%;
   }
   .auth-form {
     max-width: 430px;
@@ -1850,6 +1860,17 @@
 }
 @layer responsive {
   @media (max-width: 900px) {
+    .auth-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+    }
+    .auth-story {
+      display: none;
+    }
+    .auth-panel {
+      min-height: 100dvh;
+      padding: 32px 20px;
+    }
     .sidebar {
       padding-top: 64px;
     }
