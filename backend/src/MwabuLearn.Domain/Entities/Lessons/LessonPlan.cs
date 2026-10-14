@@ -21,6 +21,7 @@ public sealed class LessonPlan : BaseEntity
 }
 public sealed class LessonRevision : BaseEntity
 {
+    public int SchemaVersion { get; set; } = 1;
     public Guid LessonPlanId { get; set; }
     public Guid OrganisationId { get; set; }
     public int Number { get; set; }

@@ -3,7 +3,8 @@
 Ollama is the default provider. Generation remains disabled until an operator
 enables server processing and an authorised organisation administrator approves
 that organisation. There is no automatic OpenAI fallback and no model download
-during an API request. No database migration is required.
+during an API request. The inference adapter itself requires no schema change;
+the additive Ministry form migration is described in `ministry-planner-integration.md`.
 
 ## Operator setup
 
@@ -79,6 +80,15 @@ Malformed or incomplete responses retry within a single bounded timeout. Failed,
 cancelled and retried calls retain conservative token reservations. Proposals,
 usage and revisions retain the existing audit and retention behavior. Error
 responses shown to teachers do not reveal model, host or credential details.
+
+The local output schema requests a bounded object keyed by editable section code,
+containing only teaching text and authorised citation IDs. The backend supplies
+section order, headings, managed curriculum text and metadata rather than making
+a small model repeat them. It preserves a valid saved activity timing allocation;
+otherwise it proposes a balanced starter/development/conclusion allocation that
+totals the saved duration (40 minutes becomes 5/30/5). Teachers can adjust timings
+in the editor before or after accepting a proposal. Section-only actions retain
+that section's saved timing. Citation IDs are constrained to authorised evidence.
 
 After installation, local generation does not require internet. It still needs
 the API/database and an accessible local inference host. This does not turn the

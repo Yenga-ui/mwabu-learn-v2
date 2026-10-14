@@ -26,11 +26,12 @@ public sealed record LessonSection(string Code, string Title, string Body, int M
 public sealed record CurriculumContext(Guid CurriculumId, Guid VersionId, Guid GradeId, Guid SubjectId, Guid TermId,
     Guid TopicId, Guid CompetencyId, Guid OutcomeId, string Curriculum, string Version, string Grade, string Subject,
     string Term, string Topic, string Competency, string Outcome, string? OutcomeDescription, string ProvenanceNotice,
-    string? TopicDescription = null, string? CompetencyDescription = null);
+    string? TopicDescription = null, string? CompetencyDescription = null, string? CompetencyCode = null);
 public sealed record SourceCitation(Guid Id, LessonSourceKind Kind, string Title, string? Url, string? Publisher,
     string? Licence, DateTime? AccessedAt, SourceRetrievalStatus RetrievalStatus, string EvidenceDescription, bool ReusePermitted, Guid? ContentItemId = null);
-public sealed record LessonDocument(LessonSetup Setup, CurriculumContext? Curriculum, LessonSection[] Sections, SourceCitation[] References);
-public sealed record SaveLessonRequest(int ExpectedRevision, LessonSetup Setup, LessonSection[] Sections, string Reason = "Teacher edit");
+public sealed record LessonDocument(LessonSetup Setup, CurriculumContext? Curriculum, LessonSection[] Sections, SourceCitation[] References,
+    MinistryLessonForm? MinistryForm = null, int SchemaVersion = 1);
+public sealed record SaveLessonRequest(int ExpectedRevision, LessonSetup Setup, LessonSection[] Sections, string Reason = "Teacher edit", MinistryLessonForm? MinistryForm = null);
 public sealed record LessonSummary(Guid Id, Guid OrganisationId, Guid OwnerUserId, string Title, PlanningMode Mode,
     LessonStatus Status, int Revision, bool IsOrganisationTemplate, DateTime CreatedAt, DateTime? UpdatedAt);
 public sealed record LessonDetail(LessonSummary Lesson, LessonDocument Document, bool CanEdit, bool CanReview, int ViewedRevision, string AuthorName = "");
@@ -103,7 +104,7 @@ public interface ILessonGeneration
     Task<UsageReport> UsageAsync(Guid org, CancellationToken ct);
 }
 public sealed record ProviderContext(LessonDocument Lesson, string Operation, string? SectionCode, string Instructions,
-    IReadOnlyList<GroundingEvidence> Evidence, string? SelectedText = null);
+    IReadOnlyList<GroundingEvidence> Evidence, string? SelectedText = null, SyllabusReference? SyllabusReference = null);
 public sealed record GroundingEvidence(Guid SourceId, string Title, string Text, string Licence);
 public sealed record ProviderResult(GeneratedLesson Lesson, int InputTokens, int OutputTokens, int Attempts = 1, bool UsageIncomplete = false);
 public interface ILessonAiProvider

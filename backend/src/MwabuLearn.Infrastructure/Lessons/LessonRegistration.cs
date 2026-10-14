@@ -28,6 +28,7 @@ public static class LessonRegistration
         services.AddScoped<DocumentExtractor>(); services.AddScoped<LessonAccess>(); services.AddScoped<CurriculumGrounding>();
         services.AddSingleton<ILessonPdf, LessonPdf>(); services.AddScoped<ILessonPlanner, LessonPlanner>(); services.AddScoped<ILessonSources, LessonSources>();
         services.AddScoped<ILessonGeneration, LessonGenerationService>(); services.AddScoped<LessonRetention>(); services.AddHostedService<LessonRetentionWorker>();
+        services.AddScoped<ILessonSyllabus, LessonSyllabus>();
         return services;
     }
 }

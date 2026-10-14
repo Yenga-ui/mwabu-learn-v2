@@ -64,6 +64,7 @@ export function useLessonDraft(initial: Detail, organisation: string) {
             expectedRevision: expected,
             setup: snapshot.setup,
             sections: snapshot.sections,
+            ministryForm: snapshot.ministryForm,
             reason: "Teacher edit / autosave",
           },
         },

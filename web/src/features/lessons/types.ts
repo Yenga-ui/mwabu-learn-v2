@@ -47,10 +47,35 @@ export interface Citation {
   contentItemId: string | null;
 }
 export interface LessonDocument {
+  schemaVersion?: number;
+  ministryForm?: MinistryLessonForm | null;
   setup: Setup;
   curriculum: CurriculumContext | null;
   sections: Section[];
   references: Citation[];
+}
+export interface MinistryLessonForm {
+  syllabusProvenance?: string;
+  referenceCompetenceCode?: string;
+  school: string;
+  teacherName: string;
+  className: string;
+  lessonTime: string;
+  lessonGoal: string;
+  rationale: string;
+  expectedStandard: string;
+  generalCompetences: string[];
+  learningEnvironments: string[];
+  environmentNote: string;
+  evaluation: string;
+  needsReview: string[];
+  progression: {
+    code: string;
+    teacherActivities: string;
+    learnerActivities: string;
+    assessmentCriteria: string;
+    minutes: number;
+  }[];
 }
 export interface Lesson {
   id: string;

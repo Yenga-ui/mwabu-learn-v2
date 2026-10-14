@@ -19,7 +19,7 @@ public sealed class CurriculumGrounding(MwabuDbContext db)
                 x.Competency.Topic.Term.Subject.Grade.Name, x.Competency.Topic.Term.Subject.Name, x.Competency.Topic.Term.Name, x.Competency.Topic.Name,
                 x.Competency.Name, x.Name, x.Description,
                 "Authoritative selected Mwabu curriculum records. Verify official provenance with your curriculum administrator; missing descriptions are not invented.",
-                x.Competency.Topic.Description, x.Competency.Description)).SingleOrDefaultAsync(ct);
+                x.Competency.Topic.Description, x.Competency.Description, x.Competency.Code)).SingleOrDefaultAsync(ct);
         return value ?? throw Invalid("The selected curriculum hierarchy is missing or inactive. Choose an active learning outcome.");
     }
     public static LessonSection[] Bind(LessonSection[] sections, CurriculumContext? curriculum)
@@ -27,7 +27,7 @@ public sealed class CurriculumGrounding(MwabuDbContext db)
         string Value(string code) => curriculum is null ? "Free-form lesson: no validated official curriculum alignment." : code switch
         {
             "curriculum" => $"{curriculum.Curriculum} / {curriculum.Version} / {curriculum.Grade} / {curriculum.Subject} / {curriculum.Term} / {curriculum.Topic}\n{curriculum.ProvenanceNotice}",
-            "competencies" => curriculum.Competency + "\n" + (curriculum.CompetencyDescription ?? "No further official competency description is available in the managed record."),
+            "competencies" => (curriculum.CompetencyCode is { Length: > 0 } competencyCode ? competencyCode + ": " : "") + curriculum.Competency + "\n" + (curriculum.CompetencyDescription ?? "No further official competency description is available in the managed record."),
             _ => curriculum.Outcome + "\n" + (curriculum.OutcomeDescription ?? "No further official description is available in the managed record.")
         };
         var result = sections.Where(x => !Authoritative.Contains(x.Code)).ToList();

@@ -43,7 +43,10 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
             if (!id.HasValue) db.LessonPlans.Add(plan);
             var refs = await References(plan.Id, org, ct);
             var sections = CurriculumGrounding.Bind(ValidateSections(request.Sections, refs.Select(x => x.Id).ToArray()), context);
-            var document = new LessonDocument(setup, context, sections, refs);
+            var previous = id.HasValue ? await db.LessonRevisions.AsNoTracking().SingleAsync(x => x.LessonPlanId == plan.Id && x.Number == plan.Revision, ct) : null;
+            var form = request.MinistryForm ?? (previous is null ? null : LessonJson.Read<LessonDocument>(previous.DocumentJson).MinistryForm);
+            var document = new LessonDocument(setup, context, sections, refs,
+                MinistryFormRules.Validate(form ?? MinistryFormRules.FromSections(sections), setup.DurationMinutes), 2);
             plan.Title = setup.Title; plan.Mode = setup.Mode; plan.LearningOutcomeId = context?.OutcomeId;
             Append(plan, document, reason);
             await db.SaveChangesAsync(ct); id = plan.Id; return true;
@@ -60,7 +63,7 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
         if (snapshot.Length > 250000) throw LessonRules.Invalid("The encoded lesson snapshot exceeds 250,000 characters. Reduce lesson text or references.");
         plan.Revision++; plan.UpdatedAt = DateTime.UtcNow;
         db.LessonRevisions.Add(new() { LessonPlanId = plan.Id, OrganisationId = plan.OrganisationId, Number = plan.Revision,
-            ActorUserId = access.User, Reason = reason, DocumentJson = snapshot });
+            ActorUserId = access.User, Reason = reason, DocumentJson = snapshot, SchemaVersion = document.SchemaVersion });
     }
     public async Task<LessonDetail> DuplicateAsync(Guid org, Guid id, CancellationToken ct)
     {

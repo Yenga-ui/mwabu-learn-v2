@@ -24,5 +24,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Lessons/Reference/syllabus-2023.json" />
+  </ItemGroup>
 
 </Project>

@@ -1,6 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
-import { readFileSync } from "node:fs";
+import { copyFileSync, readFileSync, unlinkSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { randomBytes } from "node:crypto";
+import { pathToFileURL } from "node:url";
 type Account = { email: string; password: string };
 type Fixture = {
   admin: Account;
@@ -71,6 +73,83 @@ async function proposal(page: Page, instructions = "") {
     page.getByRole("heading", { name: "Proposed changes" }),
   ).toBeVisible();
 }
+test("Ministry teacher fields and progression survive save/reload and export a script-free offline copy", async ({
+  page,
+}) => {
+  await login(page);
+  await createFree(page, "Ministry synthetic fractions");
+  await page
+    .getByText("Ministry lesson plan form and progression", { exact: true })
+    .click();
+  await page.getByLabel("School", { exact: true }).fill("Synthetic school");
+  await page
+    .getByLabel("Name of teacher", { exact: true })
+    .fill("Synthetic teacher");
+  await page.getByLabel("Collaboration", { exact: true }).check();
+  await page
+    .getByLabel("Introduction: Learners' role", { exact: true })
+    .fill("Fold paper and compare two equal halves.");
+  await page.getByRole("button", { name: "Save now", exact: true }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: /Saved · revision/ }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByText("Ministry lesson plan form and progression", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  if (!(await page.getByLabel("School", { exact: true }).isVisible()))
+    await page
+      .getByText("Ministry lesson plan form and progression", { exact: true })
+      .click();
+  await expect(page.getByLabel("School", { exact: true })).toHaveValue(
+    "Synthetic school",
+  );
+  await expect(page.getByLabel("Collaboration", { exact: true })).toBeChecked();
+  await expect(
+    page.getByLabel("Introduction: Learners' role", { exact: true }),
+  ).toHaveValue("Fold paper and compare two equal halves.");
+  const downloaded = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "Download offline copy", exact: true })
+    .click();
+  const path = await (await downloaded).path();
+  expect(path).toBeTruthy();
+  const html = readFileSync(path!, "utf8");
+  expect(html).toContain("Synthetic school");
+  expect(html).toContain("Fold paper and compare two equal halves.");
+  expect(html).toContain("default-src 'none'");
+  expect(html).not.toContain("<script");
+  expect(html).toContain("Lesson progression");
+  expect(html).toContain("Read-only");
+  // Playwright's artifact path has no extension; keep the app's actual download
+  // filename semantics so Chromium renders HTML rather than displaying plain text.
+  const offlinePath = join(dirname(path!), "mwabu-lesson-offline.html");
+  copyFileSync(path!, offlinePath);
+  await page.context().setOffline(true);
+  try {
+    await page.goto(pathToFileURL(offlinePath).href);
+    await expect(
+      page.getByRole("heading", {
+        name: "Ministry synthetic fractions",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Fold paper and compare two equal halves.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    await page.reload();
+    await expect(
+      page.getByRole("heading", { name: "Lesson progression", exact: true }),
+    ).toBeVisible();
+  } finally {
+    await page.context().setOffline(false);
+    unlinkSync(offlinePath);
+  }
+});
 test.beforeAll(async ({ playwright }) => {
   const context = await playwright.request.newContext({
     baseURL: "https://127.0.0.1:7443",

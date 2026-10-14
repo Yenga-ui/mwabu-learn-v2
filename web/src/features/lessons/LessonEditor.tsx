@@ -39,6 +39,8 @@ import SourceExplorer from "./SourceExplorer";
 import RevisionPanel, { DocumentComparison } from "./RevisionPanel";
 import LessonSharing from "./LessonSharing";
 import { LessonPrint } from "./LessonPrint";
+import { MinistryForm } from "./MinistryForm";
+import { offlineLessonHtml } from "./offlineLesson";
 
 export default function LessonEditor({
   initial,
@@ -275,6 +277,31 @@ export default function LessonEditor({
           onClick={() =>
             void run(async () => {
               await draft.save();
+              const saved = await api<Detail>(path);
+              const url = URL.createObjectURL(
+                new Blob([offlineLessonHtml(saved, orgName)], {
+                  type: "text/html;charset=utf-8",
+                }),
+              );
+              const link = document.createElement("a");
+              link.href = url;
+              link.download = "mwabu-lesson-offline.html";
+              link.click();
+              setTimeout(() => URL.revokeObjectURL(url), 10000);
+              notify(
+                "Offline copy downloaded. Keep it secure and verify later revisions when reconnecting.",
+              );
+            })
+          }
+        >
+          Download offline copy
+        </button>
+        <button
+          className="button secondary"
+          disabled={busy || draft.conflict}
+          onClick={() =>
+            void run(async () => {
+              await draft.save();
               setTab("print");
               requestAnimationFrame(() => window.print());
             })
@@ -363,6 +390,20 @@ export default function LessonEditor({
               disabled={!editable}
               change={(value) =>
                 draft.update((document) => ({ ...document, setup: value }))
+              }
+            />
+          </details>
+          <details className="panel">
+            <summary>Ministry lesson plan form and progression</summary>
+            <MinistryForm
+              document={draft.document}
+              organisation={organisation}
+              disabled={!editable}
+              update={(form) =>
+                draft.update((document) => ({
+                  ...document,
+                  ministryForm: form,
+                }))
               }
             />
           </details>
@@ -588,8 +629,8 @@ export default function LessonEditor({
           {(!configuration.data?.aiConfigured ||
             !configuration.data.organisationAiApproved) && (
             <div className="alert" role="status">
-              AI assistance is unavailable for this organisation. Your
-              manual editor remains available.
+              AI assistance is unavailable for this organisation. Your manual
+              editor remains available.
             </div>
           )}
           <fieldset disabled={!editable || !session.can("lessons.ai")}>

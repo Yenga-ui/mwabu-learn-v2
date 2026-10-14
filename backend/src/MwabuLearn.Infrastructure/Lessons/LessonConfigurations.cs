@@ -36,6 +36,7 @@ public sealed class LessonRevisionConfiguration : IEntityTypeConfiguration<Lesso
     public void Configure(EntityTypeBuilder<LessonRevision> b)
     {
         LessonConfiguration.Parent(b); b.Property(x => x.DocumentJson).HasMaxLength(250000).IsRequired(); b.Property(x => x.Reason).HasMaxLength(500).IsRequired();
+        b.Property(x => x.SchemaVersion).HasDefaultValue(1);
         b.HasIndex(x => new { x.LessonPlanId, x.Number }).IsUnique(); b.HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.ActorUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }

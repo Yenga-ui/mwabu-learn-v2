@@ -14,7 +14,7 @@ using static MwabuLearn.Infrastructure.Identity.IdentityValidation;
 namespace MwabuLearn.Infrastructure.Lessons;
 
 public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess access, ILessonPlanner planner,
-    ILessonAiProvider provider, IEducationSearchProvider search, IOptions<LessonAiOptions> options) : ILessonGeneration
+    ILessonAiProvider provider, IEducationSearchProvider search, IOptions<LessonAiOptions> options, ILessonSyllabus syllabus) : ILessonGeneration
 {
     private static DateTime Month => new(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1, 0, 0, 0, DateTimeKind.Utc);
     private static GenerationResponse Response(LessonGeneration x, bool result = true) => new(x.Id, x.State, x.BaseRevision, x.Operation, x.SectionCode,
@@ -51,7 +51,13 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
         }
         var relevantDocument = request.SectionCode is null ? detail.Document : detail.Document with
         { Sections = detail.Document.Sections.Where(x => x.Code == request.SectionCode || x.Code == "objectives" || Authoritative.Contains(x.Code)).ToArray() };
-        var context = new ProviderContext(relevantDocument, request.Operation, request.SectionCode, instructions, evidence, selected);
+        // Teacher identity and school metadata are never inference input, including on a school-local host.
+        SyllabusReference? reference = null;
+        if (detail.Document.MinistryForm?.ReferenceCompetenceCode is { Length: > 0 } referenceCode)
+            reference = (await syllabus.ListAsync(org, detail.Document.Curriculum?.Grade ?? detail.Document.Setup.TargetLearners,
+                detail.Document.Curriculum?.Subject ?? detail.Document.Setup.Subject, ct)).SingleOrDefault(x => x.CompetenceCode == referenceCode)
+                ?? throw LessonRules.Invalid("The selected syllabus reference does not belong to this grade and subject.");
+        var context = new ProviderContext(relevantDocument with { MinistryForm = null }, request.Operation, request.SectionCode, instructions, evidence, selected, reference);
         var serialized = LessonJson.Write(context); ProviderHttp.NoPersonalData(serialized);
         if (serialized.Length > options.Value.MaxInputCharacters) throw LessonRules.Invalid("Reduce selected references or lesson text to fit the configured AI input limit.");
         var inputLimit = Encoding.UTF8.GetByteCount(serialized) + 4096;
@@ -170,7 +176,8 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
         LessonDetail? saved = null;
         await Transaction(db, async () =>
         {
-            saved = await planner.SaveAsync(org, plan, new(request.ExpectedRevision, detail.Document.Setup, sections, "Teacher accepted AI proposal: " + generation.Operation), ct);
+            var form = generation.SectionCode is null ? MinistryFormRules.FromSections(sections, detail.Document.MinistryForm) : detail.Document.MinistryForm;
+            saved = await planner.SaveAsync(org, plan, new(request.ExpectedRevision, detail.Document.Setup, sections, "Teacher accepted AI proposal: " + generation.Operation, form), ct);
             generation.State = "applied"; generation.UpdatedAt = DateTime.UtcNow; await db.SaveChangesAsync(ct); return true;
         }, ct);
         return saved!;

@@ -10,8 +10,11 @@ namespace MwabuLearn.Api.Controllers;
 [ApiController, Authorize, RequireHttps, Route("api/organisations/{organisationId:guid}/lessons")]
 [RequestSizeLimit(300000)]
 [ProducesResponseType<ProblemDetails>(400), ProducesResponseType<ProblemDetails>(401), ProducesResponseType<ProblemDetails>(403), ProducesResponseType<ProblemDetails>(404), ProducesResponseType<ProblemDetails>(409)]
-public sealed class LessonsController(ILessonPlanner plans, ILessonSources sources, ILessonGeneration generations) : ControllerBase
+public sealed class LessonsController(ILessonPlanner plans, ILessonSources sources, ILessonGeneration generations, ILessonSyllabus syllabus) : ControllerBase
 {
+    [HttpGet("syllabus-reference"), RequirePermission(PermissionCodes.LessonsRead), EnableRateLimiting("search")]
+    public async Task<IActionResult> Syllabus(Guid organisationId, [FromQuery] string grade, [FromQuery] string subject, CancellationToken ct)
+        => Ok(await syllabus.ListAsync(organisationId, grade, subject, ct));
     [HttpGet, RequirePermission(PermissionCodes.LessonsRead), EnableRateLimiting("search")]
     public async Task<IActionResult> List(Guid organisationId, [FromQuery] PageRequest page, [FromQuery] string? status, CancellationToken ct) => Ok(await plans.ListAsync(organisationId, page, status, ct));
     [HttpPost("reconcile"), RequirePermission(PermissionCodes.LessonsRead), EnableRateLimiting("search")]
