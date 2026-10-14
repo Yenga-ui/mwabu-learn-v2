@@ -1,3 +1,4 @@
+import { Brand } from "../components/Brand";
 import { useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookOpen, ArrowRight } from "lucide-react";
@@ -53,10 +54,7 @@ export default function AuthPages({
     <main className="auth-layout">
       <section className="auth-story">
         <Link to="/" className="brand">
-          <span className="brand-mark">m</span>
-          <span>
-            mwabu<span className="brand-sub">LEARN</span>
-          </span>
+          <Brand />
         </Link>
         <div>
           <p className="eyebrow">FOR EVERY LEARNING DAY</p>
@@ -83,6 +81,9 @@ export default function AuthPages({
       </section>
       <section className="auth-panel">
         <div className="auth-form">
+          <Link to="/" className="brand auth-form-brand">
+            <Brand />
+          </Link>
           <p className="eyebrow">WELCOME TO MWABU LEARN</p>
           <h2>
             {mode === "login"

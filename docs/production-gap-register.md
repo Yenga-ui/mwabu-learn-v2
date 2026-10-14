@@ -1,5 +1,22 @@
 # Live web delivery gap register
 
+## AI Lesson Planner additive feature
+
+Branch `feature/ai-lesson-planner`, base `9ca5670570dcc5ba353aaf94a7660efc320178e9`. [Operating guide](ai-lesson-planner.md) records exact contracts, configuration and acceptance limits. Historical release gaps below refer to the original live-web scope.
+
+| Gap | Resolution | Remaining acceptance |
+| --- | --- | --- |
+| Teacher planning, grounding, editing, sources, revisions, review and PDF absent | Complete new layered lesson module, React workspace/editor/source/review/print screens and additive migration | Local automated verification and complete branch CI required |
+| Real provider integration absent | Secure OpenAI Responses and Brave adapters, strict proposals, configurable limits/approval/pricing; explicit live smoke script | Operator-approved model/keys/pricing are unavailable; no live call claimed verified |
+| External fetch creates SSRF/licensing/privacy risks | Public-IP pinning, redirect/robots/MIME/parser limits, retention, rights gate, selected permitted evidence, minimal provider context | Operator legal/privacy review, provider terms and classroom data training |
+| Lost autosave and stale proposals | Serialized save snapshots, local conflict preservation, explicit expected-revision proposal acceptance | Extreme latency/load usability acceptance |
+| Private lessons could leak into global sync | Separate organization/private visibility, approved-download and bounded cached-ID reconcile/purge | Flutter/web offline client, device encryption and maximum disconnected revalidation policy are future work |
+| Budget uncertainty after failed/cancelled calls | Serializable ceiling reservation, known actual settlement, conservative uncertain charges, interruption cleanup | Compare estimates with provider invoices and establish alerts |
+| Source/document/PDF runtime dependencies | Linux image and CI install Poppler, DejaVu and resource-limit tools; Windows supports manual planning/PDF even if extraction binary absent | Exact Linux image and non-root smoke must pass CI; local Windows lacks pdftotext |
+| Independent review and secure sharing | Reviewer cannot self-publish; owner edits only drafts; same-org teaching colleagues; source and share revocation | Human role-policy review, including retained ProjectManager Teacher delegation compatibility |
+| Classroom acceptance | Tablet/print layout checks, inclusive/low-resource structured sections, teacher-controlled AI proposals | Real school curriculum correctness, multilingual fonts, instructional quality and accessibility review |
+| Production deployment | Prior migrations unchanged; new migration reviewed and tested only in disposable databases | Operator application/backup review; feature is not automatically deployed or merged |
+
 Base `f23584eae59ee661951db8ab2e6be98944b23aba`; branch `feature/production-live-site`.
 Closed implementation gaps below have local executable evidence. Release acceptance remains pending until the complete GitHub workflow passes. See [traceability](requirements-traceability.md) and [operating guide](live-web-platform.md).
 

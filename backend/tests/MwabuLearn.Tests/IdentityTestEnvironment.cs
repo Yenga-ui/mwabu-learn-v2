@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Data.Sqlite;
@@ -31,7 +32,7 @@ internal sealed class IdentityTestEnvironment : IDisposable
     {
         connection.Open();
         var services = new ServiceCollection();
-        services.AddLogging(); services.AddDataProtection(); services.AddAuthentication(); services.AddHttpContextAccessor();
+        services.AddLogging(); services.AddDataProtection().UseEphemeralDataProtectionProvider(); services.AddAuthentication(); services.AddHttpContextAccessor();
         services.AddSingleton<ICurrentUser>(Actor);
         services.AddDbContext<MwabuDbContext>(o =>
         {

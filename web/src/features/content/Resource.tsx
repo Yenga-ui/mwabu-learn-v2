@@ -169,6 +169,14 @@ export default function Resource() {
                 )}
               </section>
               <aside className="card resource-context">
+                {session.can("lessons.manage") && (
+                  <Link
+                    className="button"
+                    to={`/app/lessons/new?resourceId=${resource.content.id}`}
+                  >
+                    Plan a lesson from this resource
+                  </Link>
+                )}
                 <h2>Resource guide</h2>
                 <dl>
                   <dt>Language</dt>

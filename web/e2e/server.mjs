@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { resolve, join } from "node:path";
 import https from "node:https";
 import http from "node:http";
+import { clearTimeout } from "node:timers";
 
 const root = resolve("..");
 const source = process.env.MWABU_POSTGRES_TEST_SERVER;
@@ -94,10 +95,32 @@ async function cleanup() {
   if (stopping) return;
   stopping = true;
   readiness?.close();
-  if (server && server.exitCode === null) {
+  if (server && server.exitCode === null && server.signalCode === null) {
     const exited = new Promise((done) => server.once("exit", done));
     server.kill();
-    await exited;
+    let shutdownTimer;
+    const graceful = await Promise.race([
+      exited.then(() => true),
+      new Promise((done) => {
+        shutdownTimer = setTimeout(() => done(false), 15000);
+      }),
+    ]);
+    clearTimeout(shutdownTimer);
+    if (!graceful && server.exitCode === null && server.signalCode === null) {
+      server.kill("SIGKILL");
+      let forceTimer;
+      const forced = await Promise.race([
+        exited.then(() => true),
+        new Promise((done) => {
+          forceTimer = setTimeout(() => done(false), 5000);
+        }),
+      ]);
+      clearTimeout(forceTimer);
+      if (!forced)
+        throw new Error(
+          "Disposable browser host did not terminate; fixture cleanup requires review.",
+        );
+    }
   }
   if (created)
     await admin.query('DROP DATABASE "' + database + '" WITH (FORCE)');
@@ -173,6 +196,9 @@ try {
   const env = {
     ...process.env,
     MWABU_MIGRATIONS_CONNECTION: connection,
+    MWABU_BROWSER_TEST_HOST: "true",
+    MWABU_BROWSER_API_ROOT: resolve(root, "backend/src/MwabuLearn.Api"),
+    MWABU_BROWSER_WEB_ROOT: resolve("dist"),
     ASPNETCORE_ENVIRONMENT: "Development",
     ASPNETCORE_URLS: "https://127.0.0.1:7443",
     ConnectionStrings__MwabuLearnDb: connection,
@@ -190,6 +216,7 @@ try {
     BootstrapAdministrator__OrganisationCode: "MWABU",
     DevelopmentSeed__Enabled: "true",
     BackgroundWork__Enabled: "false",
+    LessonPlanner__Ai__MinimumRequestIntervalSeconds: "1",
     ContentStorage__RootPath: join(temporary, "content"),
     HttpSecurity__AllowedOrigins__0: "https://127.0.0.1:7443",
     DataProtection__PersistKeysInDatabase: "true",
@@ -225,7 +252,7 @@ try {
     [
       resolve(
         root,
-        "backend/src/MwabuLearn.Api/bin/Release/net10.0/MwabuLearn.Api.dll",
+        "backend/tests/MwabuLearn.BrowserHost/bin/Release/net10.0/MwabuLearn.BrowserHost.dll",
       ),
       "--webroot",
       resolve("dist"),
@@ -234,10 +261,15 @@ try {
       cwd: resolve(root, "backend/src/MwabuLearn.Api"),
       env,
       windowsHide: true,
-      stdio: ["ignore", "ignore", "pipe"],
+      stdio: ["ignore", "pipe", "pipe"],
     },
   );
-  server.stderr.on("data", () => {});
+  let startupOutput = "";
+  const captureStartup = (chunk) => {
+    startupOutput = (startupOutput + chunk.toString()).slice(-6000);
+  };
+  server.stdout.on("data", captureStartup);
+  server.stderr.on("data", captureStartup);
   const ca = await readFile(pem);
   async function request(path, body, token) {
     return await new Promise((done, fail) => {
@@ -273,8 +305,15 @@ try {
   }
   let ready = false;
   for (let attempt = 0; attempt < 120; attempt++) {
-    if (server.exitCode !== null)
-      throw new Error("Isolated test API exited before becoming ready.");
+    if (server.exitCode !== null) {
+      let safeOutput = startupOutput;
+      for (const [name, value] of Object.entries(env))
+        if (/password|key|token/i.test(name) && value)
+          safeOutput = safeOutput.replaceAll(value, "[redacted]");
+      throw new Error(
+        "Isolated test API exited before becoming ready. " + safeOutput,
+      );
+    }
     try {
       await request("/health/live");
       ready = true;

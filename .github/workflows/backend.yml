@@ -30,6 +30,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - name: Install bounded document extraction and PDF font dependencies
+        timeout-minutes: 5
+        run: |
+          test -f /etc/apt/apt-mirrors.txt
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils fonts-dejavu-core util-linux
       - name: Install and verify web application
         working-directory: web
         run: |

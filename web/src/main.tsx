@@ -7,6 +7,7 @@ import { Shell, RouteFailure } from "./app/Shell";
 import { Loading, ToastRegion } from "./components/ui";
 import { ApiError } from "./api/client";
 import "./app/styles.css";
+import "./features/lessons/lessons.css";
 const Auth = lazy(() => import("./auth/AuthPages"));
 const Dashboard = lazy(() => import("./features/dashboard/Dashboard"));
 const Catalogue = lazy(() => import("./features/content/Catalogue"));
@@ -24,6 +25,7 @@ const Devices = lazy(() => import("./features/devices/Devices"));
 const Taxonomy = lazy(() => import("./features/content/Taxonomy"));
 const Audit = lazy(() => import("./features/reports/Audit"));
 const Account = lazy(() => import("./auth/Account"));
+const LessonPlanner = lazy(() => import("./features/lessons/LessonPlanner"));
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -62,6 +64,8 @@ const router = createBrowserRouter([
       { index: true, element: route(<Dashboard />) },
       { path: "resources", element: route(<Catalogue />) },
       { path: "resources/:id", element: route(<Resource />) },
+      { path: "lessons", element: route(<LessonPlanner />) },
+      { path: "lessons/:id", element: route(<LessonPlanner />) },
       { path: "curriculum", element: route(<Curriculum />) },
       { path: "content", element: route(<ContentManagement />) },
       { path: "content/:id", element: route(<ContentManagement />) },
