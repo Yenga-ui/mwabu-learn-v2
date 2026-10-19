@@ -30,8 +30,12 @@ public sealed record CurriculumContext(Guid CurriculumId, Guid VersionId, Guid G
 public sealed record SourceCitation(Guid Id, LessonSourceKind Kind, string Title, string? Url, string? Publisher,
     string? Licence, DateTime? AccessedAt, SourceRetrievalStatus RetrievalStatus, string EvidenceDescription, bool ReusePermitted, Guid? ContentItemId = null);
 public sealed record LessonDocument(LessonSetup Setup, CurriculumContext? Curriculum, LessonSection[] Sections, SourceCitation[] References,
-    MinistryLessonForm? MinistryForm = null, int SchemaVersion = 1);
-public sealed record SaveLessonRequest(int ExpectedRevision, LessonSetup Setup, LessonSection[] Sections, string Reason = "Teacher edit", MinistryLessonForm? MinistryForm = null);
+    MinistryLessonForm? MinistryForm = null, int SchemaVersion = 1, TeachingStep[]? TeachingSteps = null);
+public sealed record TeachingResource(Guid ContentItemId, Guid AssetId, string Checksum, string Title);
+public sealed record TeachingStep(string Id, string SectionCode, string Title, string Phase, int Minutes,
+    string TeacherInstructions, string LearnerExplanation, string Hint, string Answer, string TeacherNotes,
+    TeachingResource[] Resources);
+public sealed record SaveLessonRequest(int ExpectedRevision, LessonSetup Setup, LessonSection[] Sections, string Reason = "Teacher edit", MinistryLessonForm? MinistryForm = null, TeachingStep[]? TeachingSteps = null);
 public sealed record LessonSummary(Guid Id, Guid OrganisationId, Guid OwnerUserId, string Title, PlanningMode Mode,
     LessonStatus Status, int Revision, bool IsOrganisationTemplate, DateTime CreatedAt, DateTime? UpdatedAt);
 public sealed record LessonDetail(LessonSummary Lesson, LessonDocument Document, bool CanEdit, bool CanReview, int ViewedRevision, string AuthorName = "");

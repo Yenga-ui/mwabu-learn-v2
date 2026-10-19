@@ -1,0 +1,13 @@
+# Classroom experience architecture
+
+Sprint 3 starts from main 4c5d48f, the merged Sprint 2 / PR #4. The existing classroom-readiness branch was clean and identical to main after fetching remote references. No repository AGENTS.md instructions were present.
+
+The primary journey is one teacher, one phone, one mirrored projector. Learner assessment remains a separate authenticated workflow; classroom demonstrations must not create learner attempts or attainment records.
+
+TeachingStep is an optional, additive member of the existing immutable LessonDocument revision. Array order defines teaching order. SectionCode maps each step to an existing planning/Ministry section, preserving the original plan rather than replacing it. The phase is bounded text so schools can use different methods. Teacher instructions and notes are distinct from learner-facing explanations, hints and answers. Existing documents deserialize without steps and can be prepared explicitly. Existing saves and accepted AI proposals preserve steps when omitted. Step data is excluded from legacy lesson-generation prompts to avoid introducing private guidance into provider input.
+
+TeachingResource pins ContentItemId, AssetId and SHA-256 checksum, with a readable title. Save validation requires the exact active asset of a currently published resource. Playback must resolve this exact asset and checksum again; a missing or revoked version must be shown as unavailable, never substituted with a newer draft or primary asset. Existing authentication, organisation visibility, ownership, optimistic revision checking, review, audit and media endpoints remain authoritative. No new permissions or database schema are needed: steps are stored in existing revision JSON with document schema version 3.
+
+Stage audit: current presentation pins revision but renders planning section bodies and has an explicit teacher-notes toggle. It also offers a global resource selector that follows the current primary asset. These behaviors need replacement in the teacher-led journey: projection must use explicit learner-facing text and pinned step assets, with private guidance confined to preparation. Existing published-only activity and media APIs, fixed declarative renderer, durable governed AI jobs and integrity-checked offline packages are reused.
+
+Physical Android/projector acceptance is separate from browser viewport testing. The website cannot promise casting, forced orientation or independent external displays on arbitrary hardware. No native application, production migrations or deployment is authorized by this sprint.

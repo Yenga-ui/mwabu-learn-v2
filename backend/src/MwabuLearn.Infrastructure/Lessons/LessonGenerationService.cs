@@ -58,7 +58,7 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
             reference = (await syllabus.ListAsync(org, detail.Document.Curriculum?.Grade ?? detail.Document.Setup.TargetLearners,
                 detail.Document.Curriculum?.Subject ?? detail.Document.Setup.Subject, ct)).SingleOrDefault(x => x.CompetenceCode == referenceCode)
                 ?? throw LessonRules.Invalid("The selected syllabus reference does not belong to this grade and subject.");
-        var context = new ProviderContext(relevantDocument with { MinistryForm = null }, request.Operation, request.SectionCode, instructions, evidence, selected, reference);
+        var context = new ProviderContext(relevantDocument with { MinistryForm = null, TeachingSteps = null }, request.Operation, request.SectionCode, instructions, evidence, selected, reference);
         var serialized = LessonJson.Write(context); ProviderHttp.NoPersonalData(serialized);
         if (serialized.Length > options.Value.MaxInputCharacters) throw LessonRules.Invalid("Reduce selected references or lesson text to fit the configured AI input limit.");
         var inputLimit = Encoding.UTF8.GetByteCount(serialized) + 4096;

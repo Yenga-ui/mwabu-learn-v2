@@ -44,9 +44,15 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
             var refs = await References(plan.Id, org, ct);
             var sections = CurriculumGrounding.Bind(ValidateSections(request.Sections, refs.Select(x => x.Id).ToArray()), context);
             var previous = id.HasValue ? await db.LessonRevisions.AsNoTracking().SingleAsync(x => x.LessonPlanId == plan.Id && x.Number == plan.Revision, ct) : null;
-            var form = request.MinistryForm ?? (previous is null ? null : LessonJson.Read<LessonDocument>(previous.DocumentJson).MinistryForm);
+            var previousDocument = previous is null ? null : LessonJson.Read<LessonDocument>(previous.DocumentJson);
+            var form = request.MinistryForm ?? previousDocument?.MinistryForm;
+            var steps = JourneyRules.Validate(request.TeachingSteps ?? previousDocument?.TeachingSteps ?? [], sections);
+            foreach (var resource in steps.SelectMany(x => x.Resources))
+                if (!await db.ContentAssets.AsNoTracking().AnyAsync(a => a.Id == resource.AssetId && a.ContentItemId == resource.ContentItemId &&
+                    a.Checksum == resource.Checksum && !a.IsPendingDeletion && db.ContentItems.Any(c => c.Id == a.ContentItemId && c.Status == Domain.Entities.Content.ContentStatus.Published), ct))
+                    throw LessonRules.Invalid("A teaching resource version is unavailable or unpublished. Select an approved version.");
             var document = new LessonDocument(setup, context, sections, refs,
-                MinistryFormRules.Validate(form ?? MinistryFormRules.FromSections(sections), setup.DurationMinutes), 2);
+                MinistryFormRules.Validate(form ?? MinistryFormRules.FromSections(sections), setup.DurationMinutes), 3, steps);
             plan.Title = setup.Title; plan.Mode = setup.Mode; plan.LearningOutcomeId = context?.OutcomeId;
             Append(plan, document, reason);
             await db.SaveChangesAsync(ct); id = plan.Id; return true;

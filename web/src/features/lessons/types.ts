@@ -47,12 +47,32 @@ export interface Citation {
   contentItemId: string | null;
 }
 export interface LessonDocument {
+  teachingSteps?: TeachingStep[] | null;
   schemaVersion?: number;
   ministryForm?: MinistryLessonForm | null;
   setup: Setup;
   curriculum: CurriculumContext | null;
   sections: Section[];
   references: Citation[];
+}
+export interface TeachingResource {
+  contentItemId: string;
+  assetId: string;
+  checksum: string;
+  title: string;
+}
+export interface TeachingStep {
+  id: string;
+  sectionCode: string;
+  title: string;
+  phase: string;
+  minutes: number;
+  teacherInstructions: string;
+  learnerExplanation: string;
+  hint: string;
+  answer: string;
+  teacherNotes: string;
+  resources: TeachingResource[];
 }
 export interface MinistryLessonForm {
   syllabusProvenance?: string;
