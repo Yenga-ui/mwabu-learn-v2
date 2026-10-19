@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { readFileSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 
 type Account = { email: string; password: string };
 type Fixture = {
@@ -242,7 +243,7 @@ test("content manager uploads, tags, maps, reviews and publishes a resource", as
   await page.goto("/app/content");
   await page.getByRole("button", { name: "Create resource" }).click();
   await page.getByLabel("Resource title").fill("Browser reviewed lesson");
-  await page.getByLabel("URL name").fill("browser-reviewed-lesson");
+  await page.getByLabel("URL name").fill(`browser-reviewed-${randomUUID()}`);
   await page
     .getByRole("dialog")
     .getByRole("button", { name: /Save|Create/ })
@@ -271,12 +272,18 @@ test("content manager uploads, tags, maps, reviews and publishes a resource", as
   await page
     .getByRole("button", { name: "Add selected tag", exact: true })
     .click();
+  await expect(
+    page.locator(".tag-list .badge", { hasText: "Fractions" }),
+  ).toBeVisible();
   await page
     .getByRole("combobox", { name: "Add collection", exact: true })
     .selectOption({ label: "Everyday mathematics" });
   await page
     .getByRole("button", { name: "Add selected collection", exact: true })
     .click();
+  await expect(
+    page.locator(".assignment", { hasText: "Everyday mathematics" }),
+  ).toBeVisible();
   // Another test creates an empty framework. Never rely on random GUID ordering.
   for (const [label, name] of [
     ["Curriculum", "Demonstration Learning Framework"],
@@ -295,6 +302,13 @@ test("content manager uploads, tags, maps, reviews and publishes a resource", as
   await page
     .getByRole("button", { name: /Connect Represent one half/ })
     .click();
+  // Wait for the saved connection, not only the click: publishing must not race
+  // the assignment request and its content/cache updates on a busy CI runner.
+  await expect(
+    page.locator(".assignment", {
+      hasText: "Represent one half using familiar objects",
+    }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Submit for review" }).click();
   await expect(page.getByText("InReview", { exact: true })).toBeVisible();
   await page

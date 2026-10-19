@@ -10,7 +10,9 @@ Current local results: restore passed; Release build passed with zero warnings/e
 
 Generated API wwwroot output is removed from the Git index and ignored, with local copies preserved. Original logo/favicon sources remain in web/public. Docker excludes local wwwroot and builds/copies fresh web/dist; development can use the documented --webroot path. This removes obsolete bundles without altering application data.
 
-Browser and final GitHub CI acceptance are recorded separately when complete. Live provider/classroom acceptance and deployment approval remain release gates. The follow-up scope is in [the separate implementation plan](lesson-platform-next-implementation-plan.md).
+All 34 local Chromium workflows passed on HTTPS with the real API and isolated PostgreSQL, including generation/apply, section refinement, revision comparison, failure preservation, review, export and authorization. PR workflow run [39262278393](https://github.com/Yenga-ui/mwabu-learn-v2/actions/runs/39262278393) passed all gates on commit 2e6b9b0, including the Linux image and non-root smoke tests. The parallel push run exposed a content-publication test race: it clicked assignment/review actions before prior saves completed. The follow-up test waits for persisted tag, collection and curriculum connection UI before proceeding, preserving all assertions and zero retries. Final checks must pass on the follow-up commit too.
+
+Live provider/classroom acceptance and deployment approval remain release gates. Connected GitHub permissions cannot read branch protection (403); configured required-check policy needs repository-owner confirmation. The follow-up scope is in [the separate implementation plan](lesson-platform-next-implementation-plan.md).
 
 ## Historical verification
 
