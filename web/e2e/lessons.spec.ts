@@ -671,3 +671,100 @@ test("tablet lesson editor fits the viewport and offers a print-friendly preview
   await expect(page.locator(".lesson-toolbar")).toBeHidden();
   await expect(page.locator(".lesson-print")).toBeVisible();
 });
+test("teacher presents a pinned saved revision with section navigation and authorized teaching resources", async ({
+  page,
+}) => {
+  await login(page);
+  const id = await createFree(page, "Classroom halves presentation");
+  const path = `/api/organisations/${fixture().schoolId}/lessons/${id}`;
+  const catalogue = await (
+    await page.request.get("/api/learning/content?text=sharing")
+  ).json();
+  const resource = catalogue.items[0];
+  const attached = await mutate(page, path + "/sources", {
+    contentItemId: resource.id,
+  });
+  expect(attached.status).toBe(201);
+  expect(
+    (
+      await mutate(
+        page,
+        path + `/sources/${attached.body.id}`,
+        { isSelected: true, isExcluded: false, priority: 50 },
+        "PATCH",
+      )
+    ).status,
+  ).toBe(200);
+  const detail = await (await page.request.get(path)).json();
+  const sections = detail.document.sections.map(
+    (section: { code: string; body: string }) => ({
+      ...section,
+      body:
+        section.code === "objectives"
+          ? "Identify and explain one half."
+          : section.code === "starter"
+            ? "Compare two equal pieces of paper."
+            : section.code === "teacher-activities"
+              ? "Private teacher reminder."
+              : section.body,
+    }),
+  );
+  expect(
+    (
+      await mutate(
+        page,
+        path,
+        {
+          expectedRevision: 1,
+          setup: detail.document.setup,
+          sections,
+          reason: "Prepare classroom presentation",
+        },
+        "PUT",
+      )
+    ).status,
+  ).toBe(200);
+  await page.reload();
+  await page
+    .getByRole("button", { name: "Present saved lesson", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/present\?revision=2$/);
+  await expect(page.getByText(/Saved revision 2/)).toBeVisible();
+  await expect(
+    page.getByText("Identify and explain one half.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Save now", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Private teacher reminder.", { exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "Next section", exact: true }).click();
+  await expect(
+    page.getByText("Compare two equal pieces of paper.", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("combobox", { name: "Open a teaching resource", exact: true })
+    .selectOption(resource.id);
+  await expect(page.locator("iframe.document-viewer")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Show teacher notes", exact: true })
+    .click();
+  await expect(
+    page.getByText("Private teacher reminder.", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Enter fullscreen", exact: true })
+    .click();
+  if (await page.evaluate(() => document.fullscreenEnabled)) {
+    await expect(
+      page.getByRole("button", { name: "Exit fullscreen", exact: true }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Exit fullscreen", exact: true })
+      .click();
+  } else
+    await expect(
+      page.getByRole("status").filter({ hasText: /Fullscreen/ }),
+    ).toBeVisible();
+});

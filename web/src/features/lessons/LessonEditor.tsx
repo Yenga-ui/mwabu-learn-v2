@@ -381,6 +381,20 @@ export default function LessonEditor({
         <Link className="button secondary" to="/app/lessons">
           All lesson plans
         </Link>
+        <button
+          className="button secondary"
+          disabled={busy || draft.conflict}
+          onClick={() =>
+            void run(async () => {
+              const saved = await draft.save();
+              navigate(
+                `/app/lessons/${saved.lesson.id}/present?revision=${saved.lesson.revision}`,
+              );
+            })
+          }
+        >
+          Present saved lesson
+        </button>
       </div>
       {!!draft.error && <ErrorNotice error={draft.error} />}
       {!!error && <ErrorNotice error={error} />}

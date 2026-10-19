@@ -2,6 +2,8 @@
 
 Prepared 19 October 2026. This is a separate follow-up scope after PR #2 passes its required checks; it does not authorize deployment.
 
+Execution has started on `feature/teacher-ux-ai-optimisation` after PR #2 merged. The master-request reconciliation is in [the repository audit](teacher-platform-audit.md), and delivered scope, evidence and remaining work are maintained in [the implementation readiness report](teacher-platform-readiness.md). This earlier plan remains architectural context, not a claim of completion.
+
 ## 1. Teacher-facing curriculum selection
 
 Inventory curriculum and lesson forms, including Ministry form, source explorer and printable exports. Present human-readable curriculum, grade, subject, topic and competence names. Keep stable IDs/codes in API contracts, stored revisions and administrative diagnostics. Preserve historical records and resolve duplicate names using descriptive parent context.
