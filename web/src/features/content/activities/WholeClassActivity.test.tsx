@@ -51,6 +51,10 @@ describe("whole-class activity", () => {
     expect(screen.queryByText("Answer: 1/2")).toBeNull();
     expect(screen.queryByText("Two equal parts make halves.")).toBeNull();
     expect(screen.queryByRole("button", { name: "Check answers" })).toBeNull();
+    expect(screen.queryByText("Check answers", { exact: true })).toBeNull();
+    expect(
+      screen.queryByText("Try the activity again", { exact: true }),
+    ).toBeNull();
     fireEvent.click(
       screen.getByRole("button", { name: "Reveal activity answer" }),
     );

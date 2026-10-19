@@ -568,6 +568,7 @@ function ResourcePicker({
                   </button>
                   <button
                     className="button secondary"
+                    disabled={resourceKind(a.mimeType) === "Download-only file"}
                     onClick={() =>
                       onAttach({
                         contentItemId: r.content.id,

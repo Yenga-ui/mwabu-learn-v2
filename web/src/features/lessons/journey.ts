@@ -3,9 +3,9 @@ export function resourceKind(mime: string) {
   if (mime === "application/vnd.mwabu.activity+json")
     return "Interactive activity";
   if (mime === "application/pdf") return "PDF document";
-  if (mime.startsWith("image/")) return "Image";
-  if (mime.startsWith("audio/")) return "Audio";
-  if (mime.startsWith("video/")) return "Video";
+  if (["image/png", "image/jpeg", "image/gif", "image/webp"].includes(mime)) return "Image";
+  if (["audio/mpeg", "audio/ogg", "audio/wav"].includes(mime)) return "Audio";
+  if (["video/mp4", "video/webm"].includes(mime)) return "Video";
   return "Download-only file";
 }
 

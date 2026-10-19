@@ -1204,6 +1204,12 @@ test("Grade 4 fractions journey works on phone portrait and landscape, with revi
     await canvas
       .getByRole("combobox", { name: "Teaching resource", exact: true })
       .selectOption(asset.id);
+    await expect(
+      canvas.getByText("Check answers", { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      canvas.getByText("Try the activity again", { exact: true }),
+    ).toHaveCount(0);
     await canvas.getByRole("button", { name: "Part 1", exact: true }).click();
     await canvas.getByRole("button", { name: "Part 2", exact: true }).click();
     await expect(

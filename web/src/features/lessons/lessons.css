@@ -308,6 +308,12 @@
 .classroom-stage .activity-player {
   font-size: clamp(1.2rem, 2vw, 2rem);
 }
+.classroom-stage button,
+.classroom-stage input,
+.classroom-stage select,
+.classroom-stage label {
+  font: inherit;
+}
 .classroom-controls,
 .classroom-overview,
 .classroom-timer {

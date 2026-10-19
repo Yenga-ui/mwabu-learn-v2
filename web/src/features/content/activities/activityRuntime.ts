@@ -292,7 +292,6 @@ export function mountActivity(
       feedback.push(element("p", "", group));
     }
     const submit = element("button", "Check answers", form);
-    submit.hidden = wholeClass;
     submit.type = "submit";
     submit.className = "button";
     const summary = element("p", "", form);
@@ -340,7 +339,6 @@ export function mountActivity(
       feedback[index] = element("p", "", group);
     });
     const check = element("button", "Check answers", form);
-    check.hidden = wholeClass;
     check.type = "submit";
     check.className = "button";
     const summary = element("p", "", form);
@@ -489,6 +487,15 @@ export function mountActivity(
       "Use Next to work at your own pace. The explanation never starts automatically.",
     );
     render();
+  }
+  if (wholeClass) {
+    host.querySelectorAll("form").forEach((form) => {
+      form.onsubmit = (event) => event.preventDefault();
+      // Remove practice controls entirely: CSS can override the hidden attribute.
+      form
+        .querySelectorAll(":scope > button")
+        .forEach((control) => control.remove());
+    });
   }
   return () => {
     if (timer !== undefined) clearInterval(timer);
