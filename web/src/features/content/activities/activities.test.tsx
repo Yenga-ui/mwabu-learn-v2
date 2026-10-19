@@ -9,6 +9,71 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 describe("safe interactive teaching content", () => {
+  it.each([
+    "matching",
+    "sequencing",
+    "fill-blank",
+    "number-line",
+    "fraction",
+    "place-value-exercise",
+  ] as const)("plays and marks %s with accessible controls", (kind) => {
+    const definition = {
+      ...sampleActivity(),
+      schemaVersion: 2,
+      kind,
+      number: 2,
+      minimum: 0,
+      maximum: 10,
+      denominator: 4,
+      questions: ["matching", "sequencing", "fill-blank"].includes(kind)
+        ? [
+            {
+              prompt: "Complete",
+              options: ["one", "two"],
+              correctOption: 0,
+              explanation: "Count carefully",
+            },
+          ]
+        : [],
+    };
+    render(<ActivityPlayer definition={definition} />);
+    if (kind === "matching")
+      fireEvent.change(screen.getByLabelText("Matching answer"), {
+        target: { value: "0" },
+      });
+    if (kind === "sequencing") {
+      fireEvent.change(screen.getByLabelText("Position 1"), {
+        target: { value: "0" },
+      });
+      fireEvent.change(screen.getByLabelText("Position 2"), {
+        target: { value: "1" },
+      });
+    }
+    if (kind === "fill-blank")
+      fireEvent.change(screen.getByLabelText("Your answer"), {
+        target: { value: " ONE " },
+      });
+    if (kind === "number-line")
+      fireEvent.input(screen.getByRole("slider"), { target: { value: "2" } });
+    if (kind === "fraction") {
+      fireEvent.click(screen.getByRole("button", { name: "Part 1" }));
+      fireEvent.click(screen.getByRole("button", { name: "Part 2" }));
+    }
+    if (kind === "place-value-exercise") {
+      fireEvent.click(screen.getByRole("button", { name: "Add one ones" }));
+      fireEvent.click(screen.getByRole("button", { name: "Add one ones" }));
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Check answers" }));
+    expect(
+      screen.getByRole("status", { name: "Practice result" }),
+    ).toHaveTextContent("1 of 1 correct");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Try the activity again" }),
+    );
+    expect(
+      screen.getByRole("status", { name: "Practice result" }),
+    ).toBeEmptyDOMElement();
+  });
   it("marks real selected answers with explanations and supports another attempt", () => {
     render(<ActivityPlayer definition={sampleActivity()} />);
     fireEvent.click(

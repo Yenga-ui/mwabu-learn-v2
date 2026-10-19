@@ -109,7 +109,11 @@ function ActivityForm({
   const client = useQueryClient();
   const definition = {
     ...value,
-    questions: value.kind === "quiz" ? questions : [],
+    questions: ["quiz", "matching", "sequencing", "fill-blank"].includes(
+      value.kind,
+    )
+      ? questions
+      : [],
   };
   const dirty =
     editable && JSON.stringify(definition) !== JSON.stringify(initial);
@@ -175,11 +179,26 @@ function ActivityForm({
                 setValue({
                   ...value,
                   kind: e.target.value as ActivityDefinition["kind"],
+                  schemaVersion: 2,
+                  number:
+                    e.target.value === "fraction"
+                      ? 1
+                      : e.target.value === "number-line"
+                        ? 5
+                        : value.number,
                 })
               }
             >
               <option value="quiz">Multiple-choice practice</option>
               <option value="place-value">Place-value animation</option>
+              <option value="matching">Matching</option>
+              <option value="sequencing">Sequencing</option>
+              <option value="fill-blank">Fill in the blank</option>
+              <option value="number-line">Number line</option>
+              <option value="fraction">Fraction visualisation</option>
+              <option value="place-value-exercise">
+                Build with place values
+              </option>
             </select>
           </label>
           <label>
@@ -202,22 +221,89 @@ function ActivityForm({
               }
             />
           </label>
-          {value.kind === "place-value" ? (
-            <label>
-              Number to explore
-              <input
-                type="number"
-                required
-                min={0}
-                max={9999}
-                value={value.number}
-                onChange={(e) =>
-                  setValue({ ...value, number: Number(e.target.value) })
-                }
-              />
-            </label>
+          {[
+            "place-value",
+            "number-line",
+            "fraction",
+            "place-value-exercise",
+          ].includes(value.kind) ? (
+            <>
+              <label>
+                Number to explore
+                <input
+                  type="number"
+                  required
+                  min={0}
+                  max={9999}
+                  value={value.number}
+                  onChange={(e) =>
+                    setValue({ ...value, number: Number(e.target.value) })
+                  }
+                />
+              </label>
+              {value.kind === "number-line" && (
+                <>
+                  <label>
+                    Line starts at
+                    <input
+                      required
+                      type="number"
+                      min={-1000}
+                      max={999}
+                      value={value.minimum ?? 0}
+                      onChange={(e) =>
+                        setValue({ ...value, minimum: Number(e.target.value) })
+                      }
+                    />
+                  </label>
+                  <label>
+                    Line ends at
+                    <input
+                      required
+                      type="number"
+                      min={1}
+                      max={1000}
+                      value={value.maximum ?? 20}
+                      onChange={(e) =>
+                        setValue({ ...value, maximum: Number(e.target.value) })
+                      }
+                    />
+                  </label>
+                </>
+              )}
+              {value.kind === "fraction" && (
+                <label>
+                  Equal parts in the whole
+                  <input
+                    required
+                    type="number"
+                    min={2}
+                    max={24}
+                    value={value.denominator ?? 4}
+                    onChange={(e) =>
+                      setValue({
+                        ...value,
+                        denominator: Number(e.target.value),
+                      })
+                    }
+                  />
+                </label>
+              )}
+            </>
           ) : (
             <>
+              {value.kind === "sequencing" && (
+                <p>
+                  Enter answer choices in the correct order. Learners choose the
+                  order themselves.
+                </p>
+              )}
+              {value.kind === "fill-blank" && (
+                <p>
+                  Answer choices are accepted spellings or equivalent answers.
+                  They are hidden during practice.
+                </p>
+              )}
               {questions.map((question, index) => (
                 <fieldset key={index}>
                   <legend>Question {index + 1}</legend>

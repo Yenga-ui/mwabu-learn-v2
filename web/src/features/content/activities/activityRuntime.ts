@@ -6,12 +6,23 @@ export interface ActivityQuestion {
 }
 export interface ActivityDefinition {
   schemaVersion: number;
-  kind: "quiz" | "place-value";
+  kind:
+    | "quiz"
+    | "place-value"
+    | "matching"
+    | "sequencing"
+    | "fill-blank"
+    | "number-line"
+    | "fraction"
+    | "place-value-exercise";
   title: string;
   instructions: string;
   language: string;
   questions: ActivityQuestion[];
   number: number;
+  minimum?: number;
+  maximum?: number;
+  denominator?: number;
 }
 export const activityMime = "application/vnd.mwabu.activity+json";
 
@@ -45,7 +56,192 @@ export function mountActivity(host: HTMLElement, activity: ActivityDefinition) {
   host.lang = activity.language;
   element("h2", activity.title);
   element("p", activity.instructions);
-  if (activity.kind === "quiz") {
+  if (activity.kind !== "quiz" && activity.kind !== "place-value") {
+    const form = element("form");
+    const feedback: HTMLElement[] = [];
+    const read: (() => boolean)[] = [];
+    const resets: (() => void)[] = [];
+    if (["matching", "sequencing", "fill-blank"].includes(activity.kind)) {
+      activity.questions.forEach((q, index) => {
+        const group = element("fieldset", "", form);
+        element("legend", `${index + 1}. ${q.prompt}`, group);
+        if (activity.kind === "fill-blank") {
+          const label = element("label", "Your answer", group);
+          const input = element("input", "", label);
+          input.required = true;
+          input.maxLength = 300;
+          read.push(() =>
+            q.options.some(
+              (x) =>
+                x.trim().normalize().toUpperCase() ===
+                input.value.trim().normalize().toUpperCase(),
+            ),
+          );
+        } else {
+          const choices: HTMLSelectElement[] = [];
+          const count = activity.kind === "sequencing" ? q.options.length : 1;
+          for (let position = 0; position < count; position++) {
+            const label = element(
+              "label",
+              count === 1 ? "Matching answer" : `Position ${position + 1}`,
+              group,
+            );
+            const select = element("select", "", label);
+            select.required = true;
+            const empty = element("option", "Choose…", select);
+            empty.value = "";
+            [...q.options.keys()].reverse().forEach((i) => {
+              const option = element("option", q.options[i], select);
+              option.value = String(i);
+            });
+            choices.push(select);
+          }
+          read.push(() =>
+            choices.every(
+              (select, i) =>
+                select.value ===
+                String(activity.kind === "sequencing" ? i : q.correctOption),
+            ),
+          );
+        }
+        feedback.push(element("p", "", group));
+      });
+    } else {
+      const group = element("fieldset", "", form);
+      element(
+        "legend",
+        activity.kind === "fraction"
+          ? `Shade ${activity.number} of ${activity.denominator ?? 4} equal parts`
+          : `Build ${activity.number}`,
+        group,
+      );
+      if (activity.kind === "number-line") {
+        const minimum = activity.minimum ?? 0,
+          maximum = activity.maximum ?? 20;
+        const label = element(
+          "label",
+          `Number line from ${minimum} to ${maximum}`,
+          group,
+        );
+        const input = element("input", "", label);
+        input.type = "range";
+        input.min = String(minimum);
+        input.max = String(maximum);
+        input.step = "1";
+        input.value = String(minimum);
+        const output = element("output", input.value, group);
+        input.oninput = () => {
+          output.textContent = input.value;
+        };
+        element(
+          "p",
+          "Use the arrow keys to move one step, or select a position on the line.",
+          group,
+        );
+        read.push(() => Number(input.value) === activity.number);
+        resets.push(() => {
+          input.value = String(minimum);
+          output.textContent = input.value;
+        });
+      } else if (activity.kind === "fraction") {
+        const selected = new Set<number>();
+        const parts: HTMLButtonElement[] = [];
+        const caption = element(
+          "p",
+          `0 / ${activity.denominator ?? 4} shaded`,
+          group,
+        );
+        const row = element("div", "", group);
+        row.className = "fraction-parts";
+        for (let i = 0; i < (activity.denominator ?? 4); i++) {
+          const part = button(
+            `Part ${i + 1}`,
+            () => {
+              if (selected.has(i)) selected.delete(i);
+              else selected.add(i);
+              part.setAttribute("aria-pressed", String(selected.has(i)));
+              caption.textContent = `${selected.size} / ${activity.denominator ?? 4} shaded`;
+            },
+            row,
+          );
+          part.setAttribute("aria-pressed", "false");
+          parts.push(part);
+        }
+        read.push(() => selected.size === activity.number);
+        resets.push(() => {
+          selected.clear();
+          parts.forEach((x) => x.setAttribute("aria-pressed", "false"));
+          caption.textContent = `0 / ${activity.denominator ?? 4} shaded`;
+        });
+      } else {
+        const digits = [0, 0, 0, 0];
+        const inputs: HTMLInputElement[] = [];
+        const output = element("output", "0", group);
+        const update = () => {
+          output.textContent = `${digits.reduce((sum, x, i) => sum + x * 10 ** (3 - i), 0)} = ${digits.map((x, i) => x * 10 ** (3 - i)).join(" + ")}`;
+        };
+        ["Thousands", "Hundreds", "Tens", "Ones"].forEach((name, i) => {
+          const row = element("div", "", group);
+          const label = element("label", name, row);
+          const input = element("input", "", label);
+          input.type = "number";
+          input.min = "0";
+          input.max = "9";
+          input.value = "0";
+          input.required = true;
+          inputs.push(input);
+          input.oninput = () => {
+            digits[i] = Number(input.value);
+            update();
+          };
+          const set = (delta: number) => {
+            digits[i] = Math.max(0, Math.min(9, digits[i] + delta));
+            input.value = String(digits[i]);
+            update();
+          };
+          button(`Add one ${name.toLowerCase()}`, () => set(1), row);
+          button(`Remove one ${name.toLowerCase()}`, () => set(-1), row);
+        });
+        read.push(
+          () => digits.join("") === String(activity.number).padStart(4, "0"),
+        );
+        resets.push(() => {
+          digits.fill(0);
+          inputs.forEach((x) => (x.value = "0"));
+          update();
+        });
+        update();
+      }
+      feedback.push(element("p", "", group));
+    }
+    const submit = element("button", "Check answers", form);
+    submit.type = "submit";
+    submit.className = "button";
+    const summary = element("p", "", form);
+    summary.setAttribute("role", "status");
+    summary.setAttribute("aria-label", "Practice result");
+    form.onsubmit = (event) => {
+      event.preventDefault();
+      let score = 0;
+      read.forEach((mark, i) => {
+        const correct = mark();
+        if (correct) score++;
+        feedback[i].textContent =
+          `${correct ? "Correct." : "Try again."} ${activity.questions[i]?.explanation ?? "Use the equal parts or place values to build the target, then check again."}`;
+      });
+      summary.textContent = `${score} of ${read.length} correct. This is practice feedback; no learner results are uploaded.`;
+    };
+    button(
+      "Try the activity again",
+      () => {
+        form.reset();
+        resets.forEach((reset) => reset());
+        summary.textContent = "";
+        feedback.forEach((x) => (x.textContent = ""));
+      },
+      form,
+    );
+  } else if (activity.kind === "quiz") {
     const form = element("form");
     const answers: HTMLInputElement[][] = [];
     const feedback: HTMLElement[] = [];
