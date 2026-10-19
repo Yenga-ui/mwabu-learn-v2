@@ -7,6 +7,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -31,7 +32,7 @@ public sealed class CatalogueAuthorizationTests
         var controllerTypes = new[] { typeof(CurriculaController), typeof(ContentController), typeof(CollectionsController), typeof(TagsController) };
         var endpoints = factory.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>()
             .Where(x => controllerTypes.Contains(x.Metadata.GetMetadata<ControllerActionDescriptor>()?.ControllerTypeInfo.AsType())).ToArray();
-        Assert.Equal(55, endpoints.Length);
+        Assert.Equal(57, endpoints.Length); // Includes validated activity authoring and management-only draft preview.
         foreach (var endpoint in endpoints)
         {
             var path = "/" + Regex.Replace(endpoint.RoutePattern.RawText!.TrimStart('/'), @"\{[^}]+\}", Guid.NewGuid().ToString());
@@ -43,7 +44,8 @@ public sealed class CatalogueAuthorizationTests
                 Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
                 using var scopedRequest = Request(method, path);
                 using var scoped = await teacher.Client.SendAsync(scopedRequest);
-                if (method == "GET")
+                var managementOnly = endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>().Any(x => x.Policy?.StartsWith("permission:CatalogueManagement:", StringComparison.Ordinal) == true);
+                if (method == "GET" && !managementOnly)
                     Assert.True(scoped.StatusCode is HttpStatusCode.OK or HttpStatusCode.NotFound, $"Reader GET {path}: {scoped.StatusCode}");
                 else
                     Assert.True(scoped.StatusCode == HttpStatusCode.Forbidden, $"Organisation manager {method} {path}: {scoped.StatusCode}");
@@ -226,6 +228,6 @@ public sealed class CatalogueAuthorizationTests
                 count++;
             }
         }
-        Assert.Equal(55, count);
+        Assert.Equal(57, count);
     }
 }

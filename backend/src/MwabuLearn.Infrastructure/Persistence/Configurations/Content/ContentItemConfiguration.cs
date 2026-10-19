@@ -12,7 +12,7 @@ public sealed class ContentItemConfiguration : IEntityTypeConfiguration<ContentI
         {
             t.HasCheckConstraint("CK_ContentItems_SortOrder", "\"SortOrder\" >= 0");
             t.HasCheckConstraint("CK_ContentItems_Duration", "\"EstimatedDurationMinutes\" IS NULL OR \"EstimatedDurationMinutes\" > 0");
-            t.HasCheckConstraint("CK_ContentItems_Status", "\"Status\" IN ('Draft', 'InReview', 'Published', 'Archived')");
+            t.HasCheckConstraint("CK_ContentItems_Status", "\"Status\" IN ('Draft', 'InReview', 'Approved', 'Published', 'Archived')");
             t.HasCheckConstraint("CK_ContentItems_PublishedAt", "\"Status\" <> 'Published' OR \"PublishedAt\" IS NOT NULL");
         });
         builder.HasKey(x => x.Id);

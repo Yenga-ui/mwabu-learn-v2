@@ -25,6 +25,7 @@ builder.Services.AddScoped<CatalogueVisibilityFilter>();
 builder.Services.AddControllers(options => options.Filters.AddService<CatalogueVisibilityFilter>()).AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false)));
 builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddScoped<ActivityDocuments>();
 builder.Services.AddLessonPlanning(builder.Configuration);
 builder.Services.AddScoped<ILearningCatalogue, LearningCatalogue>();
 builder.Services.AddScoped<MwabuLearn.Application.Education.IProjectService, MwabuLearn.Infrastructure.Education.ProjectService>();

@@ -22,6 +22,7 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
         result && x.ExpiresAt > DateTime.UtcNow && x.ResultJson is not null ? LessonJson.Read<GeneratedLesson>(x.ResultJson) : null);
     public async Task<GenerationResponse> GenerateAsync(Guid org, Guid plan, GenerateLessonRequest request, CancellationToken ct)
     {
+        using var measurement = LessonAiTelemetry.Measure("end-to-end", provider.Name);
         await access.Demand(org, PermissionCodes.LessonsAi, ct); var entity = await access.Edit(org, plan, ct); LessonAccess.Version(entity, request.ExpectedRevision);
         if (!request.ConfirmNoPersonalData) throw LessonRules.Invalid("Confirm that the lesson context and selected references contain no identifiable learner/personal information before sending to the provider.");
         if (!LessonRules.Operations.Contains(request.Operation) || request.Operation == "regenerate-section" && request.SectionCode is null || request.Operation == "generate" && request.SectionCode is not null ||
@@ -113,6 +114,7 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
         }
         catch (Exception ex) when (!settling)
         {
+            LessonAiTelemetry.Failure(provider.Name);
             generation.State = ex is OperationCanceledException ? "cancelled" : "failed";
             generation.ErrorCode = ex is PlannerException error ? error.Error.ToString() : ex is OperationCanceledException ? "CancelledUsageUncertain" : "ProviderFailure";
             // Ambiguous failure/cancellation is charged at the reserved ceiling. Never silently retry or refund an unknown bill.

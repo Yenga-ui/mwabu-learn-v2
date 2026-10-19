@@ -2,7 +2,7 @@ using MwabuLearn.Domain.Common;
 
 namespace MwabuLearn.Domain.Entities.Content;
 
-public enum ContentStatus { Draft, InReview, Published, Archived }
+public enum ContentStatus { Draft, InReview, Published, Archived, Approved }
 public enum AssetType { Document, Audio, Video, Image, Animation, Package, Other }
 public enum CurriculumNodeType { CurriculumVersion, Grade, Subject, Term, Topic, Competency, LearningOutcome }
 

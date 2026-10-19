@@ -296,8 +296,7 @@ function SyllabusPicker({
       <legend>Supplied 2023 syllabus reference</legend>
       <p>
         This reference is separate from your managed curriculum alignment. Check
-        that it applies to this lesson; codes are matched within the grade and
-        subject.
+        that it applies to this lesson's grade and subject.
       </p>
       {!!references.error && <ErrorNotice error={references.error} />}
       <label>
@@ -321,7 +320,7 @@ function SyllabusPicker({
           <option value="">No reference selected</option>
           {references.data?.map((x) => (
             <option key={x.competenceCode} value={x.competenceCode}>
-              {x.competenceCode} — {x.topic} / {x.competence}
+              {x.topic} / {x.subtopic} — {x.competence}
             </option>
           ))}
         </select>

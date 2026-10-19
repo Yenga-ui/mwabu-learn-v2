@@ -19,6 +19,10 @@ namespace MwabuLearn.Api.Controllers;
 [ProducesResponseType<ProblemDetails>(409)]
 public sealed class ContentController(IContentService service, IOptions<ContentOptions> options, IAuthorizationService authorization) : ControllerBase
 {
+    [HttpPost("{id:guid}/activities"), RequirePermission(PermissionCodes.ContentManage, PermissionScope.CatalogueManagement), RequestSizeLimit(100000)]
+    public async Task<IActionResult> SaveActivity(Guid id, ActivityDefinition definition, [FromServices] MwabuLearn.Infrastructure.Content.ActivityDocuments activities, CancellationToken ct) => Ok(await activities.SaveAsync(id, definition, ct));
+    [HttpGet("{id:guid}/activities/{assetId:guid}"), RequirePermission(PermissionCodes.ContentManage, PermissionScope.CatalogueManagement)]
+    public async Task<IActionResult> PreviewActivity(Guid id, Guid assetId, [FromServices] MwabuLearn.Infrastructure.Content.ActivityDocuments activities, CancellationToken ct) => Ok(await activities.ReadAsync(id, assetId, false, ct));
     [RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
     [HttpGet, Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("search")]
     [ProducesResponseType<PagedResponse<ContentResponse>>(200)]
@@ -56,7 +60,7 @@ public sealed class ContentController(IContentService service, IOptions<ContentO
     [ProducesResponseType<ContentResponse>(200)]
     public async Task<ActionResult<ContentResponse>> Status(Guid id, StatusRequest request, CancellationToken ct)
     {
-        if (request.Status == ContentStatus.Published && !(await authorization.AuthorizeAsync(User,
+        if (request.Status is ContentStatus.Published or ContentStatus.Approved && !(await authorization.AuthorizeAsync(User,
             RequirePermissionAttribute.PolicyName(PermissionCodes.ContentPublish, PermissionScope.CatalogueManagement))).Succeeded)
             return Forbid();
         return Ok(await service.ChangeStatusAsync(id, request, ct));

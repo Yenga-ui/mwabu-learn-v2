@@ -29,6 +29,7 @@ public sealed class OllamaLessonProvider(HttpClient http, IOptions<LessonAiOptio
 
     public async Task PrepareAsync(CancellationToken ct)
     {
+        using var measurement = LessonAiTelemetry.Measure("model-discovery", Name);
         if (!IsConfigured) throw Unavailable();
         if (Model.Length > 0) return;
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct); timeout.CancelAfter(TimeSpan.FromSeconds(10));
@@ -61,6 +62,7 @@ public sealed class OllamaLessonProvider(HttpClient http, IOptions<LessonAiOptio
 
     public async Task<ProviderResult> GenerateAsync(ProviderContext context, CancellationToken ct)
     {
+        using var measurement = LessonAiTelemetry.Measure("provider-total", Name);
         await PrepareAsync(ct);
         // Empty saved sections are placeholders, not exemplars for the model to copy.
         var input = LessonJson.Write(context with { Lesson = context.Lesson with { MinistryForm = null,
@@ -103,6 +105,7 @@ public sealed class OllamaLessonProvider(HttpClient http, IOptions<LessonAiOptio
         {
             for (var attempt = 1; attempt <= Settings.MaximumAttempts; attempt++)
             {
+                LessonAiTelemetry.Attempt(Name);
                 using var response = await PostAsync("api/chat", new
                 {
                     model = Model, stream = false, think = false, format = schema,
@@ -128,10 +131,20 @@ public sealed class OllamaLessonProvider(HttpClient http, IOptions<LessonAiOptio
                     inputTokens = checked(inputTokens + Field(root, "prompt_eval_count").GetInt32());
                     outputTokens = checked(outputTokens + Field(root, "eval_count").GetInt32());
                     if (!Field(root, "done").GetBoolean() || Field(root, "done_reason").GetString() != "stop") throw Invalid();
-                    var result = Expand(Field(Field(root, "message"), "content").GetString()!, context, editableCodes);
-                    Validate(result, context);
+                    GeneratedLesson result;
+                    using (LessonAiTelemetry.Measure("schema-validation", Name))
+                    {
+                        result = Expand(Field(Field(root, "message"), "content").GetString()!, context, editableCodes);
+                        Validate(result, context);
+                    }
+                    double Milliseconds(string key) => root.TryGetProperty(key, out var value) && value.TryGetInt64(out var ns) && ns >= 0 ? ns / 1000000d : 0;
+                    var diagnostics = new ProviderDiagnostics(Milliseconds("load_duration"), Milliseconds("prompt_eval_duration"), Milliseconds("eval_duration"));
+                    LessonAiTelemetry.Record("model-load", Name, diagnostics.LoadMilliseconds);
+                    LessonAiTelemetry.Record("prompt-evaluation", Name, diagnostics.PromptMilliseconds);
+                    LessonAiTelemetry.Record("token-generation", Name, diagnostics.EvaluationMilliseconds);
+                    LessonAiTelemetry.Usage(Name, inputTokens, outputTokens);
                     // Retain the full reservation after retries; failed attempts may have missing usage metadata.
-                    return new(result, inputTokens, outputTokens, attempt, attempt > 1);
+                    return new(result, inputTokens, outputTokens, attempt, attempt > 1, diagnostics);
                 }
                 catch (Exception ex) when (ex is JsonException or KeyNotFoundException or InvalidOperationException or PlannerException or NullReferenceException or FormatException)
                 {

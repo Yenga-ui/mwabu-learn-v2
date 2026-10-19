@@ -9,4 +9,7 @@
     <Project Path="tests/MwabuLearn.BrowserHost/MwabuLearn.BrowserHost.csproj" />
     <Project Path="tests/MwabuLearn.Tests/MwabuLearn.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/MwabuLearn.AiBench/MwabuLearn.AiBench.csproj" />
+  </Folder>
 </Solution>

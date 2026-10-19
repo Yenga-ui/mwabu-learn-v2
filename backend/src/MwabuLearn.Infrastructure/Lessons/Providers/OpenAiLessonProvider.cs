@@ -13,6 +13,7 @@ public sealed class OpenAiLessonProvider(HttpClient http, IOptions<LessonAiOptio
     public string Model => Settings.Model;
     public async Task<ProviderResult> GenerateAsync(ProviderContext context, CancellationToken ct)
     {
+        using var measurement = LessonAiTelemetry.Measure("provider-total", Name);
         if (!IsConfigured) throw new PlannerException(PlannerError.Unavailable, "AI generation is not configured and approved. Manual lesson editing remains available.");
         var input = LessonJson.Write(context);
         if (input.Length > Settings.MaxInputCharacters) throw new PlannerException(PlannerError.Validation, "Selected context is too large. Reduce references or instructions.");
@@ -25,6 +26,7 @@ public sealed class OpenAiLessonProvider(HttpClient http, IOptions<LessonAiOptio
         {
             for (var attempt = 0; attempt < Settings.MaximumAttempts; attempt++)
             {
+                LessonAiTelemetry.Attempt(Name);
                 using var request = new HttpRequestMessage(HttpMethod.Post, "https://api.openai.com/v1/responses");
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", Settings.ApiKey);
                 request.Content = new StringContent(payload, Encoding.UTF8, "application/json");

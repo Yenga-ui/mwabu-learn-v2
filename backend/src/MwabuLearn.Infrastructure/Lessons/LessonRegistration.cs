@@ -29,6 +29,8 @@ public static class LessonRegistration
         services.AddSingleton<ILessonPdf, LessonPdf>(); services.AddScoped<ILessonPlanner, LessonPlanner>(); services.AddScoped<ILessonSources, LessonSources>();
         services.AddScoped<ILessonGeneration, LessonGenerationService>(); services.AddScoped<LessonRetention>(); services.AddHostedService<LessonRetentionWorker>();
         services.AddScoped<ILessonSyllabus, LessonSyllabus>();
+        services.AddScoped<LessonJobActor>(); services.AddScoped<LessonGenerationJobs>();
+        services.AddScoped<LessonGenerationJobRunner>(); services.AddHostedService<LessonGenerationWorker>();
         return services;
     }
 }

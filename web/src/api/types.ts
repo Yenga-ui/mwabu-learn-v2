@@ -72,7 +72,7 @@ export interface Content {
   summary?: string;
   description?: string;
   contentType: string;
-  status: "Draft" | "InReview" | "Published" | "Archived";
+  status: "Draft" | "InReview" | "Approved" | "Published" | "Archived";
   languageCode: string;
   sortOrder: number;
   isDownloadable: boolean;

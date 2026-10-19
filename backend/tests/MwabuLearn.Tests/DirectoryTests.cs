@@ -14,6 +14,24 @@ namespace MwabuLearn.Tests;
 public sealed class DirectoryTests
 {
     [Fact]
+    public async Task Teacher_search_filters_names_active_paths_and_parent_without_changing_admin_visibility()
+    {
+        using var env = new ContentTestEnvironment(); var ids = await env.CreateHierarchy();
+        var root = await env.Db.Curricula.SingleAsync();
+        env.Db.Curricula.Add(new Curriculum { Name = "Archived framework", CountryCode = "ZM", IsActive = false });
+        await env.Db.SaveChangesAsync();
+        var service = new DirectoryService(env.Db, new IdentityTestEnvironment.TestActor());
+        Assert.Single((await service.CurriculaAsync(new() { Text = " FRAMEwork ", ActiveOnly = true }, default)).Items);
+        Assert.Empty((await service.CurriculaAsync(new() { Text = "missing" }, default)).Items);
+        Assert.Equal(2, (await service.CurriculaAsync(new(), default)).Items.Count);
+        var type = MwabuLearn.Domain.Entities.Content.CurriculumNodeType.LearningOutcome;
+        Assert.Single((await service.NodesAsync(root.Id, type, new() { ParentId = ids[^2], Text = "node 6", ActiveOnly = true }, default)).Items);
+        Assert.Empty((await service.NodesAsync(root.Id, type, new() { ParentId = Guid.NewGuid(), ActiveOnly = true }, default)).Items);
+        var grade = await env.Db.Grades.SingleAsync(); grade.IsActive = false; await env.Db.SaveChangesAsync();
+        Assert.Empty((await service.NodesAsync(root.Id, type, new() { ActiveOnly = true }, default)).Items);
+        Assert.Single((await service.NodesAsync(root.Id, type, new(), default)).Items);
+    }
+    [Fact]
     public async Task Large_legacy_lists_fail_explicitly_while_paged_directory_remains_bounded()
     {
         using var env = new ContentTestEnvironment();

@@ -22,9 +22,10 @@ public sealed class PermissionPolicyProvider(IOptions<AuthorizationOptions> opti
             .AddRequirements(new PermissionRequirement(parts[2], scope)).Build());
     }
 }
-public sealed class HttpCurrentUser(IHttpContextAccessor accessor) : ICurrentUser
+public sealed class HttpCurrentUser(IHttpContextAccessor accessor, MwabuLearn.Infrastructure.Lessons.LessonJobActor actor) : ICurrentUser
 {
-    public Guid? UserId => Guid.TryParse(accessor.HttpContext?.User.FindFirst("sub")?.Value, out var id) ? id : null;
+    public Guid? UserId => accessor.HttpContext is null ? actor.UserId :
+        Guid.TryParse(accessor.HttpContext.User.FindFirst("sub")?.Value, out var id) ? id : null;
 }
 public sealed class PermissionHandler(IPermissionEvaluator evaluator, ICurrentUser current, IHttpContextAccessor accessor) : AuthorizationHandler<PermissionRequirement>
 {

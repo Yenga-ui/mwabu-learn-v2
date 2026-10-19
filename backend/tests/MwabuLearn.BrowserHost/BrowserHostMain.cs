@@ -69,9 +69,10 @@ internal sealed class ControlledRetrieval : IPublicSourceRetriever
 internal sealed class ControlledAi : ILessonAiProvider
 {
     public bool IsConfigured => true; public string Name => "ControlledTestOnly"; public string Model => "deterministic-browser-fixture";
-    public Task<ProviderResult> GenerateAsync(ProviderContext context, CancellationToken ct)
+    public async Task<ProviderResult> GenerateAsync(ProviderContext context, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested();
+        if (context.Instructions.Contains("simulate-slow-job", StringComparison.Ordinal)) await Task.Delay(TimeSpan.FromSeconds(8), ct);
         if (context.Instructions.Contains("simulate-provider-failure", StringComparison.Ordinal)) throw new PlannerException(PlannerError.Unavailable, "Controlled test provider failure; draft unchanged.");
         var sections = context.Lesson.Sections.Where(x => context.SectionCode is null || x.Code == context.SectionCode).Select(section =>
         {
@@ -87,6 +88,6 @@ internal sealed class ControlledAi : ILessonAiProvider
             return section with { Body = body, Minutes = context.SectionCode is not null ? section.Minutes : section.Code == "starter" ? 5 : section.Code == "development" ? context.Lesson.Setup.DurationMinutes - 10 : section.Code == "conclusion" ? 5 : 0,
                 SourceIds = section.Code == "development" ? context.Evidence.Select(x => x.SourceId).Take(2).ToArray() : [] };
         }).ToArray();
-        return Task.FromResult(new ProviderResult(new("Deterministic TEST-ONLY proposal for browser acceptance. No real external AI call was made.", sections), 100, 300));
+        return new ProviderResult(new("Deterministic TEST-ONLY proposal for browser acceptance. No real external AI call was made.", sections), 100, 300);
     }
 }

@@ -59,6 +59,8 @@ public sealed record GenerationResponse(Guid Id, string State, int BaseRevision,
     string? ErrorCode, DateTime CreatedAt, DateTime? CompletedAt, GeneratedLesson? Result);
 public sealed record GeneratedLesson(string Explanation, LessonSection[] Sections);
 public sealed record ApplyGenerationRequest(int ExpectedRevision);
+public sealed record GenerationJobResponse(Guid Id, string State, Guid? GenerationId, bool CancelRequested,
+    string? ErrorCode, DateTime CreatedAt, DateTime? CompletedAt);
 public sealed record PlannerConfiguration(bool AiConfigured, bool SearchConfigured, bool OrganisationAiApproved,
     bool OrganisationSearchApproved, string[] Operations, string[] SectionCodes, int MaxDocumentBytes);
 public sealed record PlannerSettingsRequest(bool ExternalAiApproved, bool WebSearchApproved, int DailyRequestLimit,
@@ -106,7 +108,8 @@ public interface ILessonGeneration
 public sealed record ProviderContext(LessonDocument Lesson, string Operation, string? SectionCode, string Instructions,
     IReadOnlyList<GroundingEvidence> Evidence, string? SelectedText = null, SyllabusReference? SyllabusReference = null);
 public sealed record GroundingEvidence(Guid SourceId, string Title, string Text, string Licence);
-public sealed record ProviderResult(GeneratedLesson Lesson, int InputTokens, int OutputTokens, int Attempts = 1, bool UsageIncomplete = false);
+public sealed record ProviderDiagnostics(double LoadMilliseconds, double PromptMilliseconds, double EvaluationMilliseconds);
+public sealed record ProviderResult(GeneratedLesson Lesson, int InputTokens, int OutputTokens, int Attempts = 1, bool UsageIncomplete = false, ProviderDiagnostics? Diagnostics = null);
 public interface ILessonAiProvider
 {
     bool IsConfigured { get; }
