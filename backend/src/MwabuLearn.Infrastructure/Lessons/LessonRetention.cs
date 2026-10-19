@@ -13,6 +13,8 @@ public sealed class LessonRetention(MwabuDbContext db)
     public async Task RunAsync(CancellationToken ct)
     {
         var now = DateTime.UtcNow;
+        var attempts = await db.AssessmentAttempts.AsNoTracking().Where(x => x.ExpiresAt <= now).OrderBy(x => x.ExpiresAt).Select(x => x.Id).Take(100).ToListAsync(ct);
+        await db.AssessmentAttempts.Where(x => attempts.Contains(x.Id)).ExecuteDeleteAsync(ct);
         // Bounded batches; expired evidence is also excluded on read/generation before physical cleanup.
         var sources = await db.LessonSources.AsNoTracking().Where(x => x.ExpiresAt < now && x.Evidence != "").OrderBy(x => x.ExpiresAt).Select(x => x.Id).Take(100).ToListAsync(ct);
         await db.LessonSources.Where(x => sources.Contains(x.Id)).ExecuteUpdateAsync(set => set.SetProperty(x => x.Evidence, "")

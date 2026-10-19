@@ -179,6 +179,15 @@ export default function Resource() {
                 )}
               </section>
               <aside className="card resource-context">
+                {asset?.mimeType === activityMime &&
+                  session.organisationId &&
+                  session.can("assessments.manage") && (
+                    <AddAssessment
+                      assetId={asset.id}
+                      title={resource.content.title}
+                      organisationId={session.organisationId}
+                    />
+                  )}
                 {session.can("lessons.manage") && (
                   <Link
                     className="button"
@@ -268,4 +277,40 @@ export default function Resource() {
   );
 }
 import { PublishedActivity } from "./activities/ActivityPlayer";
+function AddAssessment({
+  assetId,
+  title,
+  organisationId,
+}: {
+  assetId: string;
+  title: string;
+  organisationId: string;
+}) {
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>();
+  return (
+    <section>
+      <button
+        className="button"
+        disabled={busy || saved}
+        onClick={() => {
+          setBusy(true);
+          setError(undefined);
+          void api(`/api/organisations/${organisationId}/assessments/banks`, {
+            method: "POST",
+            body: { assetId, title },
+          })
+            .then(() => setSaved(true))
+            .catch(setError)
+            .finally(() => setBusy(false));
+        }}
+      >
+        {saved ? "Added to organisation question bank" : "Use as an assessment"}
+      </button>
+      {!!error && <ErrorNotice error={error} />}
+      <Link to="/app/assessments">Open learning assessments</Link>
+    </section>
+  );
+}
 import { activityMime } from "./activities/activityRuntime";
