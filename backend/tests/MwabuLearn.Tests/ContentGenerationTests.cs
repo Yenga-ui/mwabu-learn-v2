@@ -25,7 +25,7 @@ public sealed class ContentGenerationTests
         public int Calls;public bool Invalid;
         public override Task<ContentProviderResult> Generate(string input,string kind,string model,CancellationToken ct) {
             Calls++; Assert.Contains("\"curriculum\"",input); Assert.DoesNotContain("@identity.test",input);
-            var json=kind=="storyboard"?JsonSerializer.Serialize(new AnimationStoryboard("Halves",[new("Fold in half","Two equal shaded parts",5)]),ActivityRules.Json):JsonSerializer.Serialize(new ActivityDefinition(2,"quiz","Halves","Choose a half","en",[new("One half",["Two equal parts","Three equal parts"],0,"A whole has two halves.")]),ActivityRules.Json);
+            var json=ContentGeneration.TextKinds.Contains(kind)?JsonSerializer.Serialize(new AnimationStoryboard("Halves",[new("Fold in half","Two equal shaded parts",5)]),ActivityRules.Json):JsonSerializer.Serialize(new ActivityDefinition(2,"quiz","Halves","Choose a half","en",[new("One half",["Two equal parts","Three equal parts"],0,"A whole has two halves.")]),ActivityRules.Json);
             return Task.FromResult(new ContentProviderResult(Invalid?"{\"script\":\"bad\"}":json,20,30));
         }
     }
@@ -52,6 +52,14 @@ public sealed class ContentGenerationTests
         using(var scope=f.Services.CreateScope()){var db=scope.ServiceProvider.GetRequiredService<MwabuDbContext>();Assert.Equal(MwabuLearn.Domain.Entities.Content.ContentStatus.Draft,(await db.ContentItems.SingleAsync(x=>x.Id==resource.Id)).Status);Assert.Equal(50,(await db.LessonUsagePeriods.SingleAsync()).ChargedTokens);}
         await Task.Delay(1100);await teacher.Client.PostAsJsonAsync(path,generation with{Kind="storyboard"});Assert.True(await f.Services.GetRequiredService<LessonGenerationJobRunner>().RunOnceAsync(default));
         using(var scope=f.Services.CreateScope()){var db=scope.ServiceProvider.GetRequiredService<MwabuDbContext>();var result=await db.LessonGenerationJobs.AsNoTracking().OrderByDescending(x=>x.CreatedAt).FirstAsync();Assert.Contains("Two equal shaded parts",result.ContentResultJson);}
+        foreach (var kind in ContentGeneration.TextKinds.Where(x => x != "storyboard")) {
+            await Task.Delay(1100);
+            var outlineResponse = await teacher.Client.PostAsJsonAsync(path, generation with { Kind = kind }); Assert.Equal(HttpStatusCode.Accepted, outlineResponse.StatusCode);
+            var outlineId = (await outlineResponse.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+            Assert.True(await f.Services.GetRequiredService<LessonGenerationJobRunner>().RunOnceAsync(default));
+            var outline = (await teacher.Client.GetFromJsonAsync<ContentProposal>(path + $"/{outlineId}", CatalogueApiFactory.Json))!;
+            Assert.NotNull(outline.Storyboard); Assert.Null(outline.Activity); Assert.Equal(lesson.Lesson.Id, outline.LessonId); Assert.Equal(1, outline.Revision);
+        }
         provider.Invalid=true;await Task.Delay(1100);await teacher.Client.PostAsJsonAsync(path,generation);Assert.True(await f.Services.GetRequiredService<LessonGenerationJobRunner>().RunOnceAsync(default));
         using(var scope=f.Services.CreateScope()){var db=scope.ServiceProvider.GetRequiredService<MwabuDbContext>();var last=await db.LessonGenerationJobs.AsNoTracking().OrderByDescending(x=>x.CreatedAt).FirstAsync();Assert.Equal("failed",last.State);Assert.Null(last.ContentResultJson);}
     }

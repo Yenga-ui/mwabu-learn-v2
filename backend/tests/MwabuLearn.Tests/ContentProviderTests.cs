@@ -7,6 +7,25 @@ using MwabuLearn.Infrastructure.Lessons.Providers;
 namespace MwabuLearn.Tests;
 public sealed class ContentProviderTests
 {
+    [Theory]
+    [InlineData("visual-explanation")]
+    [InlineData("worked-example")]
+    [InlineData("discussion-prompts")]
+    [InlineData("activity-suggestions")]
+    [InlineData("learner-explanation")]
+    public async Task Classroom_outlines_use_bounded_non_executable_structured_output(string kind)
+    {
+        Assert.Contains(kind, ContentGeneration.Kinds);
+        using var http = new HttpClient(new Handler(async (request, ct) => {
+            using var body = JsonDocument.Parse(await request.Content!.ReadAsStringAsync(ct)); var schema = body.RootElement.GetProperty("format");
+            Assert.False(schema.GetProperty("additionalProperties").GetBoolean());
+            var steps = schema.GetProperty("properties").GetProperty("steps"); Assert.Equal(12, steps.GetProperty("maxItems").GetInt32());
+            Assert.False(steps.GetProperty("items").GetProperty("additionalProperties").GetBoolean());
+            Assert.False(schema.GetProperty("properties").TryGetProperty("script", out _));
+            return new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent("{\"done\":true,\"done_reason\":\"stop\",\"message\":{\"content\":\"{}\"},\"prompt_eval_count\":20,\"eval_count\":30}") };
+        }));
+        await new ContentAiProvider(http, Options.Create(new LessonAiOptions { Enabled = true, DataProcessingApproved = true })).Generate("Synthetic curriculum", kind, "test-only", default);
+    }
     private sealed class Handler(Func<HttpRequestMessage,CancellationToken,Task<HttpResponseMessage>> send):HttpMessageHandler
     {protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,CancellationToken ct)=>send(request,ct);}
     [Theory]

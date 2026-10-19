@@ -109,6 +109,11 @@ export default function ContentAi({
                 "fraction",
                 "place-value-exercise",
                 "storyboard",
+                "visual-explanation",
+                "worked-example",
+                "discussion-prompts",
+                "activity-suggestions",
+                "learner-explanation",
               ].map((x) => (
                 <option key={x} value={x}>
                   {x.replaceAll("-", " ")}
@@ -251,8 +256,8 @@ export default function ContentAi({
                     ))}
                   </ol>
                   <p>
-                    This is a text storyboard for review. It contains no
-                    executable animation code and is not published
+                    This is a draft text teaching outline for review. It
+                    contains no executable animation code and is not published
                     automatically.
                   </p>
                 </>

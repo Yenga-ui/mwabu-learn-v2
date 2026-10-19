@@ -14,7 +14,7 @@ public class ContentAiProvider(HttpClient http,IOptions<LessonAiOptions> options
         static object Integer(int min,int max)=>new {type="integer",minimum=min,maximum=max};
         static object Obj(Dictionary<string,object> properties)=>new {type="object",additionalProperties=false,required=properties.Keys.ToArray(),properties};
         var question=Obj(new() { ["prompt"]=Text(1000),["options"]=new {type="array",minItems=kind=="fill-blank"?1:2,maxItems=6,items=Text(300)},["correctOption"]=Integer(0,5),["explanation"]=Text(2000) });
-        if(kind=="storyboard")return Obj(new() { ["title"]=Text(200),["steps"]=new {type="array",minItems=1,maxItems=12,items=Obj(new(){["caption"]=Text(1000),["visualDescription"]=Text(2000),["durationSeconds"]=Integer(1,60)})} });
+        if(ContentGeneration.TextKinds.Contains(kind))return Obj(new() { ["title"]=Text(200),["steps"]=new {type="array",minItems=1,maxItems=12,items=Obj(new(){["caption"]=Text(1000),["visualDescription"]=Text(2000),["durationSeconds"]=Integer(1,60)})} });
         var questions=kind is "quiz" or "matching" or "sequencing" or "fill-blank";
         return Obj(new() { ["schemaVersion"]=new {type="integer",@enum=new[]{2}},["kind"]=new {type="string",@enum=new[]{kind}},["title"]=Text(200),["instructions"]=Text(2000),["language"]=Text(35),["questions"]=new {type="array",minItems=questions?1:0,maxItems=questions?10:0,items=question},["number"]=Integer(0,9999),["minimum"]=Integer(-1000,999),["maximum"]=Integer(1,1000),["denominator"]=Integer(2,24) });
     }

@@ -20,7 +20,8 @@ public sealed class ContentGeneration(MwabuDbContext db, LessonAccess access, IP
     ILessonAiProvider provider, ContentAiProvider contentProvider, LessonGenerationService usage, IOptions<LessonAiOptions> options,
     IOptions<BackgroundWorkOptions> background, ActivityDocuments activities)
 {
-    public static readonly string[] Kinds = ["quiz", "matching", "sequencing", "fill-blank", "number-line", "fraction", "place-value-exercise", "storyboard"];
+    public static readonly string[] TextKinds = ["storyboard", "visual-explanation", "worked-example", "discussion-prompts", "activity-suggestions", "learner-explanation"];
+    public static readonly string[] Kinds = ["quiz", "matching", "sequencing", "fill-blank", "number-line", "fraction", "place-value-exercise", ..TextKinds];
     private async Task<LessonPlannerSettings> Demand(Guid org, CancellationToken ct)
     {
         await access.Demand(org, PermissionCodes.LessonsAi, ct);
@@ -87,7 +88,7 @@ public sealed class ContentGeneration(MwabuDbContext db, LessonAccess access, IP
             LessonAiTelemetry.Usage(provider.Name,result.InputTokens,result.OutputTokens);
             await Demand(job.OrganisationId,ct); var fresh=await db.LessonPlans.AsNoTracking().SingleAsync(x=>x.Id==job.LessonPlanId,ct); LessonAccess.Version(fresh,request.ExpectedRevision);
             ActivityDefinition? activity=null; AnimationStoryboard? board=null;
-            try {if(request.Kind=="storyboard") {board=JsonSerializer.Deserialize<AnimationStoryboard>(result.Json,ActivityRules.Json);ValidateStoryboard(board);}else{activity=ActivityRules.Validate(JsonSerializer.Deserialize<ActivityDefinition>(result.Json,ActivityRules.Json)!); if(activity.Kind!=request.Kind || activity.SchemaVersion!=2)throw LessonRules.Invalid("Unexpected activity format.");}}
+            try {if(TextKinds.Contains(request.Kind)) {board=JsonSerializer.Deserialize<AnimationStoryboard>(result.Json,ActivityRules.Json);ValidateStoryboard(board);}else{activity=ActivityRules.Validate(JsonSerializer.Deserialize<ActivityDefinition>(result.Json,ActivityRules.Json)!); if(activity.Kind!=request.Kind || activity.SchemaVersion!=2)throw LessonRules.Invalid("Unexpected activity format.");}}
             catch(Exception ex) when(ex is JsonException or ContentException) {throw new PlannerException(PlannerError.InvalidProviderOutput,"Content proposal failed strict schema validation.");}
             if(result.InputTokens<0 || result.OutputTokens<0 || result.InputTokens+result.OutputTokens>reserved || result.OutputTokens>options.Value.MaxOutputTokens)throw new PlannerException(PlannerError.InvalidProviderOutput,"Invalid usage metadata.");
             var tracked=await db.LessonGenerationJobs.SingleAsync(x=>x.Id==job.Id,ct);
