@@ -2,6 +2,8 @@
 
 Prepared 19 October 2026. This is a separate follow-up scope after PR #2 passes its required checks; it does not authorize deployment.
 
+Sprint 2 implementation and remaining limits are tracked in [the interactive learning record](sprint-2-implementation.md) and [offline/privacy design](sprint-2-privacy-and-offline.md).
+
 Execution has started on `feature/teacher-ux-ai-optimisation` after PR #2 merged. The master-request reconciliation is in [the repository audit](teacher-platform-audit.md), and delivered scope, evidence and remaining work are maintained in [the implementation readiness report](teacher-platform-readiness.md). This earlier plan remains architectural context, not a claim of completion.
 
 ## 1. Teacher-facing curriculum selection

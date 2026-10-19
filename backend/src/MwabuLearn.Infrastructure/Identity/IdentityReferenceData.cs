@@ -32,6 +32,10 @@ public static class IdentityReferenceData
             [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.ContentManage, PermissionCodes.ContentPublish, PermissionCodes.LessonsRead, PermissionCodes.LessonsManage, PermissionCodes.LessonsReview, PermissionCodes.LessonsPublish, PermissionCodes.LessonsAi],
             [PermissionCodes.ReportsRead, PermissionCodes.OrganisationsRead]
         ];
+        grants[2] = [.. grants[2], PermissionCodes.AssessmentsTake, PermissionCodes.AssessmentsManage, PermissionCodes.AssessmentsReport];
+        grants[3] = [.. grants[3], PermissionCodes.AssessmentsTake, PermissionCodes.AssessmentsManage, PermissionCodes.AssessmentsReport];
+        grants[4] = [.. grants[4], PermissionCodes.AssessmentsTake, PermissionCodes.AssessmentsManage, PermissionCodes.AssessmentsReport];
+        grants[5] = [.. grants[5], PermissionCodes.AssessmentsTake];
         var mappings = roles.SelectMany((role, r) => permissions.Where(p => grants[r].Contains(p.Code)).Select(p => new RolePermission
         {
             Id = Guid.Parse($"53000000-0000-0000-{r + 1:D4}-{Array.IndexOf(permissions, p) + 1:D12}"), RoleId = role.Id, PermissionId = p.Id, CreatedAt = Created

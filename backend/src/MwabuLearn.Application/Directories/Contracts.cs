@@ -15,10 +15,12 @@ public sealed class PageRequest
 }
 public sealed record Page<T>(IReadOnlyList<T> Items, int PageNumber, int PageSize, bool HasMore);
 public sealed record CurriculumSummary(Guid Id, string Name, string CountryCode, string? Code, string? Description, int SortOrder, bool IsActive);
+public sealed record GradeDiscovery(Guid Id, string Name, Guid CurriculumId, string CurriculumName, Guid VersionId, string VersionName);
 public sealed class LegacyResultLimitException() : Exception("This legacy response exceeds its bounded limit. Use the documented paginated search/node endpoints.");
 public interface IDirectoryService
 {
     Task<Page<CurriculumSummary>> CurriculaAsync(PageRequest page, CancellationToken ct);
+    Task<Page<GradeDiscovery>> GradesAsync(PageRequest page, CancellationToken ct);
     Task<Page<StructureResponse>> NodesAsync(Guid curriculumId, CurriculumNodeType type, PageRequest page, CancellationToken ct);
     Task<Page<OrganisationResponse>> OrganisationsAsync(PageRequest page, CancellationToken ct);
     Task<Page<MembershipResponse>> MembersAsync(Guid organisationId, PageRequest page, CancellationToken ct);

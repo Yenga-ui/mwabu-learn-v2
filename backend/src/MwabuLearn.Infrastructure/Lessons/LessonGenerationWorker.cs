@@ -18,6 +18,7 @@ public sealed class LessonGenerationJobRunner(IServiceScopeFactory scopes, IOpti
         // in-flight work as interrupted; any reserved usage remains charged conservatively.
         await db.LessonGenerationJobs.Where(x => x.State == "processing" && x.LeaseUntil < now).ExecuteUpdateAsync(s => s
             .SetProperty(x => x.State, "interrupted").SetProperty(x => x.ErrorCode, "InterruptedUsageUncertain")
+            .SetProperty(x => x.ContentResultJson, (string?)null)
             .SetProperty(x => x.RequestJson, "").SetProperty(x => x.CompletedAt, (DateTime?)now), ct);
         await db.LessonGenerationJobs.Where(x => x.State == "queued" && x.CreatedAt < now.AddMinutes(-15)).ExecuteUpdateAsync(s => s
             .SetProperty(x => x.State, "expired").SetProperty(x => x.ErrorCode, "QueueExpired")
@@ -44,12 +45,20 @@ public sealed class LessonGenerationJobRunner(IServiceScopeFactory scopes, IOpti
         string state; string? error = null; Guid? generation = null;
         try
         {
+            if (job.Purpose == "content")
+            {
+                generation = await execution.ServiceProvider.GetRequiredService<ContentGeneration>().Generate(job, cancellation.Token);
+                state = "completed";
+            }
+            else
+            {
             var queued = LessonJson.Read<QueuedLessonRequest>(job.RequestJson);
             if (queued.SourceStamp != await LessonGenerationJobs.SourceStamp(execution.ServiceProvider.GetRequiredService<MwabuDbContext>(), job.OrganisationId, job.LessonPlanId, cancellation.Token))
                 throw new PlannerException(PlannerError.Conflict, "The selected sources changed after this request was queued. Review them and generate again.");
             var result = await execution.ServiceProvider.GetRequiredService<ILessonGeneration>().GenerateAsync(job.OrganisationId,
                 job.LessonPlanId, queued.Request, cancellation.Token);
             state = "completed"; generation = result.Id;
+            }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch (OperationCanceledException) { state = "cancelled"; error = "CancelledUsageUncertain"; }
@@ -60,6 +69,7 @@ public sealed class LessonGenerationJobRunner(IServiceScopeFactory scopes, IOpti
         using var finishBound = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await finish.LessonGenerationJobs.Where(x => x.Id == job.Id && x.State == "processing").ExecuteUpdateAsync(s => s
             .SetProperty(x => x.State, state).SetProperty(x => x.ErrorCode, error).SetProperty(x => x.GenerationId, generation)
+            .SetProperty(x => x.ContentResultJson, x => state == "completed" ? x.ContentResultJson : null)
             .SetProperty(x => x.RequestJson, "").SetProperty(x => x.LeaseUntil, (DateTime?)null)
             .SetProperty(x => x.CompletedAt, (DateTime?)DateTime.UtcNow).SetProperty(x => x.UpdatedAt, DateTime.UtcNow), finishBound.Token);
         finish.AuditEvents.Add(new Domain.Entities.Auditing.AuditEvent { ActorUserId = job.ActorUserId, OrganisationId = job.OrganisationId,

@@ -12,6 +12,7 @@ const Auth = lazy(() => import("./auth/AuthPages"));
 const Dashboard = lazy(() => import("./features/dashboard/Dashboard"));
 const Catalogue = lazy(() => import("./features/content/Catalogue"));
 const Resource = lazy(() => import("./features/content/Resource"));
+const Assessments = lazy(() => import("./features/content/Assessments"));
 const Curriculum = lazy(() => import("./features/curriculum/Curriculum"));
 const ContentManagement = lazy(() => import("./features/content/Management"));
 const Organisations = lazy(
@@ -66,6 +67,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: route(<Dashboard />) },
       { path: "resources", element: route(<Catalogue />) },
+      { path: "assessments", element: route(<Assessments />) },
       { path: "resources/:id", element: route(<Resource />) },
       { path: "lessons", element: route(<LessonPlanner />) },
       { path: "lessons/:id", element: route(<LessonPlanner />) },

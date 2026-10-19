@@ -5,6 +5,7 @@ import { Download, RotateCcw } from "lucide-react";
 import { api, ensureSession, queryString } from "../../api/client";
 import type { Resource as ResourceType, Asset } from "../../api/types";
 import { useSession } from "../../auth/Session";
+import AttachToLesson from "./AttachToLesson";
 import {
   Badge,
   Empty,
@@ -179,6 +180,22 @@ export default function Resource() {
                 )}
               </section>
               <aside className="card resource-context">
+                {session.organisationId && session.can("lessons.manage") && (
+                  <AttachToLesson
+                    key={`${session.organisationId}:${resource.content.id}`}
+                    resourceId={resource.content.id}
+                  />
+                )}
+                {asset?.mimeType === activityMime &&
+                  session.organisationId &&
+                  session.can("assessments.manage") && (
+                    <AddAssessment
+                      key={`${session.organisationId}:${asset.id}`}
+                      assetId={asset.id}
+                      title={resource.content.title}
+                      organisationId={session.organisationId}
+                    />
+                  )}
                 {session.can("lessons.manage") && (
                   <Link
                     className="button"
@@ -268,4 +285,40 @@ export default function Resource() {
   );
 }
 import { PublishedActivity } from "./activities/ActivityPlayer";
+function AddAssessment({
+  assetId,
+  title,
+  organisationId,
+}: {
+  assetId: string;
+  title: string;
+  organisationId: string;
+}) {
+  const [saved, setSaved] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<unknown>();
+  return (
+    <section>
+      <button
+        className="button"
+        disabled={busy || saved}
+        onClick={() => {
+          setBusy(true);
+          setError(undefined);
+          void api(`/api/organisations/${organisationId}/assessments/banks`, {
+            method: "POST",
+            body: { assetId, title },
+          })
+            .then(() => setSaved(true))
+            .catch(setError)
+            .finally(() => setBusy(false));
+        }}
+      >
+        {saved ? "Added to organisation question bank" : "Use as an assessment"}
+      </button>
+      {!!error && <ErrorNotice error={error} />}
+      <Link to="/app/assessments">Open learning assessments</Link>
+    </section>
+  );
+}
 import { activityMime } from "./activities/activityRuntime";

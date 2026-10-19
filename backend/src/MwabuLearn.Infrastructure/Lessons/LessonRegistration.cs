@@ -30,6 +30,10 @@ public static class LessonRegistration
         services.AddScoped<ILessonGeneration, LessonGenerationService>(); services.AddScoped<LessonRetention>(); services.AddHostedService<LessonRetentionWorker>();
         services.AddScoped<ILessonSyllabus, LessonSyllabus>();
         services.AddScoped<LessonJobActor>(); services.AddScoped<LessonGenerationJobs>();
+        services.AddScoped<LessonGenerationService>(); services.AddScoped<ContentGeneration>();
+        services.AddScoped<LessonPackages>();
+        services.AddHttpClient<ContentAiProvider>(client => client.Timeout = Timeout.InfiniteTimeSpan).RemoveAllLoggers()
+            .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler { AllowAutoRedirect = false, UseCookies = false, UseProxy = false });
         services.AddScoped<LessonGenerationJobRunner>(); services.AddHostedService<LessonGenerationWorker>();
         return services;
     }

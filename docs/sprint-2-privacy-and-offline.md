@@ -1,0 +1,27 @@
+# Assessment retention and offline privacy boundary
+
+Authenticated **online** assessment submission is separate from anonymous practice. Organisation-scoped `assessments.take`, `assessments.manage` and `assessments.report` grants authorize the relevant journeys. The server resolves the bank and immutable published asset, verifies SHA-256, and computes score/per-item correctness from bounded answers. Client-supplied marks and answer keys are never accepted. Repeated submissions use an organisation/user/submission-key uniqueness constraint and payload fingerprint; a different payload under the same key conflicts. The guarantee lasts while the attempt exists; deletion or expiry removes its key too. Clients must start a new attempt after deleting a result.
+
+Stored data: account and organisation references, immutable bank/version reference, submission key/fingerprint, score, total, per-item correctness and timestamps. Raw free-text answers are not retained. Learners can read/delete only their own results. Authorized teaching staff can view bounded organisation summaries; the initial UI shows up to 100 learners and the latest 100 personal attempts. Banks are retired instead of rewriting the published version underlying historical results. Results expire after 365 days and are excluded immediately on reads; the existing background retention worker physically deletes expired records in bounded batches. Enable BackgroundWork and monitor its health to complete physical deletion. Operators must approve an appropriate local retention notice before release; this fixed default is not a jurisdictional compliance claim.
+
+These are formative assessments, not secure examinations. Published practice definitions include feedback/answer keys for anonymous/offline use; server marking prevents forged scores but does not make publicly available teaching material secret.
+
+## Implemented offline delivery
+
+The package manifest rechecks lesson access, current published revision, catalogue access, published/downloadable resource status and supported MIME types. External/uploaded references that cannot be bundled are rejected rather than omitted. Up to 30 assets and 25 MiB are supported. Teacher identity, school form metadata, learner records, credentials and external URLs are excluded from the package envelope. The teacher must inspect teaching text for personal data before export.
+
+The browser downloads 1 MiB ranges through the existing authenticated range/ETag endpoint. Completed ranges are held in IndexedDB **only as teaching asset bytes keyed by checksum**, with 50 MiB/64-entry limits and an explicit clear-storage control. A retry re-fetches the manifest/access checks, resumes completed ranges, validates Content-Range/ETag/size, and verifies the final SHA-256. Invalid data is discarded; an old exported file is not overwritten. A final manifest check rejects version changes before export. Failed IndexedDB/quota/download operations are surfaced and do not export incomplete packages.
+
+The standalone HTML embeds the approved lesson, verified activity/media bytes and a fixed renderer protected by a script-hash CSP. It checks each asset hash again before playback. It requires no network, sessions, external fonts or learner storage. Audio/video requires explicit play. Versions are embedded and export filenames change with the version. Exported files cannot receive revocations: reconnect to recheck current authorization/version, remove obsolete copies and store files securely. The feature is a portable package, not an encrypted managed-device application. Shared-device encryption/expiry enforcement remains an operator release gate.
+
+## Progress protocol: deliberately disabled pending approval
+
+`GET /api/sync/progress-policy` is registered-device protected and returns `enabled:false`. There is **no progress ingestion endpoint, learner outbox, answer cache or progress collector**. Anonymous activity feedback remains in page memory. Online assessment POSTs do not become offline background retries.
+
+The future design must be explicitly approved before implementation/activation:
+
+1. Approve data fields, purpose/consent, age-related policies, retention/deletion and authorized staff reporting. Do not infer attainment from content visits.
+2. Bind an encrypted per-account outbox to a registered device and organisation; approve key storage, device unlock, account-switch isolation, remote revocation, maximum offline age and lost-device deletion. Never put credentials into an exported package.
+3. Use immutable published bank/asset IDs plus checksum, an event UUID, monotonic device sequence and schema version. The authenticated principal supplies user/organisation/device identity; never trust identity fields supplied in a payload.
+4. On reconnection, revalidate active account/membership/device/assignment, resource version and retention age. Server-side marking remains authoritative. A unique device/event key and canonical payload fingerprint must atomically return the same acknowledgement for duplicate delivery and reject changed-payload replays.
+5. Approve conflict rules for retired/updated assignments, revoked resources, duplicate online/offline attempts and deletion tombstones. Use server receipt times for ordering; do not overwrite teacher-reviewed results based on an untrusted client clock. Test interrupted upload, replay, device loss, key rotation, account switching and reconnect conflicts before enabling any collector.

@@ -11,6 +11,8 @@ namespace MwabuLearn.Api.Controllers;
 [ProducesResponseType<ProblemDetails>(404), ProducesResponseType<ProblemDetails>(409)]
 public sealed class SyncController(ISyncService service) : ControllerBase
 {
+    [HttpGet("progress-policy")]
+    public IActionResult ProgressPolicy()=>Ok(new {schemaVersion=1,enabled=false,reason="Privacy, device-security and conflict policies require explicit approval. No identifiable offline progress is accepted or synchronized."});
     [HttpGet("bootstrap")]
     public async Task<ActionResult<SyncBatch>> Bootstrap(CancellationToken ct, [FromQuery, MaxLength(4096)] string? cursor = null, [FromQuery, Range(1, 100)] int pageSize = 100) =>
         Ok(await service.BootstrapAsync(cursor, pageSize, ct));

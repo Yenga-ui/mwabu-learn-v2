@@ -73,6 +73,12 @@ export function Shell() {
   }[] = [
     { to: "/app", label: "Your workspace", icon: LayoutDashboard },
     {
+      to: "/app/assessments",
+      label: "Learning assessments",
+      icon: GraduationCap,
+      permission: "assessments.take",
+    },
+    {
       to: "/app/lessons",
       label: "Lesson Planner",
       icon: BookOpen,

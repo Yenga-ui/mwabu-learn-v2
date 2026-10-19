@@ -10,6 +10,12 @@ namespace MwabuLearn.Infrastructure.Directories;
 
 public sealed class DirectoryService(MwabuDbContext db, ICurrentUser user) : IDirectoryService
 {
+    public async Task<Page<GradeDiscovery>> GradesAsync(PageRequest page, CancellationToken ct)
+    {
+        var grades = db.Grades.AsNoTracking().Where(x => x.IsActive && x.CurriculumVersion.IsActive && x.CurriculumVersion.Curriculum.IsActive);
+        if (!string.IsNullOrWhiteSpace(page.Text)) grades = grades.Where(x => x.Name.ToLower().Contains(page.Text.Trim().ToLower()));
+        return await Read(grades.OrderBy(x => x.SortOrder).ThenBy(x => x.Name).ThenBy(x => x.Id).Select(x => new GradeDiscovery(x.Id,x.Name,x.CurriculumVersion.CurriculumId,x.CurriculumVersion.Curriculum.Name,x.CurriculumVersionId,x.CurriculumVersion.Name)),page,ct);
+    }
     private static async Task<Page<T>> Read<T>(IQueryable<T> query, PageRequest page, CancellationToken ct)
     {
         if (page.Page is < 1 or > 100000 || page.PageSize is < 1 or > 100) throw Invalid("Use a page size between 1 and 100 and a supported page number.");

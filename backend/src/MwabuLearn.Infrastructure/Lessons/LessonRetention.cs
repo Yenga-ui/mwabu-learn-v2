@@ -13,6 +13,10 @@ public sealed class LessonRetention(MwabuDbContext db)
     public async Task RunAsync(CancellationToken ct)
     {
         var now = DateTime.UtcNow;
+        var contentJobs = await db.LessonGenerationJobs.AsNoTracking().Where(x => x.ContentResultJson != null && db.LessonGenerations.Any(g => g.Id == x.GenerationId && g.ExpiresAt <= now)).OrderBy(x => x.CreatedAt).Select(x => x.Id).Take(100).ToListAsync(ct);
+        await db.LessonGenerationJobs.Where(x => contentJobs.Contains(x.Id)).ExecuteUpdateAsync(s => s.SetProperty(x => x.ContentResultJson, (string?)null), ct);
+        var attempts = await db.AssessmentAttempts.AsNoTracking().Where(x => x.ExpiresAt <= now).OrderBy(x => x.ExpiresAt).Select(x => x.Id).Take(100).ToListAsync(ct);
+        await db.AssessmentAttempts.Where(x => attempts.Contains(x.Id)).ExecuteDeleteAsync(ct);
         // Bounded batches; expired evidence is also excluded on read/generation before physical cleanup.
         var sources = await db.LessonSources.AsNoTracking().Where(x => x.ExpiresAt < now && x.Evidence != "").OrderBy(x => x.ExpiresAt).Select(x => x.Id).Take(100).ToListAsync(ct);
         await db.LessonSources.Where(x => sources.Contains(x.Id)).ExecuteUpdateAsync(set => set.SetProperty(x => x.Evidence, "")
