@@ -14,6 +14,12 @@ public sealed class ActivityMarkingTests
         Assert.Equal(0, ActivityRules.Mark(definition, [["wrong"]]).Score);
     }
     [Fact]
+    public void A_blank_can_have_one_accepted_answer_without_quiz_distractors()
+    {
+        var definition=Definition("fill-blank") with {Questions=[new("Name one half",["1/2"],0,"One of two equal parts.")]};
+        Assert.Equal(1,ActivityRules.Mark(definition,[["1/2"]]).Score);Assert.Equal(0,ActivityRules.Mark(definition,[["1/3"]]).Score);
+    }
+    [Fact]
     public void Sequence_and_place_values_require_all_positions_in_order()
     {
         Assert.Equal(1, ActivityRules.Mark(Definition("sequencing"), [["0", "1"]]).Score);

@@ -2,7 +2,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 namespace MwabuLearn.Application.Content;
 
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ActivityQuestion(string Prompt, string[] Options, int CorrectOption, string Explanation);
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record ActivityDefinition(int SchemaVersion, string Kind, string Title, string Instructions, string Language, ActivityQuestion[] Questions, int Number = 0, int Minimum = 0, int Maximum = 20, int Denominator = 4);
 public sealed record ActivityResource(ActivityDefinition Definition, string Checksum, Guid AssetId);
 public static class ActivityRules
@@ -17,7 +19,7 @@ public static class ActivityRules
             throw new ContentException(ContentError.Validation, "Use a supported activity, title, instructions, language and a number from 0 to 9999.");
         if (value.Kind is "quiz" or "matching" or "sequencing" or "fill-blank")
         {
-            if (value.Questions.Length is < 1 or > 10 || value.Questions.Any(q => q is null || !Text(q.Prompt, 1000) || !Text(q.Explanation, 2000) || q.Options is null || q.Options.Length is < 2 or > 6 || q.Options.Any(x => !Text(x, 300)) || q.Options.Select(x => x.Trim().ToUpperInvariant()).Distinct().Count() != q.Options.Length || q.CorrectOption < 0 || q.CorrectOption >= q.Options.Length))
+            if (value.Questions.Length is < 1 or > 10 || value.Questions.Any(q => q is null || !Text(q.Prompt, 1000) || !Text(q.Explanation, 2000) || q.Options is null || q.Options.Length < (value.Kind == "fill-blank" ? 1 : 2) || q.Options.Length > 6 || q.Options.Any(x => !Text(x, 300)) || q.Options.Select(x => x.Trim().ToUpperInvariant()).Distinct().Count() != q.Options.Length || q.CorrectOption < 0 || q.CorrectOption >= q.Options.Length))
                 throw new ContentException(ContentError.Validation, "Use 1-10 questions, distinct answer choices, one valid correct choice and explanatory feedback.");
         }
         else if (value.Questions.Length != 0) throw new ContentException(ContentError.Validation, "This mathematics activity cannot contain quiz questions.");

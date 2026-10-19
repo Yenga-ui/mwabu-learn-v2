@@ -11,6 +11,8 @@ namespace MwabuLearn.Api.Controllers;
 [ProducesResponseType<ProblemDetails>(400), ProducesResponseType<ProblemDetails>(401), ProducesResponseType<ProblemDetails>(403), ProducesResponseType<ProblemDetails>(404)]
 public sealed class DirectoryController(IDirectoryService service) : ControllerBase
 {
+    [HttpGet("curriculum/grades/search"),RequirePermission(PermissionCodes.CurriculumRead,PermissionScope.Catalogue)]
+    public async Task<IActionResult> Grades([FromQuery]PageRequest page,CancellationToken ct)=>Ok(await service.GradesAsync(page,ct));
     [HttpGet("curricula/search"), RequirePermission(PermissionCodes.CurriculumRead, PermissionScope.Catalogue)]
     public async Task<IActionResult> Curricula([FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.CurriculaAsync(page, ct));
     [HttpGet("curricula/{id:guid}/nodes/{type}"), RequirePermission(PermissionCodes.CurriculumRead, PermissionScope.Catalogue)]

@@ -93,6 +93,8 @@ public sealed class LessonGenerationJobConfiguration : IEntityTypeConfiguration<
         LessonConfiguration.Parent(b);
         b.Property(x => x.State).HasMaxLength(30); b.Property(x => x.RequestJson).HasMaxLength(40000);
         b.Property(x => x.ErrorCode).HasMaxLength(50);
+        b.Property(x => x.Purpose).HasMaxLength(30).HasDefaultValue("lesson");
+        b.Property(x => x.ContentResultJson).HasMaxLength(100000);
         b.HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.ActorUserId).OnDelete(DeleteBehavior.Restrict);
         b.HasOne<LessonGeneration>().WithMany().HasForeignKey(x => x.GenerationId).OnDelete(DeleteBehavior.Restrict);
         b.HasIndex(x => new { x.State, x.CreatedAt }); b.HasIndex(x => new { x.OrganisationId, x.ActorUserId, x.CreatedAt });

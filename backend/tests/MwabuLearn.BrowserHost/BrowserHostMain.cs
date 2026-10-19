@@ -9,6 +9,10 @@ using Microsoft.Extensions.Hosting;
 using MwabuLearn.Application.Lessons;
 using MwabuLearn.Infrastructure.Lessons.Sources;
 using MwabuLearn.Infrastructure.Lessons;
+using MwabuLearn.Infrastructure.Lessons.Providers;
+using MwabuLearn.Application.Content;
+using Microsoft.Extensions.Options;
+using System.Text.Json;
 using Npgsql;
 namespace MwabuLearn.BrowserHost;
 
@@ -46,10 +50,21 @@ internal sealed class BrowserFactory : WebApplicationFactory<global::Program>
         {
             services.Configure<LessonAiOptions>(options => options.MinimumRequestIntervalSeconds = 1);
             services.RemoveAll<ILessonAiProvider>(); services.AddSingleton<ILessonAiProvider, ControlledAi>();
+            services.RemoveAll<ContentAiProvider>(); services.AddSingleton<ContentAiProvider,ControlledContentProvider>();
             services.RemoveAll<IEducationSearchProvider>(); services.AddSingleton<IEducationSearchProvider, ControlledSearch>();
             services.RemoveAll<IPublicSourceRetriever>(); services.AddSingleton<IPublicSourceRetriever, ControlledRetrieval>();
             services.RemoveAll<IPublicDns>(); services.AddSingleton<IPublicDns, ControlledDns>();
         });
+    }
+}
+internal sealed class ControlledContentProvider() : ContentAiProvider(new HttpClient(),Options.Create(new LessonAiOptions()))
+{
+    public override Task<ContentProviderResult> Generate(string input,string kind,string model,CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+        var questions=kind is "quiz" or "matching" or "sequencing" or "fill-blank";
+        var json=kind=="storyboard"?JsonSerializer.Serialize(new AnimationStoryboard("Controlled halves storyboard",[new("Fold a whole","Show two equal parts",5)]),ActivityRules.Json):JsonSerializer.Serialize(new ActivityDefinition(2,kind,"Controlled halves quiz","Choose one answer","en",questions?[new("One half means",["One of two equal parts","One of three equal parts"],0,"Two equal parts form a whole.")]:[],2),ActivityRules.Json);
+        return Task.FromResult(new ContentProviderResult(json,100,100));
     }
 }
 internal sealed class ControlledDns : IPublicDns

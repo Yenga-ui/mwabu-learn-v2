@@ -30,6 +30,7 @@ public sealed class AssessmentTests
         Assert.Equal(HttpStatusCode.OK,(await f.Admin.PatchAsJsonAsync($"/api/content/{content.Id}/status",new {status="Published"})).StatusCode);
         var created=await teacher.Client.PostAsJsonAsync(basePath+"/banks",new BankRequest(asset.Id,"Halves")); Assert.Equal(HttpStatusCode.OK,created.StatusCode);
         var bank=(await created.Content.ReadFromJsonAsync<MwabuLearn.Domain.Entities.Content.QuestionBank>(CatalogueApiFactory.Json))!;
+        Assert.Single((await learner.Client.GetFromJsonAsync<MwabuLearn.Domain.Entities.Content.QuestionBank[]>(basePath+"/banks"))!);
         Assert.Equal(HttpStatusCode.Forbidden,(await learner.Client.PostAsJsonAsync(basePath+"/banks",new BankRequest(asset.Id,"No"))).StatusCode);
         Assert.Equal(HttpStatusCode.Forbidden,(await stranger.Client.GetAsync(basePath+"/banks")).StatusCode);
         var form=await learner.Client.GetStringAsync(basePath+$"/banks/{bank.Id}"); Assert.DoesNotContain("correctOption",form); Assert.DoesNotContain("explanation",form);

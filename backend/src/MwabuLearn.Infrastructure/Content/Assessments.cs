@@ -81,8 +81,11 @@ public sealed class Assessments(MwabuDbContext db, LessonAccess access, Activity
     {
         await access.Demand(org, PermissionCodes.AssessmentsReport, ct);
         if (!await db.QuestionBanks.AnyAsync(x => x.Id == bankId && x.OrganisationId == org, ct)) throw new ContentException(ContentError.NotFound, "Bank was not found.");
-        return await db.AssessmentAttempts.AsNoTracking().Where(x => x.OrganisationId == org && x.QuestionBankId == bankId && x.ExpiresAt > DateTime.UtcNow)
+        var results = await db.AssessmentAttempts.AsNoTracking().Where(x => x.OrganisationId == org && x.QuestionBankId == bankId && x.ExpiresAt > DateTime.UtcNow)
             .GroupBy(x => x.LearnerUserId).Select(g => new { LearnerUserId = g.Key, Attempts = g.Count(), BestScore = g.Max(x => x.Score), Total = g.Max(x => x.Total), LastSubmittedAt = g.Max(x => x.CreatedAt) }).OrderBy(x => x.LearnerUserId).Take(100).ToListAsync(ct);
+        var ids = results.Select(x => x.LearnerUserId).ToArray();
+        var names = await db.Users.AsNoTracking().Where(x => ids.Contains(x.Id)).ToDictionaryAsync(x => x.Id,x => x.FirstName + " " + x.LastName,ct);
+        return results.Select(x => new { x.LearnerUserId, LearnerName = names.GetValueOrDefault(x.LearnerUserId,"Learner"), x.Attempts, x.BestScore, x.Total, x.LastSubmittedAt }).ToArray();
     }
     public async Task DeleteOwn(Guid org, Guid id, CancellationToken ct)
     {

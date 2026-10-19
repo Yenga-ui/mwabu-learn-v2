@@ -1410,6 +1410,10 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("ContentResultJson")
+                        .HasMaxLength(100000)
+                        .HasColumnType("character varying(100000)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1428,6 +1432,13 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
 
                     b.Property<Guid>("OrganisationId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("Purpose")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("lesson");
 
                     b.Property<string>("RequestJson")
                         .IsRequired()
@@ -2723,6 +2734,27 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                             Id = new Guid("53000000-0000-0000-0003-000000000018"),
                             CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("52000000-0000-0000-0000-000000000018"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000003")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0003-000000000020"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000020"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000003")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0003-000000000021"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000021"),
+                            RoleId = new Guid("51000000-0000-0000-0000-000000000003")
+                        },
+                        new
+                        {
+                            Id = new Guid("53000000-0000-0000-0003-000000000022"),
+                            CreatedAt = new DateTime(2026, 10, 6, 0, 0, 0, 0, DateTimeKind.Utc),
+                            PermissionId = new Guid("52000000-0000-0000-0000-000000000022"),
                             RoleId = new Guid("51000000-0000-0000-0000-000000000003")
                         },
                         new

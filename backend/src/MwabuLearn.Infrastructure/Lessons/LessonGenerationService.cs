@@ -123,7 +123,7 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
             throw ProviderHttp.Unavailable();
         }
     }
-    private async Task Reserve(LessonPlannerSettings settings, LessonGeneration generation, CancellationToken ct)
+    internal async Task Reserve(LessonPlannerSettings settings, LessonGeneration generation, CancellationToken ct)
     {
         await Transaction(db, async () =>
         {
@@ -140,7 +140,7 @@ public sealed class LessonGenerationService(MwabuDbContext db, LessonAccess acce
             db.LessonGenerations.Add(generation); await db.SaveChangesAsync(ct); return true;
         }, ct);
     }
-    private async Task Finish(LessonGeneration generation, int tokens)
+    internal async Task Finish(LessonGeneration generation, int tokens)
     {
         using var bound = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         // Use a SQL conditional delta rather than reloading/updating a stale budget snapshot after the network call.

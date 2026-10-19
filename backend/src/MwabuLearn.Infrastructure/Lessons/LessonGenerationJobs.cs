@@ -54,7 +54,7 @@ public sealed class LessonGenerationJobs(MwabuDbContext db, LessonAccess access,
     {
         var lesson = await access.Read(org, plan, false, ct);
         if (lesson.OwnerUserId != access.User) throw LessonRules.Forbidden();
-        return (await db.LessonGenerationJobs.AsNoTracking().Where(x => x.OrganisationId == org && x.LessonPlanId == plan && x.ActorUserId == access.User)
+        return (await db.LessonGenerationJobs.AsNoTracking().Where(x => x.OrganisationId == org && x.LessonPlanId == plan && x.ActorUserId == access.User && x.Purpose == "lesson")
             .OrderByDescending(x => x.CreatedAt).Take(20).ToListAsync(ct)).Select(Response).ToArray();
     }
     public async Task<GenerationJobResponse> CancelAsync(Guid org, Guid plan, Guid id, CancellationToken ct)

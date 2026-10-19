@@ -8,6 +8,8 @@ public sealed class LessonGenerationJob : BaseEntity
     public Guid ActorUserId { get; set; }
     public string State { get; set; } = "queued";
     public string RequestJson { get; set; } = "";
+    public string Purpose { get; set; } = "lesson";
+    public string? ContentResultJson { get; set; }
     public Guid? GenerationId { get; set; }
     public bool CancelRequested { get; set; }
     public DateTime? LeaseUntil { get; set; }

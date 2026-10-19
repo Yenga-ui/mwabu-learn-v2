@@ -32,6 +32,7 @@ public static class IdentityReferenceData
             [PermissionCodes.CurriculumRead, PermissionCodes.ContentRead, PermissionCodes.ContentManage, PermissionCodes.ContentPublish, PermissionCodes.LessonsRead, PermissionCodes.LessonsManage, PermissionCodes.LessonsReview, PermissionCodes.LessonsPublish, PermissionCodes.LessonsAi],
             [PermissionCodes.ReportsRead, PermissionCodes.OrganisationsRead]
         ];
+        grants[2] = [.. grants[2], PermissionCodes.AssessmentsTake, PermissionCodes.AssessmentsManage, PermissionCodes.AssessmentsReport];
         grants[3] = [.. grants[3], PermissionCodes.AssessmentsTake, PermissionCodes.AssessmentsManage, PermissionCodes.AssessmentsReport];
         grants[4] = [.. grants[4], PermissionCodes.AssessmentsTake, PermissionCodes.AssessmentsManage, PermissionCodes.AssessmentsReport];
         grants[5] = [.. grants[5], PermissionCodes.AssessmentsTake];

@@ -51,7 +51,8 @@ public sealed class ActivityTests
     {
         using var factory = new CatalogueApiFactory(); await factory.Initialize();
         var resource = await factory.Created<ContentResponse>("/api/content", ContentTestEnvironment.Request("bounded-activity")); var path = $"/api/content/{resource.Id}/activities";
-        foreach (var invalid in new[] { Quiz() with { Kind = "html" }, Quiz() with { SchemaVersion = 2 }, Quiz() with { Questions = [new("Invalid", ["same", "same"], 0, "Explanation")] }, Quiz() with { Questions = [new("Invalid", ["Yes", "No"], 9, "Explanation")] }, new ActivityDefinition(1, "place-value", "Place value", "Explore", "en", [], 10000) })
+        Assert.Equal(HttpStatusCode.BadRequest,(await factory.Admin.PostAsJsonAsync(path,new {schemaVersion=2,kind="fraction",title="Halves",instructions="Shade one half",language="en",questions=Array.Empty<ActivityQuestion>(),number=1,denominator=2,script="not executable"})).StatusCode);
+        foreach (var invalid in new[] { Quiz() with { Kind = "html" }, Quiz() with { SchemaVersion = 3 }, Quiz() with { Questions = [new("Invalid", ["same", "same"], 0, "Explanation")] }, Quiz() with { Questions = [new("Invalid", ["Yes", "No"], 9, "Explanation")] }, new ActivityDefinition(1, "place-value", "Place value", "Explore", "en", [], 10000) })
             Assert.Equal(HttpStatusCode.BadRequest, (await factory.Admin.PostAsJsonAsync(path, invalid)).StatusCode);
         var saved = (await (await factory.Admin.PostAsJsonAsync(path, new ActivityDefinition(1, "place-value", "Place value", "Explore 2436", "en", [], 2436))).Content.ReadFromJsonAsync<AssetResponse>(CatalogueApiFactory.Json))!;
         using (var scope = factory.Services.CreateScope()) { var db = scope.ServiceProvider.GetRequiredService<MwabuDbContext>(); var asset = await db.ContentAssets.SingleAsync(x => x.Id == saved.Id); asset.Checksum = new string('0', 64); await db.SaveChangesAsync(); }
