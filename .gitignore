@@ -28,6 +28,8 @@ coverage/
 .parcel-cache/
 .turbo/
 *.tsbuildinfo
+# Built public web assets are generated from web/ by the Docker build or copied locally.
+/backend/src/MwabuLearn.Api/wwwroot/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

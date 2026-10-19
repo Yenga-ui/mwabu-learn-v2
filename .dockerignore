@@ -9,6 +9,7 @@
 **/node_modules
 **/.pnpm-store
 web/dist
+backend/src/MwabuLearn.Api/wwwroot
 web/test-results
 web/playwright-report
 **/.local

@@ -1,5 +1,19 @@
 # AI Lesson Planner verification record
 
+## Security stabilization, 19 October 2026
+
+The October 14 CI failure is caused by advisories published October 13, after the earlier verification below. PDFsharp-MigraDoc 6.2.4 (including PDFsharp) introduces PKCS 8.0.1. DataProtection.EntityFrameworkCore 10.0.12 introduces DataProtection → XML → PKCS 10.0.12. The API's shared-framework pruning leaves the PDFsharp PKCS minimum visible in its package graph. Explicit Infrastructure references to PKCS/XML 10.0.13 protect all consumers; Microsoft ASP.NET/EF packages and CI EF tooling are aligned to 10.0.13. The net10.0 architecture, warning-as-error build and vulnerability auditing remain enabled.
+
+Verified patched floors: [PKCS high](https://github.com/advisories/GHSA-846f-f764-76mx), [PKCS moderate](https://github.com/advisories/GHSA-2fmv-rv2c-59x7), [XML 1](https://github.com/advisories/GHSA-7hqp-7c5m-4vq6), [XML 2](https://github.com/advisories/GHSA-c399-9853-6jmj), [XML 3](https://github.com/advisories/GHSA-r955-8q5j-3h83). All five identify 10.0.13 as patched.
+
+Current local results: restore passed; Release build passed with zero warnings/errors; all 295 backend tests passed with zero skips on a dedicated disposable PostgreSQL 17 cluster; frontend lint/typecheck passed; all 40 frontend tests passed; production build passed; NuGet direct/transitive and pnpm audits report no known vulnerabilities. EF 10.0.13 reports no model drift and generates the idempotent migration script offline. Original protected migrations remain unchanged.
+
+Generated API wwwroot output is removed from the Git index and ignored, with local copies preserved. Original logo/favicon sources remain in web/public. Docker excludes local wwwroot and builds/copies fresh web/dist; development can use the documented --webroot path. This removes obsolete bundles without altering application data.
+
+Browser and final GitHub CI acceptance are recorded separately when complete. Live provider/classroom acceptance and deployment approval remain release gates. The follow-up scope is in [the separate implementation plan](lesson-platform-next-implementation-plan.md).
+
+## Historical verification
+
 Date: 13 October 2026. Branch: `feature/ai-lesson-planner`. Base: `9ca5670570dcc5ba353aaf94a7660efc320178e9`. No merge or application-database migration was performed.
 
 | Check | Actual result |
