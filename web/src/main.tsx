@@ -30,6 +30,10 @@ const LessonPlanner = lazy(() => import("./features/lessons/LessonPlanner"));
 const LessonPresentation = lazy(
   () => import("./features/lessons/LessonPresentation"),
 );
+const LessonJourney = lazy(() => import("./features/lessons/LessonJourney"));
+const ClassroomTeaching = lazy(
+  () => import("./features/lessons/ClassroomTeaching"),
+);
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -72,6 +76,8 @@ const router = createBrowserRouter([
       { path: "lessons", element: route(<LessonPlanner />) },
       { path: "lessons/:id", element: route(<LessonPlanner />) },
       { path: "lessons/:id/present", element: route(<LessonPresentation />) },
+      { path: "lessons/:id/journey", element: route(<LessonJourney />) },
+      { path: "lessons/:id/teach", element: route(<ClassroomTeaching />) },
       { path: "curriculum", element: route(<Curriculum />) },
       { path: "content", element: route(<ContentManagement />) },
       { path: "content/:id", element: route(<ContentManagement />) },

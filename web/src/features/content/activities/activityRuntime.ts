@@ -28,7 +28,11 @@ export const activityMime = "application/vnd.mwabu.activity+json";
 
 // Deliberately self-contained: the same fixed renderer runs online and in an offline file.
 // All authored values are text/numbers. No HTML, script, URLs or dynamic code is evaluated.
-export function mountActivity(host: HTMLElement, activity: ActivityDefinition) {
+export function mountActivity(
+  host: HTMLElement,
+  activity: ActivityDefinition,
+  wholeClass = false,
+) {
   host.replaceChildren();
   const textValid = (value: unknown, maximum: number) =>
     typeof value === "string" &&
@@ -288,6 +292,7 @@ export function mountActivity(host: HTMLElement, activity: ActivityDefinition) {
       feedback.push(element("p", "", group));
     }
     const submit = element("button", "Check answers", form);
+    submit.hidden = wholeClass;
     submit.type = "submit";
     submit.className = "button";
     const summary = element("p", "", form);
@@ -335,6 +340,7 @@ export function mountActivity(host: HTMLElement, activity: ActivityDefinition) {
       feedback[index] = element("p", "", group);
     });
     const check = element("button", "Check answers", form);
+    check.hidden = wholeClass;
     check.type = "submit";
     check.className = "button";
     const summary = element("p", "", form);

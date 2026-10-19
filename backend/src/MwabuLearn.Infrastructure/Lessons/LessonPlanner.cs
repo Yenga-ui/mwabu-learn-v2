@@ -12,9 +12,23 @@ namespace MwabuLearn.Infrastructure.Lessons;
 public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, CurriculumGrounding grounding, ILessonPdf pdf) : ILessonPlanner
 {
     public static LessonSummary Summary(LessonPlan x) => new(x.Id, x.OrganisationId, x.OwnerUserId, x.Title, x.Mode, x.Status, x.Revision, x.IsOrganisationTemplate, x.CreatedAt, x.UpdatedAt);
-    public async Task<Page<LessonSummary>> ListAsync(Guid org, PageRequest page, string? status, CancellationToken ct)
+    public async Task<Page<LessonSummary>> ListAsync(Guid org, PageRequest page, string? status, CancellationToken ct, LessonDiscoveryFilter? filter = null)
     {
         var query = (await access.Visible(org, ct)).AsNoTracking();
+        if (filter?.NodeId is Guid node)
+        {
+            var outcomes = db.LearningOutcomes.AsNoTracking();
+            outcomes = filter.NodeType switch {
+                "LearningOutcome" => outcomes.Where(x => x.Id == node),
+                "Competency" => outcomes.Where(x => x.CompetencyId == node),
+                "Topic" => outcomes.Where(x => x.Competency.TopicId == node),
+                "Term" => outcomes.Where(x => x.Competency.Topic.TermId == node),
+                "Subject" => outcomes.Where(x => x.Competency.Topic.Term.SubjectId == node),
+                "Grade" => outcomes.Where(x => x.Competency.Topic.Term.Subject.GradeId == node),
+                "CurriculumVersion" => outcomes.Where(x => x.Competency.Topic.Term.Subject.Grade.CurriculumVersionId == node),
+                _ => throw LessonRules.Invalid("Select a supported curriculum filter.") };
+            query = query.Where(x => x.LearningOutcomeId.HasValue && outcomes.Any(o => o.Id == x.LearningOutcomeId));
+        }
         if (!string.IsNullOrWhiteSpace(status))
         { if (!Enum.TryParse<LessonStatus>(status, out var state) || !Enum.IsDefined(state)) throw LessonRules.Invalid("Invalid lesson status."); query = query.Where(x => x.Status == state); }
         var text = page.Text?.Trim(); if (!string.IsNullOrEmpty(text)) query = query.Where(x => x.Title.ToLower().Contains(text.ToLower()));
@@ -49,8 +63,8 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
             var steps = JourneyRules.Validate(request.TeachingSteps ?? previousDocument?.TeachingSteps ?? [], sections);
             foreach (var resource in steps.SelectMany(x => x.Resources))
                 if (!await db.ContentAssets.AsNoTracking().AnyAsync(a => a.Id == resource.AssetId && a.ContentItemId == resource.ContentItemId &&
-                    a.Checksum == resource.Checksum && !a.IsPendingDeletion && db.ContentItems.Any(c => c.Id == a.ContentItemId && c.Status == Domain.Entities.Content.ContentStatus.Published), ct))
-                    throw LessonRules.Invalid("A teaching resource version is unavailable or unpublished. Select an approved version.");
+                    a.Checksum == resource.Checksum && !a.IsPendingDeletion && JourneyRules.SupportedMedia.Contains(a.MimeType) && db.ContentItems.Any(c => c.Id == a.ContentItemId && c.Status == Domain.Entities.Content.ContentStatus.Published), ct))
+                    throw LessonRules.Invalid("A teaching resource version is unavailable, unpublished or unsupported. Select an approved image, audio, video, PDF or declarative activity.");
             var document = new LessonDocument(setup, context, sections, refs,
                 MinistryFormRules.Validate(form ?? MinistryFormRules.FromSections(sections), setup.DurationMinutes), 3, steps);
             plan.Title = setup.Title; plan.Mode = setup.Mode; plan.LearningOutcomeId = context?.OutcomeId;
@@ -104,6 +118,10 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
         if (request.Status is LessonStatus.InReview or LessonStatus.Published)
         {
             Publishable(detail.Document);
+            foreach (var resource in (detail.Document.TeachingSteps ?? []).SelectMany(x => x.Resources))
+                if (!await db.ContentAssets.AsNoTracking().AnyAsync(a => a.Id == resource.AssetId && a.ContentItemId == resource.ContentItemId &&
+                    a.Checksum == resource.Checksum && !a.IsPendingDeletion && db.ContentItems.Any(c => c.Id == a.ContentItemId && c.Status == Domain.Entities.Content.ContentStatus.Published), ct))
+                    throw new PlannerException(PlannerError.Conflict, "A classroom resource version is no longer published. Replace it before review.");
             var fresh = await grounding.Resolve(detail.Document.Setup, ct);
             if (fresh != detail.Document.Curriculum) throw new PlannerException(PlannerError.Conflict, "Managed curriculum records changed. Update and review the lesson alignment.");
             var referencedIds = detail.Document.References.Where(x => x.Kind == LessonSourceKind.Mwabu).Select(x => x.Id).ToArray();

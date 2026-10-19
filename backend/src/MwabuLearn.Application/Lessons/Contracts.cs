@@ -32,12 +32,15 @@ public sealed record SourceCitation(Guid Id, LessonSourceKind Kind, string Title
 public sealed record LessonDocument(LessonSetup Setup, CurriculumContext? Curriculum, LessonSection[] Sections, SourceCitation[] References,
     MinistryLessonForm? MinistryForm = null, int SchemaVersion = 1, TeachingStep[]? TeachingSteps = null);
 public sealed record TeachingResource(Guid ContentItemId, Guid AssetId, string Checksum, string Title);
+public sealed record ClassroomStep(string Id, string Title, string Phase, int Minutes, string LearnerExplanation, string Hint, string Answer, TeachingResource[] Resources);
+public sealed record ClassroomLesson(Guid LessonId, int Revision, string Title, string Language, string? LearningOutcome, ClassroomStep[] Steps);
 public sealed record TeachingStep(string Id, string SectionCode, string Title, string Phase, int Minutes,
     string TeacherInstructions, string LearnerExplanation, string Hint, string Answer, string TeacherNotes,
     TeachingResource[] Resources);
 public sealed record SaveLessonRequest(int ExpectedRevision, LessonSetup Setup, LessonSection[] Sections, string Reason = "Teacher edit", MinistryLessonForm? MinistryForm = null, TeachingStep[]? TeachingSteps = null);
 public sealed record LessonSummary(Guid Id, Guid OrganisationId, Guid OwnerUserId, string Title, PlanningMode Mode,
     LessonStatus Status, int Revision, bool IsOrganisationTemplate, DateTime CreatedAt, DateTime? UpdatedAt);
+public sealed record LessonDiscoveryFilter(string? NodeType = null, Guid? NodeId = null);
 public sealed record LessonDetail(LessonSummary Lesson, LessonDocument Document, bool CanEdit, bool CanReview, int ViewedRevision, string AuthorName = "");
 public sealed record CachedLesson(Guid Id, int Revision);
 public sealed record LessonReconcileRequest(CachedLesson[] Lessons);
@@ -73,7 +76,7 @@ public sealed record UsageReport(int RequestsToday, int ChargedTokensThisMonth, 
     int DailyRequestLimit, int MonthlyTokenLimit, decimal MonthlyCostLimitUsd, int UncertainRequests);
 public interface ILessonPlanner
 {
-    Task<Page<LessonSummary>> ListAsync(Guid org, PageRequest page, string? status, CancellationToken ct);
+    Task<Page<LessonSummary>> ListAsync(Guid org, PageRequest page, string? status, CancellationToken ct, LessonDiscoveryFilter? filter = null);
     Task<LessonDetail> GetAsync(Guid org, Guid id, int? revision, CancellationToken ct);
     Task<LessonDetail> SaveAsync(Guid org, Guid? id, SaveLessonRequest request, CancellationToken ct);
     Task<LessonDetail> DuplicateAsync(Guid org, Guid id, CancellationToken ct);

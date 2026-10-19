@@ -4,6 +4,20 @@ namespace MwabuLearn.Application.Lessons;
 // private instructions and notes are never part of the learner-facing projection.
 public static class JourneyRules
 {
+    public static readonly string[] SupportedMedia = ["application/vnd.mwabu.activity+json", "image/png", "image/jpeg", "image/gif", "image/webp", "audio/mpeg", "audio/ogg", "audio/wav", "video/mp4", "video/webm", "application/pdf"];
+    public static ClassroomStep Project(TeachingStep step) => new(step.Id, step.Title, step.Phase, step.Minutes,
+        step.LearnerExplanation, step.Hint, step.Answer, step.Resources);
+    public static ClassroomStep[] ClassroomSteps(LessonDocument document)
+    {
+        if (document.TeachingSteps is { Length: > 0 }) return document.TeachingSteps.Select(Project).ToArray();
+        // A valid historical lesson remains teachable without optional preparation.
+        // Never copy planning bodies/suggested answers into the projected view.
+        string[] codes = ["starter", "development", "learner-activities", "formative-assessment", "conclusion"];
+        var steps = document.Sections.Where(s => codes.Contains(s.Code) && !string.IsNullOrWhiteSpace(s.Body))
+            .Select(s => new ClassroomStep(s.Code, s.Title, "Classroom discussion", s.Minutes, "", "", "", [])).ToList();
+        steps.Insert(0, new("objectives", "Learning objectives", "Introduction", 0, document.Setup.Objectives, "", "", []));
+        return steps.ToArray();
+    }
     public static TeachingStep[] Validate(TeachingStep[] steps, LessonSection[] sections)
     {
         if (steps.Length > 40 || steps.Any(x => x is null) || steps.Select(x => x.Id).Distinct().Count() != steps.Length)

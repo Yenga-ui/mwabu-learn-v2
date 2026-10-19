@@ -27,6 +27,7 @@ import { blankSections, blankSetup, lessonBase } from "./types";
 import SetupForm from "./LessonSetup";
 import LessonEditor from "./LessonEditor";
 import PlannerSettings from "./PlannerSettings";
+import NodePicker from "../curriculum/NodePicker";
 
 export default function LessonPlanner() {
   const session = useSession();
@@ -37,14 +38,26 @@ export default function LessonPlanner() {
   const [text, setText] = useState("");
   const [status, setStatus] = useState("");
   const [settings, setSettings] = useState(false);
+  const [curriculumFilter, setCurriculumFilter] = useState<{
+    nodeType: string;
+    nodeId: string;
+    name: string;
+  }>();
   const allowed = !!org && session.can("lessons.read");
   const list = useQuery({
-    queryKey: ["lessons", org, page, text, status],
+    queryKey: ["lessons", org, page, text, status, curriculumFilter],
     queryFn: ({ signal }) =>
       api<Page<Lesson>>(
         lessonBase(org!) +
           "?" +
-          queryString({ page, text, status, pageSize: 20 }),
+          queryString({
+            page,
+            text,
+            status,
+            pageSize: 20,
+            nodeType: curriculumFilter?.nodeType,
+            nodeId: curriculumFilter?.nodeId,
+          }),
         { signal },
       ),
     enabled: allowed && !id,
@@ -131,6 +144,35 @@ export default function LessonPlanner() {
         </button>
       </div>
       {settings && <PlannerSettings organisation={org!} />}
+      <details className="panel">
+        <summary>
+          Find lessons by grade, subject, term or topic
+          {curriculumFilter ? ` · ${curriculumFilter.name}` : ""}
+        </summary>
+        <NodePicker
+          onSelect={(type, selectedId, name) => {
+            if (type !== "curricula") {
+              setCurriculumFilter({ nodeType: type, nodeId: selectedId, name });
+              setPage(1);
+            }
+          }}
+          onReset={() => {
+            setCurriculumFilter(undefined);
+            setPage(1);
+          }}
+        />
+        {curriculumFilter && (
+          <button
+            className="button secondary"
+            onClick={() => {
+              setCurriculumFilter(undefined);
+              setPage(1);
+            }}
+          >
+            Clear lesson curriculum filter
+          </button>
+        )}
+      </details>
       <QueryState query={list}>
         {(data) => (
           <>
@@ -166,6 +208,12 @@ export default function LessonPlanner() {
                         lesson.updatedAt ?? lesson.createdAt,
                       ).toLocaleDateString()}
                     </small>
+                    <Link
+                      className="button"
+                      to={`/app/lessons/${lesson.id}/journey?revision=${lesson.revision}`}
+                    >
+                      Open Lesson Journey
+                    </Link>
                   </article>
                 ))}
               </div>

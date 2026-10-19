@@ -405,12 +405,12 @@ export default function LessonEditor({
             void run(async () => {
               const saved = await draft.save();
               navigate(
-                `/app/lessons/${saved.lesson.id}/present?revision=${saved.lesson.revision}`,
+                `/app/lessons/${saved.lesson.id}/journey?revision=${saved.lesson.revision}`,
               );
             })
           }
         >
-          Present saved lesson
+          Prepare Lesson Journey
         </button>
       </div>
       {!!draft.error && <ErrorNotice error={draft.error} />}

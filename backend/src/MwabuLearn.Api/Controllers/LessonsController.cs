@@ -16,11 +16,20 @@ public sealed class LessonsController(ILessonPlanner plans, ILessonSources sourc
     public async Task<IActionResult> Syllabus(Guid organisationId, [FromQuery] string grade, [FromQuery] string subject, CancellationToken ct)
         => Ok(await syllabus.ListAsync(organisationId, grade, subject, ct));
     [HttpGet, RequirePermission(PermissionCodes.LessonsRead), EnableRateLimiting("search")]
-    public async Task<IActionResult> List(Guid organisationId, [FromQuery] PageRequest page, [FromQuery] string? status, CancellationToken ct) => Ok(await plans.ListAsync(organisationId, page, status, ct));
+    public async Task<IActionResult> List(Guid organisationId, [FromQuery] PageRequest page, [FromQuery] string? status, [FromQuery] LessonDiscoveryFilter filter, CancellationToken ct) => Ok(await plans.ListAsync(organisationId, page, status, ct, filter));
     [HttpPost("reconcile"), RequirePermission(PermissionCodes.LessonsRead), EnableRateLimiting("search")]
     public async Task<IActionResult> Reconcile(Guid organisationId, LessonReconcileRequest request, CancellationToken ct) => Ok(await plans.ReconcileAsync(organisationId, request, ct));
     [HttpGet("{id:guid}"), RequirePermission(PermissionCodes.LessonsRead)]
     public async Task<IActionResult> Get(Guid organisationId, Guid id, [FromQuery] int? revision, CancellationToken ct) => Ok(await plans.GetAsync(organisationId, id, revision, ct));
+    [HttpGet("{id:guid}/classroom"), RequirePermission(PermissionCodes.LessonsRead)]
+    public async Task<IActionResult> Classroom(Guid organisationId, Guid id, [FromQuery] int revision, CancellationToken ct)
+    {
+        if (revision < 1) throw LessonRules.Invalid("Choose a saved lesson revision.");
+        var detail = await plans.GetAsync(organisationId, id, revision, ct);
+        Response.Headers.CacheControl = "no-store, private";
+        return Ok(new ClassroomLesson(id, detail.ViewedRevision, detail.Document.Setup.Title, detail.Document.Setup.Language,
+            detail.Document.Curriculum?.Outcome, JourneyRules.ClassroomSteps(detail.Document)));
+    }
     [HttpPost, RequirePermission(PermissionCodes.LessonsManage)]
     public async Task<IActionResult> Create(Guid organisationId, SaveLessonRequest request, CancellationToken ct)
     { var result = await plans.SaveAsync(organisationId, null, request, ct); return CreatedAtAction(nameof(Get), new { organisationId, id = result.Lesson.Id }, result); }

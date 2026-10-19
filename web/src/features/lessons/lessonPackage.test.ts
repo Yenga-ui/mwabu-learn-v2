@@ -36,3 +36,38 @@ it("exports only complete hash-verified media packages with escaped text and a f
   ).rejects.toThrow("integrity");
   await expect(lessonPackageHtml(manifest, [])).rejects.toThrow("incomplete");
 });
+it("exports public teaching fields only and rejects unknown package versions", async () => {
+  vi.stubGlobal("crypto", webcrypto);
+  const manifest = {
+    schemaVersion: 2,
+    lessonId: "lesson",
+    revision: 4,
+    title: "Fractions",
+    language: "en",
+    sections: [],
+    assets: [],
+    version: "version-4",
+    teacherNotes: "PRIVATE ROOT",
+    teachingSteps: [
+      {
+        id: "intro",
+        title: "Equal parts",
+        phase: "Discussion",
+        minutes: 5,
+        learnerExplanation: "Compare equal parts",
+        hint: "Compare sizes",
+        answer: "Equal",
+        resources: [],
+        teacherNotes: "PRIVATE STEP",
+        teacherInstructions: "PRIVATE GUIDANCE",
+      },
+    ],
+  };
+  const html = await lessonPackageHtml(manifest, []);
+  expect(html).not.toContain("PRIVATE");
+  expect(html).not.toContain("teacherNotes");
+  expect(html).toContain("Compare equal parts");
+  await expect(
+    lessonPackageHtml({ ...manifest, schemaVersion: 99 }, []),
+  ).rejects.toThrow("Unsupported");
+});

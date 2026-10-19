@@ -66,7 +66,7 @@ public sealed class MinistryLessonFormTests
         var saved = await teacher.Client.PutAsJsonAsync(path, new SaveLessonRequest(1, detail.Document.Setup, detail.Document.Sections, "Review form", form), CatalogueApiFactory.Json);
         Assert.Equal(HttpStatusCode.OK, saved.StatusCode);
         var reopened = (await teacher.Client.GetFromJsonAsync<LessonDetail>(path, CatalogueApiFactory.Json))!;
-        Assert.Equal(2, reopened.Document.SchemaVersion); Assert.Equal("Synthetic school", reopened.Document.MinistryForm!.School);
+        Assert.Equal(3, reopened.Document.SchemaVersion); Assert.Equal("Synthetic school", reopened.Document.MinistryForm!.School);
         Assert.Equal("Two equal parts", reopened.Document.MinistryForm.Progression[0].AssessmentCriteria);
         Assert.Equal(HttpStatusCode.OK, (await teacher.Client.PutAsJsonAsync(path, new SaveLessonRequest(2, detail.Document.Setup, detail.Document.Sections), CatalogueApiFactory.Json)).StatusCode);
         Assert.Equal("Synthetic school", (await teacher.Client.GetFromJsonAsync<LessonDetail>(path, CatalogueApiFactory.Json))!.Document.MinistryForm!.School);

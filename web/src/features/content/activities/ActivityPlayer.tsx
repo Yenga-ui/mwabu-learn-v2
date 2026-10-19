@@ -4,16 +4,26 @@ import { api, ensureSession } from "../../../api/client";
 import { ErrorNotice, QueryState } from "../../../components/ui";
 import { mountActivity, type ActivityDefinition } from "./activityRuntime";
 import { offlineActivityHtml } from "./offlineActivity";
+import { WholeClassActivity } from "./WholeClassActivity";
 
 export function ActivityPlayer({
   definition,
+  wholeClass = false,
 }: {
   definition: ActivityDefinition;
+  wholeClass?: boolean;
 }) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (host.current) return mountActivity(host.current, definition);
-  }, [definition]);
+    if (host.current) {
+      const cleanup = mountActivity(host.current, definition, wholeClass);
+      if (wholeClass)
+        host.current.querySelectorAll("form").forEach((form) => {
+          form.onsubmit = (event) => event.preventDefault();
+        });
+      return cleanup;
+    }
+  }, [definition, wholeClass]);
   return (
     <div
       ref={host}
@@ -27,11 +37,13 @@ export function PublishedActivity({
   assetId,
   downloadUrl,
   downloadable,
+  wholeClass = false,
 }: {
   resourceId: string;
   assetId: string;
   downloadUrl: string;
   downloadable: boolean;
+  wholeClass?: boolean;
 }) {
   const query = useQuery({
     queryKey: ["published-activity", resourceId, assetId],
@@ -50,7 +62,11 @@ export function PublishedActivity({
     <QueryState query={query}>
       {(data) => (
         <section>
-          <ActivityPlayer key={assetId} definition={data.definition} />
+          {wholeClass ? (
+            <WholeClassActivity key={assetId} definition={data.definition} />
+          ) : (
+            <ActivityPlayer key={assetId} definition={data.definition} />
+          )}
           {!!error && <ErrorNotice error={error} />}
           {downloadable && (
             <button

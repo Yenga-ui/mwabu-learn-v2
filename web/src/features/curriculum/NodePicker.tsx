@@ -114,6 +114,7 @@ export default function NodePicker({
                   setSearch("");
                   setText("");
                   onReset?.();
+                  onSelect("Grade", row.id, row.name, [row.curriculumName, row.versionName, row.name]);
                 }
               }}
             >
