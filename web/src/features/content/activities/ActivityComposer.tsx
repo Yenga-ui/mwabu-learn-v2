@@ -31,6 +31,31 @@ export const sampleActivity = (): ActivityDefinition => ({
     },
   ],
 });
+export function sampleQuestion(
+  kind: ActivityDefinition["kind"],
+): ActivityQuestion {
+  if (kind === "fill-blank")
+    return {
+      prompt: "Write a fraction equal to one of two equal parts.",
+      options: ["one half", "1/2"],
+      correctOption: 0,
+      explanation: "One half, written 1/2, is one of two equal parts.",
+    };
+  if (kind === "sequencing")
+    return {
+      prompt: "Put the paper-folding steps in order.",
+      options: [
+        "Take a square sheet of paper",
+        "Fold it into two equal parts",
+        "Open the sheet and trace the fold",
+        "Label each equal part one half",
+      ],
+      correctOption: 0,
+      explanation:
+        "Start with a whole sheet, fold it equally, open it, then label the two halves.",
+    };
+  return sampleActivity().questions[0];
+}
 
 export default function ActivityComposer({
   id,
@@ -60,9 +85,10 @@ export default function ActivityComposer({
     <section className="card">
       <h2>Interactive activity authoring</h2>
       <p>
-        Create a practice quiz or a place-value explanation. Preview it, save
-        the activity file and use the existing review and publishing workflow.
-        Only published resources appear to learners.
+        Create quizzes, matching and sequencing tasks, blank-answer exercises or
+        mathematics visualisations. Preview and save the activity, then use the
+        existing review and publishing workflow. Only published resources appear
+        to learners.
       </p>
       {asset ? (
         <QueryState query={saved}>
@@ -175,19 +201,27 @@ function ActivityForm({
             Activity format
             <select
               value={value.kind}
-              onChange={(e) =>
+              onChange={(e) => {
+                const kind = e.target.value as ActivityDefinition["kind"];
+                if (kind !== value.kind) setQuestions([sampleQuestion(kind)]);
                 setValue({
                   ...value,
                   kind: e.target.value as ActivityDefinition["kind"],
                   schemaVersion: 2,
+                  instructions:
+                    kind === "sequencing"
+                      ? "Put the steps in order, then check your answer."
+                      : kind === "fill-blank"
+                        ? "Write your answer, then check it and read the explanation."
+                        : value.instructions,
                   number:
                     e.target.value === "fraction"
                       ? 1
                       : e.target.value === "number-line"
                         ? 5
                         : value.number,
-                })
-              }
+                });
+              }}
             >
               <option value="quiz">Multiple-choice practice</option>
               <option value="place-value">Place-value animation</option>
@@ -320,7 +354,13 @@ function ActivityForm({
                   </label>
                   {question.options.map((option, choice) => (
                     <label key={choice}>
-                      Question {index + 1}: answer choice {choice + 1}
+                      Question {index + 1}:{" "}
+                      {value.kind === "fill-blank"
+                        ? "accepted answer"
+                        : value.kind === "sequencing"
+                          ? "step"
+                          : "answer choice"}{" "}
+                      {choice + 1}
                       <input
                         required
                         maxLength={300}
@@ -335,23 +375,56 @@ function ActivityForm({
                       />
                     </label>
                   ))}
-                  <label>
-                    Question {index + 1}: correct answer
-                    <select
-                      value={question.correctOption}
-                      onChange={(e) =>
+                  {question.options.length < 6 && (
+                    <button
+                      type="button"
+                      className="button secondary"
+                      onClick={() =>
                         changeQuestion(index, {
-                          correctOption: Number(e.target.value),
+                          options: [...question.options, ""],
                         })
                       }
                     >
-                      {question.options.map((option, i) => (
-                        <option key={i} value={i}>
-                          {option || `Answer choice ${i + 1}`}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      Add answer for question {index + 1}
+                    </button>
+                  )}
+                  {question.options.length >
+                    (value.kind === "fill-blank" ? 1 : 2) && (
+                    <button
+                      type="button"
+                      className="button secondary"
+                      onClick={() =>
+                        changeQuestion(index, {
+                          options: question.options.slice(0, -1),
+                          correctOption: Math.min(
+                            question.correctOption,
+                            question.options.length - 2,
+                          ),
+                        })
+                      }
+                    >
+                      Remove last answer for question {index + 1}
+                    </button>
+                  )}
+                  {!["fill-blank", "sequencing"].includes(value.kind) && (
+                    <label>
+                      Question {index + 1}: correct answer
+                      <select
+                        value={question.correctOption}
+                        onChange={(e) =>
+                          changeQuestion(index, {
+                            correctOption: Number(e.target.value),
+                          })
+                        }
+                      >
+                        {question.options.map((option, i) => (
+                          <option key={i} value={i}>
+                            {option || `Answer choice ${i + 1}`}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   <label>
                     Question {index + 1}: explanation
                     <input
@@ -385,7 +458,7 @@ function ActivityForm({
                   onClick={() =>
                     setQuestions((rows) => [
                       ...rows,
-                      sampleActivity().questions[0],
+                      sampleQuestion(value.kind),
                     ])
                   }
                 >

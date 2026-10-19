@@ -30,6 +30,79 @@ export const activityMime = "application/vnd.mwabu.activity+json";
 // All authored values are text/numbers. No HTML, script, URLs or dynamic code is evaluated.
 export function mountActivity(host: HTMLElement, activity: ActivityDefinition) {
   host.replaceChildren();
+  const textValid = (value: unknown, maximum: number) =>
+    typeof value === "string" &&
+    value.trim().length > 0 &&
+    value.length <= maximum;
+  const questionsKind = [
+    "quiz",
+    "matching",
+    "sequencing",
+    "fill-blank",
+  ].includes(activity?.kind);
+  const minimum = activity?.minimum ?? 0,
+    maximum = activity?.maximum ?? 20,
+    denominator = activity?.denominator ?? 4;
+  if (
+    !activity ||
+    ![1, 2].includes(activity.schemaVersion) ||
+    ![
+      "quiz",
+      "place-value",
+      "matching",
+      "sequencing",
+      "fill-blank",
+      "number-line",
+      "fraction",
+      "place-value-exercise",
+    ].includes(activity.kind) ||
+    (activity.schemaVersion === 1 &&
+      !["quiz", "place-value"].includes(activity.kind)) ||
+    !textValid(activity.title, 200) ||
+    !textValid(activity.instructions, 2000) ||
+    !textValid(activity.language, 35) ||
+    !Number.isInteger(activity.number) ||
+    activity.number < 0 ||
+    activity.number > 9999 ||
+    !Array.isArray(activity.questions) ||
+    (questionsKind
+      ? activity.questions.length < 1 ||
+        activity.questions.length > 10 ||
+        activity.questions.some(
+          (q) =>
+            !q ||
+            !textValid(q.prompt, 1000) ||
+            !textValid(q.explanation, 2000) ||
+            !Array.isArray(q.options) ||
+            q.options.length < (activity.kind === "fill-blank" ? 1 : 2) ||
+            q.options.length > 6 ||
+            q.options.some((x) => !textValid(x, 300)) ||
+            new Set(q.options.map((x) => x.trim().toUpperCase())).size !==
+              q.options.length ||
+            !Number.isInteger(q.correctOption) ||
+            q.correctOption < 0 ||
+            q.correctOption >= q.options.length,
+        )
+      : activity.questions.length !== 0) ||
+    (activity.kind === "fraction" &&
+      (!Number.isInteger(denominator) ||
+        denominator < 2 ||
+        denominator > 24 ||
+        activity.number > denominator)) ||
+    (activity.kind === "number-line" &&
+      (!Number.isInteger(minimum) ||
+        !Number.isInteger(maximum) ||
+        minimum < -1000 ||
+        maximum > 1000 ||
+        maximum <= minimum ||
+        maximum - minimum > 100 ||
+        activity.number < minimum ||
+        activity.number > maximum))
+  ) {
+    host.textContent =
+      "This activity is invalid or unsupported. Check its definition before saving or playing it.";
+    return () => host.replaceChildren();
+  }
   const prefix = "practice-" + Math.random().toString(36).slice(2);
   let timer: ReturnType<typeof setInterval> | undefined;
   function element<K extends keyof HTMLElementTagNameMap>(

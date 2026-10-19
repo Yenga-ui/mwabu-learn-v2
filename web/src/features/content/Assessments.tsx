@@ -51,6 +51,7 @@ export default function Assessments() {
       api<
         {
           learnerUserId: string;
+          learnerName: string;
           attempts: number;
           bestScore: number;
           total: number;
@@ -135,15 +136,15 @@ export default function Assessments() {
         <section>
           <h2>Teacher performance summary</h2>
           <p>
-            Up to 100 learners. Identifiers below are organisation account
-            references, not public rankings.
+            Up to 100 learners. These organisation results are visible only to
+            authorised staff.
           </p>
           <QueryState query={summary}>
             {(rows) => (
               <table>
                 <thead>
                   <tr>
-                    <th>Learner account</th>
+                    <th>Learner</th>
                     <th>Attempts</th>
                     <th>Best result</th>
                     <th>Last submitted</th>
@@ -152,7 +153,7 @@ export default function Assessments() {
                 <tbody>
                   {rows.map((row) => (
                     <tr key={row.learnerUserId}>
-                      <td>{row.learnerUserId}</td>
+                      <td>{row.learnerName}</td>
                       <td>{row.attempts}</td>
                       <td>
                         {row.bestScore} / {row.total}

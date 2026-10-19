@@ -1,5 +1,7 @@
 # Durable lesson generation and measured performance
 
+Sprint 2 content jobs share this queue, global inference slot, approval and usage ledger; their strict activity/storyboard contracts and limits are documented in [the Sprint 2 record](sprint-2-implementation.md).
+
 19 October 2026. The browser uses POST `.../lessons/{id}/generation-jobs` (202), polls GET of the same path while active and can POST `.../generation-jobs/{jobId}/cancel`. Existing synchronous generation remains API-compatible. Proposal retrieval/application and immutable lesson revisions are unchanged. A completed job never applies or publishes a lesson.
 
 Jobs persist in LessonGenerationJobs. A scoped worker identity comes only from the recorded actor in a fresh background scope; HTTP requests cannot supply it. Execution rechecks the organization, active permissions, current draft revision, processing approval, selected-source stamp and the existing rate/token/cost limits. Only the originating owner can list/cancel these jobs. Context is rebuilt only after those checks; request text is erased on terminal states. No account names, school metadata or learner identifiers are added to inference context.

@@ -42,6 +42,8 @@ import LessonSharing from "./LessonSharing";
 import { LessonPrint } from "./LessonPrint";
 import { MinistryForm } from "./MinistryForm";
 import { offlineLessonHtml } from "./offlineLesson";
+import ContentAi from "./ContentAi";
+import LessonPackageDownload from "./LessonPackageDownload";
 
 export default function LessonEditor({
   initial,
@@ -282,6 +284,21 @@ export default function LessonEditor({
   );
   return (
     <div className="lesson-workspace" data-unsaved-work={draft.dirty}>
+      {draft.server.lesson.status === "Published" && (
+        <LessonPackageDownload
+          path={path}
+          revision={draft.server.lesson.revision}
+        />
+      )}
+      {draft.server.canEdit &&
+        session.can("lessons.ai") &&
+        session.can("content.manage", "global") && (
+          <ContentAi
+            org={organisation}
+            plan={draft.server.lesson.id}
+            save={async () => (await draft.save()).lesson.revision}
+          />
+        )}
       <PageTitle eyebrow="LESSON PLANNER" title={draft.document.setup.title}>
         {orgName} ·{" "}
         {draft.document.setup.mode === "CurriculumAligned"

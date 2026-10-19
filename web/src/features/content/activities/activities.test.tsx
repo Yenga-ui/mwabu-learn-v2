@@ -2,13 +2,33 @@ import { fireEvent, render, screen, act } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { webcrypto } from "node:crypto";
 import { ActivityPlayer } from "./ActivityPlayer";
-import { sampleActivity } from "./ActivityComposer";
+import { sampleActivity, sampleQuestion } from "./ActivityComposer";
 import { offlineActivityHtml } from "./offlineActivity";
 afterEach(() => {
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
 describe("safe interactive teaching content", () => {
+  it("uses accepted equivalents rather than quiz distractors when authoring blanks", () => {
+    expect(sampleQuestion("fill-blank").options).toEqual(["one half", "1/2"]);
+    expect(sampleQuestion("sequencing").options[0]).toContain("Take a square");
+  });
+  it("rejects unbounded preview definitions before creating controls", () => {
+    render(
+      <ActivityPlayer
+        definition={{
+          ...sampleActivity(),
+          schemaVersion: 2,
+          kind: "fraction",
+          questions: [],
+          number: 2,
+          denominator: 1000000,
+        }}
+      />,
+    );
+    expect(screen.getByText(/invalid or unsupported/)).toBeVisible();
+    expect(screen.queryByRole("button")).toBeNull();
+  });
   it.each([
     "matching",
     "sequencing",

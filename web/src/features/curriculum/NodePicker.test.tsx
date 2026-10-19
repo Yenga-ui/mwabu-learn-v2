@@ -68,6 +68,45 @@ async function select(level: number) {
   fireEvent.change(select, { target: { value: `node-${level}` } });
 }
 describe("teacher curriculum selection", () => {
+  it("starts from a grade with explicit curriculum/version context and continues to its subjects", async () => {
+    vi.mocked(api).mockImplementation(async (path) =>
+      path.startsWith("/api/curriculum/grades/search")
+        ? ({
+            items: [
+              {
+                id: "grade-4",
+                name: "Grade 4",
+                curriculumId: "curriculum",
+                curriculumName: "Zambia",
+                versionId: "version",
+                versionName: "2026",
+              },
+            ],
+            hasMore: false,
+          } as never)
+        : ({
+            items: [{ id: "subject", name: "Mathematics" }],
+            hasMore: false,
+          } as never),
+    );
+    render(<NodePicker onSelect={vi.fn()} />, { wrapper });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Start with your grade" }),
+    );
+    await screen.findByRole("option", { name: "Grade 4 · Zambia · 2026" });
+    const grades = screen.getByLabelText("Grade and curriculum");
+    await waitFor(() => expect(grades).toBeEnabled());
+    fireEvent.change(grades, { target: { value: "grade-4" } });
+    await screen.findByRole("combobox", { name: "Subjects" });
+    await waitFor(() =>
+      expect(api).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "/api/curricula/curriculum/nodes/Subject?parentId=grade-4",
+        ),
+        expect.anything(),
+      ),
+    );
+  });
   it("searches names on the server with active filtering and resets descendants when changing a parent", async () => {
     const reset = vi.fn();
     const choose = vi.fn();

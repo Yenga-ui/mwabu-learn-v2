@@ -5,6 +5,7 @@ import { Download, RotateCcw } from "lucide-react";
 import { api, ensureSession, queryString } from "../../api/client";
 import type { Resource as ResourceType, Asset } from "../../api/types";
 import { useSession } from "../../auth/Session";
+import AttachToLesson from "./AttachToLesson";
 import {
   Badge,
   Empty,
@@ -179,10 +180,17 @@ export default function Resource() {
                 )}
               </section>
               <aside className="card resource-context">
+                {session.organisationId && session.can("lessons.manage") && (
+                  <AttachToLesson
+                    key={`${session.organisationId}:${resource.content.id}`}
+                    resourceId={resource.content.id}
+                  />
+                )}
                 {asset?.mimeType === activityMime &&
                   session.organisationId &&
                   session.can("assessments.manage") && (
                     <AddAssessment
+                      key={`${session.organisationId}:${asset.id}`}
                       assetId={asset.id}
                       title={resource.content.title}
                       organisationId={session.organisationId}

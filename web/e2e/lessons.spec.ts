@@ -316,6 +316,44 @@ test("teacher discovers attaches and previews published Mwabu evidence without d
       .first(),
   ).toBeVisible();
 });
+test("teacher attaches a published resource to an existing draft from its resource page", async ({
+  page,
+}) => {
+  await login(page);
+  await createFree(page, "Resource assignment journey");
+  const resources = await (
+    await page.request.get("/api/learning/content?text=sharing")
+  ).json();
+  await page.goto(`/app/resources/${resources.items[0].id}`);
+  await page.getByText("Attach to an existing lesson", { exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Draft lesson", exact: true })
+    .selectOption({ label: "Resource assignment journey" });
+  await page
+    .getByRole("button", { name: "Attach resource to draft", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", {
+      name: "Resource attached for review",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page
+    .getByRole("link", { name: "Open lesson to review resources", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Source Explorer", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", {
+      name: "Attached references and evidence",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByText(resources.items[0].title, { exact: true }).first(),
+  ).toBeVisible();
+});
 test("teacher discovers public metadata selects a source and retrieves licensed evidence", async ({
   page,
 }) => {
@@ -526,6 +564,95 @@ test("a separate reviewer approves a submitted lesson and approved PDF reflects 
 }) => {
   await login(page);
   const id = await createFree(page, "Reviewer-approved browser lesson");
+  const attached = await (
+    await page.request.get("/api/learning/content?text=sharing")
+  ).json();
+  const authoringContext = await browser.newContext({
+    ignoreHTTPSErrors: true,
+  });
+  let packageResourceId: string;
+  try {
+    const author = await authoringContext.newPage();
+    await login(author, "PlatformAdmin");
+    const original = await (
+      await author.request.get(`/api/learning/content/${attached.items[0].id}`)
+    ).json();
+    const originalBytes = await (
+      await author.request.get(original.assets[0].downloadUrl)
+    ).body();
+    const created = await mutate(author, "/api/content", {
+      title: "Resumable classroom PDF",
+      description: "Approved offline teaching guidance.",
+      slug: `package-${randomBytes(6).toString("hex")}`,
+      contentType: "lesson",
+      languageCode: "en",
+      isDownloadable: true,
+      sortOrder: 0,
+    });
+    expect(created.status).toBe(201);
+    packageResourceId = created.body.id;
+    const csrf = await author.evaluate(
+      async () =>
+        (await (await fetch("/api/browser/session/csrf")).json()).requestToken,
+    );
+    const upload = await author.request.post(
+      `/api/content/${packageResourceId}/assets`,
+      {
+        headers: { "X-Mwabu-CSRF": csrf },
+        multipart: {
+          File: {
+            name: "classroom-package.pdf",
+            mimeType: "application/pdf",
+            buffer: Buffer.concat([
+              originalBytes,
+              Buffer.from("\n%" + "range-test".repeat(240000)),
+            ]),
+          },
+          AssetType: "Document",
+          IsPrimary: "true",
+        },
+      },
+    );
+    expect(upload.status()).toBe(201);
+    expect(
+      (
+        await mutate(
+          author,
+          `/api/content/${packageResourceId}/status`,
+          { status: "InReview" },
+          "PATCH",
+        )
+      ).status,
+    ).toBe(200);
+    expect(
+      (
+        await mutate(
+          author,
+          `/api/content/${packageResourceId}/status`,
+          { status: "Published" },
+          "PATCH",
+        )
+      ).status,
+    ).toBe(200);
+  } finally {
+    await authoringContext.close();
+  }
+  const attachedSource = await mutate(
+    page,
+    `/api/organisations/${fixture().schoolId}/lessons/${id}/sources`,
+    { contentItemId: packageResourceId!, url: null, title: null },
+  );
+  expect(attachedSource.status).toBe(201);
+  expect(
+    (
+      await mutate(
+        page,
+        `/api/organisations/${fixture().schoolId}/lessons/${id}/sources/${attachedSource.body.id}`,
+        { isSelected: true, isExcluded: false, priority: 0 },
+        "PATCH",
+      )
+    ).status,
+  ).toBe(200);
   await proposal(page);
   await page
     .getByRole("button", {
@@ -565,6 +692,77 @@ test("a separate reviewer approves a submitted lesson and approved PDF reflects 
   );
   expect(pdf.status()).toBe(200);
   expect((await pdf.body()).subarray(0, 4).toString()).toBe("%PDF");
+  await reviewer
+    .getByText("Complete offline lesson package", { exact: true })
+    .click();
+  await reviewer
+    .getByLabel(/I checked this teaching content contains no personal data/)
+    .check();
+  const ranges: string[] = [];
+  let interrupted = false;
+  await reviewer.route(
+    "**/api/learning/content/*/assets/*/download",
+    async (route) => {
+      const range = route.request().headers()["range"] ?? "";
+      ranges.push(range);
+      if (!interrupted && range.startsWith("bytes=1048576-")) {
+        interrupted = true;
+        await route.abort();
+      } else await route.continue();
+    },
+  );
+  await reviewer
+    .getByRole("button", {
+      name: "Download complete lesson package",
+      exact: true,
+    })
+    .click();
+  await expect(reviewer.getByRole("alert")).toBeVisible();
+  expect(interrupted).toBe(true);
+  expect(ranges).toEqual(["bytes=0-1048575", "bytes=1048576-2097151"]);
+  const packageEvent = reviewer.waitForEvent("download");
+  await reviewer
+    .getByRole("button", {
+      name: "Download complete lesson package",
+      exact: true,
+    })
+    .click();
+  const packageDownload = await packageEvent;
+  expect(ranges[2]).toBe("bytes=1048576-2097151");
+  const packagePath = join(
+    dirname((await packageDownload.path())!),
+    "mwabu-complete-package.html",
+  );
+  copyFileSync((await packageDownload.path())!, packagePath);
+  const disconnected = await browser.newContext();
+  try {
+    await disconnected.setOffline(true);
+    const offlinePage = await disconnected.newPage();
+    const network: string[] = [];
+    offlinePage.on("request", (request) => {
+      if (/^https?:/.test(request.url())) network.push(request.url());
+    });
+    await offlinePage.goto(pathToFileURL(packagePath).href);
+    await expect(
+      offlinePage.getByRole("heading", {
+        name: "Reviewer-approved browser lesson",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      offlinePage.getByText(/Published lesson revision/),
+    ).toBeVisible();
+    await expect(offlinePage.locator("iframe")).toBeVisible();
+    await expect(
+      offlinePage.getByText("Approved offline teaching guidance.", {
+        exact: true,
+      }),
+    ).toBeVisible();
+    expect(network).toEqual([]);
+  } finally {
+    await disconnected.close();
+    unlinkSync(packagePath);
+  }
   await context.close();
 });
 test("another authorised teacher reads a shared draft and share revocation blocks later access", async ({

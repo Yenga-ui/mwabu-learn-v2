@@ -1,5 +1,7 @@
 # Teacher platform implementation, roadmap and readiness
 
+This is the historical Sprint 1 readiness snapshot. Subsequent interactive learning, assessment and offline work is recorded in [Sprint 2 implementation](sprint-2-implementation.md).
+
 Branch: feature/teacher-ux-ai-optimisation. Base: b1e2079, merged PR #2. This is a staged implementation of the master request, not a claim that every requested platform capability is complete. No automatic main merge, deployment or application-database migration occurred.
 
 ## Implemented and reused
