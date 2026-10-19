@@ -12,6 +12,7 @@ using MwabuLearn.Infrastructure.Content;
 using MwabuLearn.Infrastructure.Content.Storage;
 using MwabuLearn.Api.Security;
 using Microsoft.OpenApi;
+using MwabuLearn.Infrastructure.Lessons;
 var builder = WebApplication.CreateBuilder(args);
 if (builder.Environment.IsProduction() && builder.Configuration.GetValue<bool>("BootstrapAdministrator:Enabled"))
     throw new InvalidOperationException("Administrator bootstrap must be disabled in Production.");
@@ -24,6 +25,7 @@ builder.Services.AddScoped<CatalogueVisibilityFilter>();
 builder.Services.AddControllers(options => options.Filters.AddService<CatalogueVisibilityFilter>()).AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false)));
 builder.Services.AddScoped<IContentService, ContentService>();
+builder.Services.AddLessonPlanning(builder.Configuration);
 builder.Services.AddScoped<ILearningCatalogue, LearningCatalogue>();
 builder.Services.AddScoped<MwabuLearn.Application.Education.IProjectService, MwabuLearn.Infrastructure.Education.ProjectService>();
 builder.Services.AddScoped<MwabuLearn.Application.Education.IDevelopmentSeed, MwabuLearn.Infrastructure.Education.DevelopmentSeed>();
@@ -85,6 +87,7 @@ builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = 
 builder.Services.AddExceptionHandler<CurriculumExceptionHandler>();
 builder.Services.AddExceptionHandler<ContentExceptionHandler>();
 builder.Services.AddExceptionHandler<IdentityExceptionHandler>();
+builder.Services.AddExceptionHandler<PlannerExceptionHandler>();
 builder.Services.AddExceptionHandler<SafeExceptionHandler>();
 
 builder.Services.AddEndpointsApiExplorer();

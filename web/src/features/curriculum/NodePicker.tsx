@@ -6,8 +6,10 @@ import { nodeNames, nodeTypes } from "./Curriculum";
 import { ErrorNotice, Loading, Pagination } from "../../components/ui";
 export default function NodePicker({
   onSelect,
+  onReset,
 }: {
   onSelect: (type: string, id: string, name: string) => void;
+  onReset?: () => void;
 }) {
   const [trail, setTrail] = useState<Structure[]>([]);
   const [page, setPage] = useState(1);
@@ -34,6 +36,7 @@ export default function NodePicker({
           type="button"
           onClick={() => {
             setTrail([]);
+            onReset?.();
             setPage(1);
           }}
         >
@@ -45,6 +48,7 @@ export default function NodePicker({
             type="button"
             onClick={() => {
               setTrail((t) => t.slice(0, i + 1));
+              onReset?.();
               setPage(1);
             }}
           >
@@ -63,6 +67,7 @@ export default function NodePicker({
                   (x) => x.id === e.target.value,
                 );
                 if (node) {
+                  onReset?.();
                   setTrail((t) => [...t, node]);
                   setPage(1);
                   if (level >= 0)

@@ -30,6 +30,13 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: '24'
+      - name: Install bounded document extraction and PDF font dependencies
+        timeout-minutes: 5
+        run: |
+          test -f /etc/apt/apt-mirrors.txt
+          printf '%s\n' 'https://archive.ubuntu.com/ubuntu' | sudo tee /etc/apt/apt-mirrors.txt >/dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends poppler-utils fonts-dejavu-core util-linux
       - name: Install and verify web application
         working-directory: web
         run: |
@@ -80,7 +87,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dotnet tool install --tool-path "$RUNNER_TEMP/ef" dotnet-ef --version 10.0.12
+          dotnet tool install --tool-path "$RUNNER_TEMP/ef" dotnet-ef --version 10.0.13
           "$RUNNER_TEMP/ef/dotnet-ef" migrations has-pending-model-changes --configuration Release --no-build --project backend/src/MwabuLearn.Infrastructure --startup-project backend/src/MwabuLearn.Api -- --offline
           "$RUNNER_TEMP/ef/dotnet-ef" migrations script --idempotent --configuration Release --no-build --project backend/src/MwabuLearn.Infrastructure --startup-project backend/src/MwabuLearn.Api --output artifacts/migrations.sql -- --offline
           # EF tooling builds the startup/project graph for this RID without restoring it.

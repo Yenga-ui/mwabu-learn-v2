@@ -206,6 +206,7 @@ export async function upload(
   assetType: string,
   onProgress: (percent: number) => void,
   signal: AbortSignal,
+  fields: Record<string, string> = {},
 ) {
   signal.throwIfAborted();
   await ensureSession();
@@ -249,6 +250,7 @@ export async function upload(
     const form = new FormData();
     form.append("File", file);
     form.append("AssetType", assetType);
+    Object.entries(fields).forEach(([name, value]) => form.append(name, value));
     xhr.send(form);
   });
 }

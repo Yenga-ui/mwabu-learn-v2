@@ -148,7 +148,19 @@ export function Pagination({
   );
 }
 export function Badge({ children }: { children: ReactNode }) {
-  return <span className="badge">{children}</span>;
+  const value = typeof children === "string" ? children.toLowerCase() : "";
+  const tone = ["active", "published", "approved", "completed"].includes(value)
+    ? "success"
+    : ["failed", "error", "inactive", "revoked"].includes(value)
+      ? "error"
+      : ["draft", "inreview", "pending", "cancelled"].includes(value)
+        ? "warning"
+        : "neutral";
+  return (
+    <span className="badge" data-tone={tone}>
+      {children}
+    </span>
+  );
 }
 export interface Field {
   name: string;

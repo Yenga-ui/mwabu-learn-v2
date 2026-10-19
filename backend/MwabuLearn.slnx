@@ -6,6 +6,7 @@
     <Project Path="src/MwabuLearn.Infrastructure/MwabuLearn.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/MwabuLearn.BrowserHost/MwabuLearn.BrowserHost.csproj" />
     <Project Path="tests/MwabuLearn.Tests/MwabuLearn.Tests.csproj" />
   </Folder>
 </Solution>

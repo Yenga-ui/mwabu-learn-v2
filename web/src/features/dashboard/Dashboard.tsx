@@ -92,6 +92,18 @@ export default function Dashboard() {
         {session.memberships.find((x) => x.membership.organisationId === org)
           ?.organisationName ?? "Your Mwabu Learn workspace"}
       </PageTitle>
+      {session.can("lessons.read") && (
+        <section className="panel">
+          <h2>Plan your next lesson</h2>
+          <p>
+            Build a structured plan with managed curriculum context, published
+            resources and teacher-reviewed AI proposals.
+          </p>
+          <Link className="button" to="/app/lessons">
+            Open Lesson Planner
+          </Link>
+        </section>
+      )}
       {session.can("content.read", "catalogue") && (
         <section className="hero">
           <div>
