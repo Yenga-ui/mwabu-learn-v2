@@ -36,7 +36,7 @@ export default function LessonSetup({
       </div>
       <p>
         {value.mode === "CurriculumAligned"
-          ? "Choose the managed hierarchy through its learning outcome. Official fields come from those records, never from AI."
+          ? "Choose your curriculum, then follow the grade, subject and topic to a learning outcome. Search by name at any step."
           : "Create a flexible lesson. No official curriculum alignment is claimed. Your other setup fields are retained when switching modes."}
       </p>
       <label>
@@ -52,14 +52,27 @@ export default function LessonSetup({
         <>
           <NodePicker
             onReset={() => set("learningOutcomeId", null)}
-            onSelect={(type, id) =>
-              set("learningOutcomeId", type === "LearningOutcome" ? id : null)
+            onSelect={(type, id, name, context) =>
+              change({
+                ...value,
+                learningOutcomeId: type === "LearningOutcome" ? id : null,
+                ...(type === "LearningOutcome"
+                  ? {
+                      title: value.title.trim() ? value.title : name,
+                      subject: context[3],
+                      targetLearners: context[2],
+                      objectives: value.objectives.trim()
+                        ? value.objectives
+                        : name,
+                    }
+                  : {}),
+              })
             }
           />
           <p role="status">
             {value.learningOutcomeId
               ? "Learning outcome selected. The saved lesson shows its authoritative full context."
-              : "Select all eight levels to align this lesson."}
+              : "Choose a learning outcome to finish alignment. Your curriculum choices stay linked automatically."}
           </p>
         </>
       ) : (
@@ -106,14 +119,29 @@ export default function LessonSetup({
         </label>
         <label>
           Language of instruction
-          <input
+          <select
             required
-            maxLength={35}
-            pattern="[a-zA-Z]{2,8}(-[a-zA-Z0-9]{2,8})*"
-            placeholder="en, bem, nya…"
             value={value.language}
             onChange={(e) => set("language", e.target.value)}
-          />
+          >
+            {[
+              ["en", "English"],
+              ["bem", "Bemba"],
+              ["nya", "Chinyanja"],
+              ["toi", "Tonga"],
+              ["loz", "Lozi"],
+              ["lun", "Lunda"],
+              ["lue", "Luvale"],
+              ["kqn", "Kaonde"],
+            ].map(([code, label]) => (
+              <option key={code} value={code}>
+                {label}
+              </option>
+            ))}
+            {!["en", "bem", "nya", "toi", "loz", "lun", "lue", "kqn"].includes(
+              value.language,
+            ) && <option value={value.language}>Saved language</option>}
+          </select>
         </label>
         <label>
           Class size

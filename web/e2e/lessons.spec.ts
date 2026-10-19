@@ -207,7 +207,7 @@ test.beforeAll(async ({ playwright }) => {
   ).toBe(201);
   await context.dispose();
 });
-test("teacher creates a curriculum-aligned lesson using all eight managed levels", async ({
+test("teacher searches curriculum by name and creates an aligned lesson with derived defaults", async ({
   page,
 }) => {
   await login(page);
@@ -216,8 +216,8 @@ test("teacher creates a curriculum-aligned lesson using all eight managed levels
     .getByRole("link", { name: "Create lesson plan", exact: true })
     .click();
   await page
-    .getByLabel("Lesson title", { exact: true })
-    .fill("Aligned teaching of halves");
+    .getByRole("searchbox", { name: "Search curriculum", exact: true })
+    .fill("Demonstration");
   for (const [label, value] of [
     ["Curriculum", "Demonstration Learning Framework"],
     ["Versions", "Demonstration 2026"],
@@ -231,6 +231,21 @@ test("teacher creates a curriculum-aligned lesson using all eight managed levels
     await page
       .getByRole("combobox", { name: label, exact: true })
       .selectOption({ label: value });
+  await expect(page.getByLabel("Lesson title", { exact: true })).toHaveValue(
+    "Represent one half using familiar objects",
+  );
+  await expect(
+    page.getByRole("textbox", { name: "Initial learning objectives", exact: true }),
+  ).toHaveValue("Represent one half using familiar objects");
+  await expect(
+    page.getByRole("combobox", {
+      name: "Language of instruction",
+      exact: true,
+    }),
+  ).toHaveValue("en");
+  await page
+    .getByLabel("Lesson title", { exact: true })
+    .fill("Aligned teaching of halves");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Selected curriculum context" }),
