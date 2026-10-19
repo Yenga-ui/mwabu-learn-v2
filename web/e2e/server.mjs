@@ -215,7 +215,7 @@ try {
     BootstrapAdministrator__OrganisationName: "Mwabu",
     BootstrapAdministrator__OrganisationCode: "MWABU",
     DevelopmentSeed__Enabled: "true",
-    BackgroundWork__Enabled: "false",
+    BackgroundWork__Enabled: "true",
     LessonPlanner__Ai__MinimumRequestIntervalSeconds: "1",
     ContentStorage__RootPath: join(temporary, "content"),
     HttpSecurity__AllowedOrigins__0: "https://127.0.0.1:7443",

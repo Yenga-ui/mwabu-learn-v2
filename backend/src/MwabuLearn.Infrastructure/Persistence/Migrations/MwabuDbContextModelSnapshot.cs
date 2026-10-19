@@ -17,7 +17,7 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1286,6 +1286,72 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.HasIndex("OrganisationId", "CreatedAt");
 
                     b.ToTable("LessonGenerations");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonGenerationJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("CancelRequested")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ErrorCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<Guid?>("GenerationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("LeaseUntil")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("LessonPlanId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RequestJson")
+                        .IsRequired()
+                        .HasMaxLength(40000)
+                        .HasColumnType("character varying(40000)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("GenerationId");
+
+                    b.HasIndex("State")
+                        .IsUnique()
+                        .HasFilter("\"State\" = 'processing'");
+
+                    b.HasIndex("LessonPlanId", "OrganisationId");
+
+                    b.HasIndex("State", "CreatedAt");
+
+                    b.HasIndex("OrganisationId", "ActorUserId", "CreatedAt");
+
+                    b.ToTable("LessonGenerationJobs");
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonPlan", b =>
@@ -3411,6 +3477,27 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .HasForeignKey("ActorUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Lessons.LessonPlan", null)
+                        .WithMany()
+                        .HasForeignKey("LessonPlanId", "OrganisationId")
+                        .HasPrincipalKey("Id", "OrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Lessons.LessonGenerationJob", b =>
+                {
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Lessons.LessonGeneration", null)
+                        .WithMany()
+                        .HasForeignKey("GenerationId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("MwabuLearn.Domain.Entities.Lessons.LessonPlan", null)
                         .WithMany()

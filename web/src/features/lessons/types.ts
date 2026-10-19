@@ -97,6 +97,15 @@ export interface Detail {
   canReview: boolean;
   viewedRevision: number;
 }
+export interface GenerationJob {
+  id: string;
+  state: string;
+  generationId: string | null;
+  cancelRequested: boolean;
+  errorCode: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
 export interface Source extends Citation {
   publicationDate: string | null;
   accessedAt: string | null;

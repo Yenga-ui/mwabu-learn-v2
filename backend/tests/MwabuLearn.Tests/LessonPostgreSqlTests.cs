@@ -15,6 +15,13 @@ public sealed class LessonPostgreSqlTests
         db.Organisations.AddRange(org, foreign); db.Users.Add(user);
         var plan = new LessonPlan { OrganisationId = org.Id, OwnerUserId = user.Id, Title = "Relational lesson", Mode = PlanningMode.FreeForm, Revision = 1 };
         db.LessonPlans.Add(plan); await db.SaveChangesAsync();
+        var otherUser = new ApplicationUser { UserName = "second@test.invalid", NormalizedUserName = "SECOND@TEST.INVALID", Email = "second@test.invalid", NormalizedEmail = "SECOND@TEST.INVALID", FirstName = "Second", LastName = "Teacher" };
+        db.Users.Add(otherUser); await db.SaveChangesAsync();
+        db.LessonGenerationJobs.Add(new() { OrganisationId = org.Id, LessonPlanId = plan.Id, ActorUserId = user.Id, State = "processing", RequestJson = "{}" });
+        await db.SaveChangesAsync();
+        db.LessonGenerationJobs.Add(new() { OrganisationId = org.Id, LessonPlanId = plan.Id, ActorUserId = otherUser.Id, State = "processing", RequestJson = "{}" });
+        var parallelInference = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync());
+        Assert.Equal("IX_LessonGenerationJobs_State", Assert.IsType<PostgresException>(parallelInference.InnerException).ConstraintName); db.ChangeTracker.Clear();
         db.LessonSources.Add(new() { OrganisationId = foreign.Id, LessonPlanId = plan.Id, Title = "Wrong scope" });
         var wrong = await Assert.ThrowsAsync<DbUpdateException>(() => db.SaveChangesAsync()); Assert.Equal(PostgresErrorCodes.ForeignKeyViolation, Assert.IsType<PostgresException>(wrong.InnerException).SqlState); db.ChangeTracker.Clear();
         var revision = new LessonRevision { OrganisationId = org.Id, LessonPlanId = plan.Id, Number = 1, ActorUserId = user.Id, Reason = "Original", DocumentJson = "{}" };

@@ -23,6 +23,7 @@ import type {
   Configuration,
   Detail,
   Generation,
+  GenerationJob,
   LessonDocument,
   LessonStatus,
   Source,
@@ -69,6 +70,8 @@ export default function LessonEditor({
   const [note, setNote] = useState("");
   const [template, setTemplate] = useState(false);
   const [generationPage, setGenerationPage] = useState(1);
+  const [activeJob, setActiveJob] = useState<string>();
+  const openedJobs = useRef(new Set<string>());
   const abort = useRef<AbortController | null>(null);
   const mounted = useRef(true);
   const configuration = useQuery({
@@ -91,6 +94,47 @@ export default function LessonEditor({
       ),
     enabled: tab === "ai" && initial.lesson.ownerUserId === session.user?.id,
   });
+  const jobs = useQuery({
+    queryKey: ["lesson-jobs", path],
+    queryFn: ({ signal }) =>
+      api<GenerationJob[]>(path + "/generation-jobs", { signal }),
+    enabled: tab === "ai" && initial.lesson.ownerUserId === session.user?.id,
+    refetchInterval: (query) =>
+      query.state.data?.some(
+        (x) => x.state === "queued" || x.state === "processing",
+      )
+        ? 1000
+        : false,
+  });
+  const jobRunning =
+    jobs.data?.some((x) => x.state === "queued" || x.state === "processing") ??
+    false;
+  useEffect(() => {
+    const job = jobs.data?.find(
+      (x) => x.id === activeJob && x.state === "completed" && x.generationId,
+    );
+    if (!job || openedJobs.current.has(job.id)) return;
+    const opened = openedJobs.current;
+    opened.add(job.id);
+    let cancelled = false;
+    void api<Generation>(path + `/generations/${job.generationId}`)
+      .then((result) => {
+        if (!cancelled) setProposal(result);
+        return client.invalidateQueries({
+          queryKey: ["lesson-generations", path],
+        });
+      })
+      .catch((failure) => {
+        if (!cancelled) {
+          opened.delete(job.id);
+          setError(failure);
+        }
+      });
+    return () => {
+      cancelled = true;
+      opened.delete(job.id);
+    };
+  }, [jobs.data, activeJob, path, client]);
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       draft.dirty && currentLocation.pathname !== nextLocation.pathname,
@@ -157,7 +201,7 @@ export default function LessonEditor({
         throw new Error(
           "Sign in again before starting generation; your draft is saved.",
         );
-      const generated = await api<Generation>(path + "/generations", {
+      const generated = await api<GenerationJob>(path + "/generation-jobs", {
         method: "POST",
         signal: abort.current.signal,
         retryAuth: false,
@@ -171,7 +215,14 @@ export default function LessonEditor({
             selectedPassage?.code === sectionCode ? selectedPassage.text : null,
         },
       });
-      if (mounted.current) setProposal(generated);
+      if (mounted.current) {
+        setActiveJob(generated.id);
+        setProposal(undefined);
+      }
+      await client.invalidateQueries({ queryKey: ["lesson-jobs", path] });
+      notify(
+        "Generation queued. You can keep editing or return later; your saved revision is protected.",
+      );
       await client.invalidateQueries({
         queryKey: ["lesson-generations", path],
       });
@@ -713,6 +764,7 @@ export default function LessonEditor({
             <button
               className="button"
               disabled={
+                jobRunning ||
                 !confirmed ||
                 !configuration.data?.aiConfigured ||
                 !configuration.data.organisationAiApproved ||
@@ -725,18 +777,65 @@ export default function LessonEditor({
               Request AI proposal
             </button>
           </fieldset>
-          {busy && (
-            <div role="status" aria-live="polite">
-              <progress />
-              Request in progress. Your saved draft remains unchanged.{" "}
-              <button
-                className="button secondary"
-                onClick={() => abort.current?.abort()}
-              >
-                Cancel generation
-              </button>
-            </div>
+          {busy && <p role="status">Saving and sending your request…</p>}
+          {!!jobs.error && (
+            <ErrorNotice error={jobs.error} retry={() => void jobs.refetch()} />
           )}
+          {(jobs.data ?? []).map((job) => (
+            <div key={job.id} className="notice">
+              <p
+                role={
+                  ["queued", "processing", "completed"].includes(job.state)
+                    ? "status"
+                    : "alert"
+                }
+              >
+                {job.state === "queued"
+                  ? "Queued for generation. You can leave this page and return later."
+                  : job.state === "processing"
+                    ? "Generating a validated proposal. You can continue other work."
+                    : job.state === "completed"
+                      ? "Proposal ready for teacher review."
+                      : "Generation stopped. Your saved draft is unchanged. Check your access and settings, then try again."}
+              </p>
+              {(job.state === "queued" || job.state === "processing") && (
+                <button
+                  className="button secondary"
+                  disabled={job.cancelRequested}
+                  onClick={() =>
+                    void run(async () => {
+                      await api(path + `/generation-jobs/${job.id}/cancel`, {
+                        method: "POST",
+                      });
+                      await client.invalidateQueries({
+                        queryKey: ["lesson-jobs", path],
+                      });
+                    })
+                  }
+                >
+                  {job.cancelRequested
+                    ? "Cancellation requested…"
+                    : "Cancel generation"}
+                </button>
+              )}
+              {job.generationId && (
+                <button
+                  className="button secondary"
+                  onClick={() =>
+                    void run(async () => {
+                      setProposal(
+                        await api<Generation>(
+                          path + `/generations/${job.generationId}`,
+                        ),
+                      );
+                    })
+                  }
+                >
+                  Review completed proposal
+                </button>
+              )}
+            </div>
+          ))}
           {proposal && (
             <section className="lesson-proposal">
               <h3>Proposed changes</h3>

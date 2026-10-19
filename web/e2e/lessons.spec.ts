@@ -71,7 +71,7 @@ async function proposal(page: Page, instructions = "") {
     .click();
   await expect(
     page.getByRole("heading", { name: "Proposed changes" }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 15000 });
 }
 test("Ministry teacher fields and progression survive save/reload and export a script-free offline copy", async ({
   page,
@@ -235,7 +235,10 @@ test("teacher searches curriculum by name and creates an aligned lesson with der
     "Represent one half using familiar objects",
   );
   await expect(
-    page.getByRole("textbox", { name: "Initial learning objectives", exact: true }),
+    page.getByRole("textbox", {
+      name: "Initial learning objectives",
+      exact: true,
+    }),
   ).toHaveValue("Represent one half using familiar objects");
   await expect(
     page.getByRole("combobox", {
@@ -413,6 +416,85 @@ test("section refinement is proposed separately and leaves other teacher section
   await expect(
     page.getByRole("textbox", { name: "SMART lesson objectives", exact: true }),
   ).toHaveValue(objectives);
+});
+test("background generation survives navigation and reload and remains a reviewable proposal", async ({
+  page,
+}) => {
+  await login(page);
+  await createFree(page, "Background recovery lesson");
+  const lessonUrl = page.url();
+  await page.getByRole("button", { name: "AI proposals", exact: true }).click();
+  await page
+    .getByLabel("Instructions for this proposal")
+    .fill("simulate-slow-job");
+  await page.getByLabel(/I reviewed this lesson and selected sources/).check();
+  const started = Date.now();
+  await page
+    .getByRole("button", { name: "Request AI proposal", exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({
+        hasText: /Queued for generation|Generating a validated proposal/,
+      })
+      .first(),
+  ).toBeVisible();
+  console.log(
+    `Controlled background acknowledgement: ${Date.now() - started} ms; inference fixture delays 8 s.`,
+  );
+  await page
+    .getByRole("button", { name: "Structured editor", exact: true })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "SMART lesson objectives", exact: true }),
+  ).toBeEnabled();
+  await page.goto("/app/lessons");
+  await page.goto(lessonUrl);
+  await page.reload();
+  await page.getByRole("button", { name: "AI proposals", exact: true }).click();
+  await expect(
+    page.getByRole("button", {
+      name: "Review completed proposal",
+      exact: true,
+    }),
+  ).toBeVisible({ timeout: 15000 });
+  await page
+    .getByRole("button", { name: "Review completed proposal", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Proposed changes" }),
+  ).toBeVisible();
+  await expect(page.getByText(/Saved · revision 1/)).toBeVisible();
+});
+test("teacher can cancel a running background generation without changing the saved draft", async ({
+  page,
+}) => {
+  await login(page);
+  await createFree(page, "Background cancellation lesson");
+  await page.getByRole("button", { name: "AI proposals", exact: true }).click();
+  await page
+    .getByLabel("Instructions for this proposal")
+    .fill("simulate-slow-job");
+  await page.getByLabel(/I reviewed this lesson and selected sources/).check();
+  await page
+    .getByRole("button", { name: "Request AI proposal", exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Generating a validated proposal" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Cancel generation", exact: true })
+    .click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Generation stopped" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Proposed changes" }),
+  ).toHaveCount(0);
+  await expect(page.getByText(/Saved · revision 1/)).toBeVisible();
 });
 test("autosave and revision comparison preserve manual section edits", async ({
   page,

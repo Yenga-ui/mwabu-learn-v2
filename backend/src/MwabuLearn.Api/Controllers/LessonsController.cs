@@ -76,6 +76,19 @@ public sealed class LessonsController(ILessonPlanner plans, ILessonSources sourc
     [HttpPost("{id:guid}/generations"), RequirePermission(PermissionCodes.LessonsAi), EnableRateLimiting("search")]
     [ProducesResponseType<ProblemDetails>(429), ProducesResponseType<ProblemDetails>(502), ProducesResponseType<ProblemDetails>(503)]
     public async Task<IActionResult> Generate(Guid organisationId, Guid id, GenerateLessonRequest request, CancellationToken ct) => Ok(await generations.GenerateAsync(organisationId, id, request, ct));
+    [HttpPost("{id:guid}/generation-jobs"), RequirePermission(PermissionCodes.LessonsAi), EnableRateLimiting("search")]
+    public async Task<IActionResult> Queue(Guid organisationId, Guid id, GenerateLessonRequest request,
+        [FromServices] MwabuLearn.Infrastructure.Lessons.LessonGenerationJobs jobs, CancellationToken ct)
+    {
+        var result = await jobs.EnqueueAsync(organisationId, id, request, ct);
+        return Accepted(Url.Action(nameof(Jobs), new { organisationId, id }), result);
+    }
+    [HttpGet("{id:guid}/generation-jobs"), RequirePermission(PermissionCodes.LessonsRead)]
+    public async Task<IActionResult> Jobs(Guid organisationId, Guid id,
+        [FromServices] MwabuLearn.Infrastructure.Lessons.LessonGenerationJobs jobs, CancellationToken ct) => Ok(await jobs.ListAsync(organisationId, id, ct));
+    [HttpPost("{id:guid}/generation-jobs/{jobId:guid}/cancel"), RequirePermission(PermissionCodes.LessonsManage)]
+    public async Task<IActionResult> CancelJob(Guid organisationId, Guid id, Guid jobId,
+        [FromServices] MwabuLearn.Infrastructure.Lessons.LessonGenerationJobs jobs, CancellationToken ct) => Ok(await jobs.CancelAsync(organisationId, id, jobId, ct));
     [HttpGet("{id:guid}/generations"), RequirePermission(PermissionCodes.LessonsRead)]
     public async Task<IActionResult> Generations(Guid organisationId, Guid id, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await generations.HistoryAsync(organisationId, id, page, ct));
     [HttpGet("{id:guid}/generations/{generationId:guid}"), RequirePermission(PermissionCodes.LessonsRead)]

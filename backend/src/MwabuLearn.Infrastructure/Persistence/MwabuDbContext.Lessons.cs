@@ -9,6 +9,7 @@ public partial class MwabuDbContext
     public DbSet<LessonShare> LessonShares => Set<LessonShare>();
     public DbSet<LessonReview> LessonReviews => Set<LessonReview>();
     public DbSet<LessonGeneration> LessonGenerations => Set<LessonGeneration>();
+    public DbSet<LessonGenerationJob> LessonGenerationJobs => Set<LessonGenerationJob>();
     public DbSet<LessonPlannerSettings> LessonPlannerSettings => Set<LessonPlannerSettings>();
     public DbSet<LessonUsagePeriod> LessonUsagePeriods => Set<LessonUsagePeriod>();
 }
