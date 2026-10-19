@@ -528,7 +528,7 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
 
                             t.HasCheckConstraint("CK_ContentItems_SortOrder", "\"SortOrder\" >= 0");
 
-                            t.HasCheckConstraint("CK_ContentItems_Status", "\"Status\" IN ('Draft', 'InReview', 'Published', 'Archived')");
+                            t.HasCheckConstraint("CK_ContentItems_Status", "\"Status\" IN ('Draft', 'InReview', 'Approved', 'Published', 'Archived')");
                         });
                 });
 

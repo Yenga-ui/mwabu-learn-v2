@@ -153,7 +153,17 @@ export default function Resource() {
             <div className="resource-layout">
               <section className="card media-card">
                 {asset ? (
-                  <MediaViewer key={asset.id} asset={asset} />
+                  asset.mimeType === activityMime ? (
+                    <PublishedActivity
+                      key={asset.id}
+                      resourceId={resource.content.id}
+                      assetId={asset.id}
+                      downloadUrl={asset.downloadUrl}
+                      downloadable={resource.content.isDownloadable}
+                    />
+                  ) : (
+                    <MediaViewer key={asset.id} asset={asset} />
+                  )
                 ) : (
                   <Empty title="No files attached">
                     This resource currently contains text only.
@@ -257,3 +267,5 @@ export default function Resource() {
     </QueryState>
   );
 }
+import { PublishedActivity } from "./activities/ActivityPlayer";
+import { activityMime } from "./activities/activityRuntime";

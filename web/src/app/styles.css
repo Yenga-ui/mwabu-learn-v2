@@ -1887,3 +1887,23 @@
     }
   }
 }
+.activity-player {
+  overflow-wrap: anywhere;
+}
+.activity-player fieldset {
+  margin: 1rem 0;
+  padding: 1rem;
+}
+.activity-player .check-label {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin: 0.6rem 0;
+}
+.place-value-scene {
+  max-width: 760px;
+}
+.place-value-scene svg {
+  width: 100%;
+  height: auto;
+}

@@ -10,6 +10,9 @@ namespace MwabuLearn.Api.Controllers;
 [ApiController, Authorize, RequireHttps, Route("api/learning/content"), RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
 public sealed class LearningController(ILearningCatalogue service) : ControllerBase
 {
+    [HttpGet("{id:guid}/activities/{assetId:guid}")]
+    public async Task<IActionResult> Activity(Guid id, Guid assetId, [FromServices] MwabuLearn.Infrastructure.Content.ActivityDocuments activities, CancellationToken ct)
+    { Response.Headers.CacheControl = "private, no-store"; return Ok(await activities.ReadAsync(id, assetId, true, ct)); }
     [HttpGet, EnableRateLimiting("search")]
     public async Task<IActionResult> Search([FromQuery] ContentSearchRequest request, CancellationToken ct) => Ok(await service.SearchAsync(request, ct));
     [HttpGet("{id:guid}")]

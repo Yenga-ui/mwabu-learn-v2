@@ -27,6 +27,8 @@ import {
   type FormValues,
 } from "../../components/ui";
 import NodePicker from "../curriculum/NodePicker";
+import ActivityComposer from "./activities/ActivityComposer";
+import { activityMime } from "./activities/activityRuntime";
 const contentFields: Field[] = [
   { name: "title", label: "Resource title", required: true, maxLength: 200 },
   {
@@ -110,6 +112,13 @@ export default function Management() {
     enabled: allowed && !!id,
   });
   const refresh = () => client.invalidateQueries({ queryKey: ["studio"] });
+  const activityAssets = useQuery({
+    queryKey: ["studio-assets", id],
+    queryFn: () => api<Asset[]>(`/api/content/${id}/assets`),
+    enabled: allowed && !!id,
+  });
+  const hasActivity =
+    activityAssets.data?.some((x) => x.mimeType === activityMime) ?? false;
   if (!allowed)
     return (
       <Empty title="Content studio is not available in your scope">
@@ -164,9 +173,11 @@ export default function Management() {
                 }}
               >
                 <option value="">All statuses</option>
-                {["Draft", "InReview", "Published", "Archived"].map((x) => (
-                  <option key={x}>{x}</option>
-                ))}
+                {["Draft", "InReview", "Approved", "Published", "Archived"].map(
+                  (x) => (
+                    <option key={x}>{x}</option>
+                  ),
+                )}
               </select>
             </label>
           </section>
@@ -272,10 +283,50 @@ export default function Management() {
                     >
                       Return to draft
                     </Action>
+                    {session.can("content.publish", "global") &&
+                      !activityAssets.isPending &&
+                      !activityAssets.error && (
+                        <Action
+                          className="button"
+                          confirm={
+                            hasActivity
+                              ? "Approve this activity after reviewing its content and feedback? Authors cannot approve their own work."
+                              : "Publish this resource? Published metadata and files become immutable."
+                          }
+                          run={async () => {
+                            await api(`/api/content/${id}/status`, {
+                              method: "PATCH",
+                              body: {
+                                status: hasActivity ? "Approved" : "Published",
+                              },
+                            });
+                            await refresh();
+                          }}
+                        >
+                          {hasActivity
+                            ? "Approve activity"
+                            : "Publish resource"}
+                        </Action>
+                      )}
+                  </>
+                )}
+                {resource.status === "Approved" && (
+                  <>
+                    <Action
+                      run={async () => {
+                        await api(`/api/content/${id}/status`, {
+                          method: "PATCH",
+                          body: { status: "Draft" },
+                        });
+                        await refresh();
+                      }}
+                    >
+                      Return to draft
+                    </Action>
                     {session.can("content.publish", "global") && (
                       <Action
                         className="button"
-                        confirm="Publish this resource? Published metadata and files become immutable."
+                        confirm="Publish the reviewed resource? Its content and files will become immutable."
                         run={async () => {
                           await api(`/api/content/${id}/status`, {
                             method: "PATCH",
@@ -340,6 +391,11 @@ export default function Management() {
                   editable={["Draft", "InReview"].includes(resource.status)}
                 />
               </div>
+              <ActivityComposer
+                id={resource.id}
+                language={resource.languageCode}
+                editable={["Draft", "InReview"].includes(resource.status)}
+              />
               <Assignments
                 id={resource.id}
                 editable={["Draft", "InReview"].includes(resource.status)}

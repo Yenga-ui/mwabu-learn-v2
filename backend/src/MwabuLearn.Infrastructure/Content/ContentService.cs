@@ -11,7 +11,7 @@ using Npgsql;
 namespace MwabuLearn.Infrastructure.Content;
 
 public sealed partial class ContentService(MwabuDbContext db, IContentStorage storage,
-    IOptions<ContentOptions> options, ILogger<ContentService> logger) : IContentService
+    IOptions<ContentOptions> options, ILogger<ContentService> logger, MwabuLearn.Application.Identity.ICurrentUser? current = null) : IContentService
 {
     private static readonly Regex SlugFormat = new(@"\A[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant);
     private static readonly Regex LanguageFormat = new(@"\A[a-z]{2,3}(?:-[a-z0-9]{2,8})*\z", RegexOptions.CultureInvariant);
@@ -48,6 +48,8 @@ public sealed partial class ContentService(MwabuDbContext db, IContentStorage st
         await CheckSlug(values.Slug, id, ct);
         Apply(entity, request);
         Touch(entity);
+        if (current?.UserId is Guid editor)
+            db.AuditEvents.Add(new Domain.Entities.Auditing.AuditEvent { ActorUserId = editor, EntityId = id, EntityType = nameof(ContentItem), EventType = "content.metadata_edited" });
         await Save(ct);
         return Map(entity);
     }
@@ -60,8 +62,24 @@ public sealed partial class ContentService(MwabuDbContext db, IContentStorage st
             (ContentStatus.Draft, ContentStatus.InReview) or
             (ContentStatus.InReview, ContentStatus.Draft) or
             (ContentStatus.InReview, ContentStatus.Published) or
+            (ContentStatus.InReview, ContentStatus.Approved) or
+            (ContentStatus.Approved, ContentStatus.Draft) or
+            (ContentStatus.Approved, ContentStatus.Published) or
             (ContentStatus.Published, ContentStatus.Archived);
         if (!valid) throw Conflict("Invalid publication transition. Published and archived content cannot return to editing.");
+        var activities = await db.ContentAssets.AsNoTracking().Where(x => x.ContentItemId == id && x.MimeType == ActivityRules.MimeType && !x.IsPendingDeletion).ToListAsync(ct);
+        if (activities.Count > 0 && request.Status == ContentStatus.Published && entity.Status != ContentStatus.Approved)
+            throw Conflict("An independent authorised publisher must approve this activity before publication.");
+        if (request.Status == ContentStatus.Approved)
+        {
+            var authoredIds = activities.Select(x => x.Id).Append(id).ToArray();
+            var authors = await db.AuditEvents.AsNoTracking().Where(x => authoredIds.Contains(x.EntityId ?? Guid.Empty) &&
+                (x.EventType == "ContentAsset.added" || x.EventType == "ContentItem.added" || x.EventType == "content.metadata_edited")).Select(x => x.ActorUserId).ToListAsync(ct);
+            if (current?.UserId is not Guid reviewer || authors.Count == 0 || authors.Any(x => x is null || x == reviewer))
+                throw Conflict("Another authorised publisher must review and approve this resource. Authors cannot approve their own work.");
+        }
+        if (request.Status is ContentStatus.Approved or ContentStatus.Published)
+            foreach (var asset in activities) await ActivityDocuments.ValidateStoredAsync(storage, asset, ct);
         entity.Status = request.Status;
         if (request.Status == ContentStatus.Published) entity.PublishedAt = DateTime.UtcNow;
         Touch(entity);
