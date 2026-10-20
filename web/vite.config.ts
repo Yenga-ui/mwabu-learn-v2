@@ -39,6 +39,9 @@ export default defineConfig(({ command, mode }) => {
         : {}),
     },
     test: {
+      // Bound concurrent jsdom instances on shared developer/CI machines.
+      // All files remain isolated and retain the existing timeout/assertions.
+      maxWorkers: 2,
       environment: "jsdom",
       setupFiles: ["./src/test/setup.ts"],
       include: ["src/**/*.test.{ts,tsx}"],

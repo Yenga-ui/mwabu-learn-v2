@@ -452,12 +452,6 @@ export default function LessonEditor({
         {[
           ["plan", "Lesson plan"],
           ["resources", "View resources"],
-          ["editor", "Structured editor"],
-          ["sources", "Source Explorer"],
-          ["ai", "AI proposals"],
-          ["history", "Revision history"],
-          ["review", "Review & sharing"],
-          ["print", "Print preview"],
         ].map(([value, label]) => (
           <button
             className={tab === value ? "button" : "button secondary"}
@@ -468,6 +462,28 @@ export default function LessonEditor({
             {label}
           </button>
         ))}
+        <details className="lesson-more-tools">
+          <summary>More lesson tools</summary>
+          <div className="actions">
+            {[
+              ["editor", "Structured editor"],
+              ["sources", "Source Explorer"],
+              ["ai", "AI proposals"],
+              ["history", "Revision history"],
+              ["review", "Review & sharing"],
+              ["print", "Print preview"],
+            ].map(([value, label]) => (
+              <button
+                className={tab === value ? "button" : "button secondary"}
+                key={value}
+                aria-pressed={tab === value}
+                onClick={() => setTab(value)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </details>
       </nav>
       {tab === "plan" && (
         <OfficialPlanEditor

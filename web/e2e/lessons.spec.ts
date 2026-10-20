@@ -48,6 +48,17 @@ async function mutate(
     { path, body, method },
   );
 }
+async function selectLessonTool(page: Page, name: string) {
+  const summary = page.getByText("More lesson tools", { exact: true });
+  await expect(summary).toBeVisible();
+  if (
+    !(await summary.evaluate(
+      (node) => (node.parentElement as HTMLDetailsElement).open,
+    ))
+  )
+    await summary.click();
+  await page.getByRole("button", { name, exact: true }).click();
+}
 async function createFree(page: Page, title: string) {
   await page.goto("/app/lessons/new");
   await page.getByRole("button", { name: "Free-form", exact: true }).click();
@@ -58,13 +69,11 @@ async function createFree(page: Page, title: string) {
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Structured editor", exact: true })
-    .click();
+  await selectLessonTool(page, "Structured editor");
   return page.url().split("/").at(-1)!;
 }
 async function proposal(page: Page, instructions = "") {
-  await page.getByRole("button", { name: "AI proposals", exact: true }).click();
+  await selectLessonTool(page, "AI proposals");
   await page.getByLabel("Instructions for this proposal").fill(instructions);
   await page.getByLabel(/I reviewed this lesson and selected sources/).check();
   // The controlled fixture retains a real one-second per-user cooldown; do not bypass it.
@@ -97,17 +106,7 @@ test("Ministry teacher fields and progression survive save/reload and export a s
     page.getByRole("status").filter({ hasText: /Saved · revision/ }),
   ).toBeVisible();
   await page.reload();
-  await expect(
-    page.getByRole("button", { name: "Structured editor", exact: true }),
-  ).toBeVisible();
-  if (
-    await page
-      .getByRole("button", { name: "Structured editor", exact: true })
-      .isVisible()
-  )
-    await page
-      .getByRole("button", { name: "Structured editor", exact: true })
-      .click();
+  await selectLessonTool(page, "Structured editor");
   await expect(
     page.getByText("Ministry lesson plan form and progression", {
       exact: true,
@@ -161,9 +160,7 @@ test("Ministry teacher fields and progression survive save/reload and export a s
         .getByRole("button", { name: "Structured editor", exact: true })
         .isVisible()
     )
-      await page
-        .getByRole("button", { name: "Structured editor", exact: true })
-        .click();
+      await selectLessonTool(page, "Structured editor");
     await expect(
       page.getByRole("heading", { name: "Lesson progression", exact: true }),
     ).toBeVisible();
@@ -286,9 +283,7 @@ test("teacher searches curriculum by name and creates an aligned lesson with der
     .getByLabel("Lesson title", { exact: true })
     .fill("Aligned teaching of halves");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Structured editor", exact: true })
-    .click();
+  await selectLessonTool(page, "Structured editor");
   await expect(
     page.getByRole("heading", { name: "Selected curriculum context" }),
   ).toBeVisible();
@@ -326,9 +321,7 @@ test("free-form mode retains setup when switching and does not claim official al
     "Mathematics",
   );
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
-  await page
-    .getByRole("button", { name: "Structured editor", exact: true })
-    .click();
+  await selectLessonTool(page, "Structured editor");
   await expect(
     page.getByText(/Free-form: no official alignment claimed/).first(),
   ).toBeVisible();
@@ -338,9 +331,7 @@ test("teacher discovers attaches and previews published Mwabu evidence without d
 }) => {
   await login(page);
   await createFree(page, "Resource grounded lesson");
-  await page
-    .getByRole("button", { name: "Source Explorer", exact: true })
-    .click();
+  await selectLessonTool(page, "Source Explorer");
   await page.getByLabel("Search educational sources").fill("sharing");
   await page
     .getByRole("button", { name: "Search Mwabu resources", exact: true })
@@ -386,9 +377,7 @@ test("teacher attaches a published resource to an existing draft from its resour
   await page
     .getByRole("link", { name: "Open lesson to review resources", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Source Explorer", exact: true })
-    .click();
+  await selectLessonTool(page, "Source Explorer");
   await expect(
     page.getByRole("heading", {
       name: "Attached references and evidence",
@@ -404,9 +393,7 @@ test("teacher discovers public metadata selects a source and retrieves licensed 
 }) => {
   await login(page);
   await createFree(page, "External grounded lesson");
-  await page
-    .getByRole("button", { name: "Source Explorer", exact: true })
-    .click();
+  await selectLessonTool(page, "Source Explorer");
   await page
     .getByRole("button", { name: "Public internet", exact: true })
     .click();
@@ -442,9 +429,7 @@ test("AI produces a structured proposal and explicit teacher apply saves a new d
       exact: true,
     })
     .click();
-  await page
-    .getByRole("button", { name: "Structured editor", exact: true })
-    .click();
+  await selectLessonTool(page, "Structured editor");
   await expect(
     page.getByRole("textbox", { name: "SMART lesson objectives", exact: true }),
   ).toHaveValue(/By the end of this lesson/);
@@ -462,9 +447,7 @@ test("section refinement is proposed separately and leaves other teacher section
       exact: true,
     })
     .click();
-  await page
-    .getByRole("button", { name: "Structured editor", exact: true })
-    .click();
+  await selectLessonTool(page, "Structured editor");
   await expect(page.getByText(/Saved · revision 2/)).toBeVisible();
   const objectives = await page
     .getByRole("textbox", { name: "SMART lesson objectives", exact: true })
@@ -493,9 +476,7 @@ test("section refinement is proposed separately and leaves other teacher section
       exact: true,
     })
     .click();
-  await page
-    .getByRole("button", { name: "Structured editor", exact: true })
-    .click();
+  await selectLessonTool(page, "Structured editor");
   await expect(
     page.getByRole("textbox", { name: "SMART lesson objectives", exact: true }),
   ).toHaveValue(objectives);
@@ -506,7 +487,7 @@ test("background generation survives navigation and reload and remains a reviewa
   await login(page);
   await createFree(page, "Background recovery lesson");
   const lessonUrl = page.url();
-  await page.getByRole("button", { name: "AI proposals", exact: true }).click();
+  await selectLessonTool(page, "AI proposals");
   await page
     .getByLabel("Instructions for this proposal")
     .fill("simulate-slow-job");
@@ -526,9 +507,7 @@ test("background generation survives navigation and reload and remains a reviewa
   console.log(
     `Controlled background acknowledgement: ${Date.now() - started} ms; inference fixture delays 8 s.`,
   );
-  await page
-    .getByRole("button", { name: "Structured editor", exact: true })
-    .click();
+  await selectLessonTool(page, "Structured editor");
   await expect(
     page.getByRole("textbox", { name: "SMART lesson objectives", exact: true }),
   ).toBeEnabled();
@@ -540,10 +519,8 @@ test("background generation survives navigation and reload and remains a reviewa
       .getByRole("button", { name: "Structured editor", exact: true })
       .isVisible()
   )
-    await page
-      .getByRole("button", { name: "Structured editor", exact: true })
-      .click();
-  await page.getByRole("button", { name: "AI proposals", exact: true }).click();
+    await selectLessonTool(page, "Structured editor");
+  await selectLessonTool(page, "AI proposals");
   await expect(
     page.getByRole("button", {
       name: "Review completed proposal",
@@ -563,7 +540,7 @@ test("teacher can cancel a running background generation without changing the sa
 }) => {
   await login(page);
   await createFree(page, "Background cancellation lesson");
-  await page.getByRole("button", { name: "AI proposals", exact: true }).click();
+  await selectLessonTool(page, "AI proposals");
   await page
     .getByLabel("Instructions for this proposal")
     .fill("simulate-slow-job");
@@ -596,9 +573,7 @@ test("autosave and revision comparison preserve manual section edits", async ({
     .getByRole("textbox", { name: "SMART lesson objectives", exact: true })
     .fill("Learners identify one half independently.");
   await expect(page.getByText(/Saved · revision 2/)).toBeVisible();
-  await page
-    .getByRole("button", { name: "Revision history", exact: true })
-    .click();
+  await selectLessonTool(page, "Revision history");
   await page
     .getByRole("combobox", { name: "Compare saved revision" })
     .selectOption("1");
@@ -713,9 +688,7 @@ test("a separate reviewer approves a submitted lesson and approved PDF reflects 
       exact: true,
     })
     .click();
-  await page
-    .getByRole("button", { name: "Review & sharing", exact: true })
-    .click();
+  await selectLessonTool(page, "Review & sharing");
   page.once("dialog", (dialog) => dialog.accept());
   await page
     .getByRole("button", { name: "Submit lesson for review", exact: true })
@@ -727,9 +700,7 @@ test("a separate reviewer approves a submitted lesson and approved PDF reflects 
   const reviewer = await context.newPage();
   await login(reviewer, "HeadTeacher");
   await reviewer.goto(`/app/lessons/${id}`);
-  await reviewer
-    .getByRole("button", { name: "Review & sharing", exact: true })
-    .click();
+  await selectLessonTool(reviewer, "Review & sharing");
   await reviewer
     .getByLabel("Publish as reusable organisation template")
     .check();
@@ -828,9 +799,7 @@ test("another authorised teacher reads a shared draft and share revocation block
 }) => {
   await login(page);
   const id = await createFree(page, "Shared teacher draft");
-  await page
-    .getByRole("button", { name: "Review & sharing", exact: true })
-    .click();
+  await selectLessonTool(page, "Review & sharing");
   await page
     .getByRole("combobox", { name: "Teaching colleague", exact: true })
     .selectOption(peerId);
@@ -884,7 +853,7 @@ test("provider failure preserves the teacher's current saved and manual content"
   await page
     .getByRole("textbox", { name: "SMART lesson objectives", exact: true })
     .fill("Important teacher wording remains intact.");
-  await page.getByRole("button", { name: "AI proposals", exact: true }).click();
+  await selectLessonTool(page, "AI proposals");
   await page
     .getByLabel("Instructions for this proposal")
     .fill("simulate-provider-failure");
@@ -900,9 +869,7 @@ test("provider failure preserves the teacher's current saved and manual content"
       .filter({ hasText: /unavailable|try again/i })
       .first(),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Structured editor", exact: true })
-    .click();
+  await selectLessonTool(page, "Structured editor");
   await expect(
     page.getByRole("textbox", { name: "SMART lesson objectives", exact: true }),
   ).toHaveValue("Important teacher wording remains intact.");
@@ -913,9 +880,7 @@ test("tablet lesson editor fits the viewport and offers a print-friendly preview
   await page.setViewportSize({ width: 768, height: 1024 });
   await login(page);
   await createFree(page, "Tablet teaching lesson");
-  await page
-    .getByRole("button", { name: "Print preview", exact: true })
-    .click();
+  await selectLessonTool(page, "Print preview");
   await expect(page.locator(".lesson-print")).toBeVisible();
   expect(
     await page.evaluate(
@@ -988,9 +953,7 @@ test("teacher presents a pinned saved revision with navigation, approved resourc
       .getByRole("button", { name: "Structured editor", exact: true })
       .isVisible()
   )
-    await page
-      .getByRole("button", { name: "Structured editor", exact: true })
-      .click();
+    await selectLessonTool(page, "Structured editor");
   await page
     .getByRole("button", { name: "Prepare Lesson Journey", exact: true })
     .click();
@@ -1050,9 +1013,7 @@ test("teacher presents a pinned saved revision with navigation, approved resourc
       .getByRole("button", { name: "Structured editor", exact: true })
       .isVisible()
   )
-    await page
-      .getByRole("button", { name: "Structured editor", exact: true })
-      .click();
+    await selectLessonTool(page, "Structured editor");
   await expect(page.getByText(/Saved revision 2/)).toBeVisible();
   await page
     .getByRole("link", { name: "Exit to preparation", exact: true })
@@ -1157,9 +1118,7 @@ test("Grade 4 fractions journey works on phone portrait and landscape, with revi
     await page
       .getByRole("button", { name: "Create draft", exact: true })
       .click();
-    await page
-      .getByRole("button", { name: "Structured editor", exact: true })
-      .click();
+    await selectLessonTool(page, "Structured editor");
     await expect(
       page.getByRole("heading", {
         name: "Selected curriculum context",

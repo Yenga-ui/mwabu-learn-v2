@@ -95,6 +95,12 @@ test("teacher starts with a published resource, completes the official plan, fin
   ).toBeVisible();
   const id = page.url().split("/").at(-1)!;
   const path = `/api/organisations/${fixture().schoolId}/lessons/${id}`;
+  await expect(
+    page.getByText("More lesson tools", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "AI proposals", exact: true }),
+  ).not.toBeVisible();
   await page
     .getByLabel("School", { exact: true })
     .fill("Synthetic acceptance school");
@@ -206,6 +212,13 @@ test("teacher starts with a published resource, completes the official plan, fin
   await expect(card).toContainText("Mathematics");
   await expect(card).toContainText("1 learning resources attached");
   await card.getByRole("link", { name: "View lesson", exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/app/lessons/${id}$`));
+  await expect(
+    page.getByRole("heading", { name: title, exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel("Lesson plan title", { exact: true }),
+  ).toHaveValue(title);
   await page
     .getByRole("button", { name: "Use this lesson", exact: true })
     .click();
