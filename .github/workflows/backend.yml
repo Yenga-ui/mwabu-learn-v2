@@ -1,7 +1,7 @@
 name: Backend validation
 on:
   push:
-    branches: [main, 'feature/**']
+    branches: [main, 'feature/**', 'codex/**']
     paths: ['backend/**', 'web/**', 'deployment/**', '.dockerignore', '.github/workflows/backend.yml']
   pull_request:
     paths: ['backend/**', 'web/**', 'deployment/**', '.dockerignore', '.github/workflows/backend.yml']

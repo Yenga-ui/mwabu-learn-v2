@@ -30,7 +30,7 @@ public sealed class TeacherLessonReuseTests
     {
         using var f = new CatalogueApiFactory(); await f.Initialize(); using var owner = await f.User("Teacher"); using var peer = await f.User("Teacher");
         var org = owner.Memberships[0].OrganisationId; await LessonPlannerTests.Join(f, peer.Profile.Id, org, "Teacher");
-        var request = LessonPlannerTests.Request() with { MinistryForm = new() { SubTopic = "Equal shares", Evaluation = "PRIVATE EVALUATION", LessonGoal = "Find one half" },
+        var request = LessonPlannerTests.Request() with { MinistryForm = new() { SubTopic = "Equal shares", Evaluation = "PRIVATE EVALUATION", References = "PRIVATE uploaded reference", LessonGoal = "Find one half" },
             TeachingSteps = [new("intro", "starter", "Start", "Introduction", 5, "PRIVATE INSTRUCTIONS", "Share equally", "Compare sizes", "Two equal parts", "PRIVATE NOTES", [])] };
         var original = await LessonPlannerTests.Create(owner.Client, org, request); var path = LessonPlannerTests.Path(org, original.Lesson.Id);
         (await owner.Client.PutAsJsonAsync(path + "/shares", new ShareLessonRequest(peer.Profile.Id, true), CatalogueApiFactory.Json)).EnsureSuccessStatusCode();
@@ -38,6 +38,7 @@ public sealed class TeacherLessonReuseTests
         var copy = (await response.Content.ReadFromJsonAsync<LessonDetail>(CatalogueApiFactory.Json))!;
         Assert.Equal(peer.Profile.Id, copy.Lesson.OwnerUserId); Assert.Equal(LessonStatus.Draft, copy.Lesson.Status);
         Assert.Equal("Equal shares", copy.Document.MinistryForm!.SubTopic); Assert.Equal("", copy.Document.MinistryForm.Evaluation);
+        Assert.Equal("", copy.Document.MinistryForm.References);
         Assert.Equal("", copy.Document.TeachingSteps![0].TeacherNotes); Assert.Equal("", copy.Document.TeachingSteps[0].TeacherInstructions);
         Assert.Equal("Share equally", copy.Document.TeachingSteps[0].LearnerExplanation);
         var unchanged = (await owner.Client.GetFromJsonAsync<LessonDetail>(path, CatalogueApiFactory.Json))!;
