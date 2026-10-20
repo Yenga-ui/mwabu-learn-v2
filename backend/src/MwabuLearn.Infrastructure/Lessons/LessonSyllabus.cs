@@ -8,6 +8,15 @@ namespace MwabuLearn.Infrastructure.Lessons;
 public sealed class LessonSyllabus(LessonAccess access) : ILessonSyllabus
 {
     private static readonly Lazy<SyllabusReference[]> Records = new(Load);
+    // Resolves only an ambiguous source subject label using grade + code + topic.
+    // It never creates an outcome, term or a historical curriculum crosswalk.
+    internal static string? CorroboratedSubject(int grade, string code, string topic)
+    {
+        string Normal(string value) => Regex.Replace(value.ToLowerInvariant(), @"[^a-z0-9]", "");
+        var subjects = Records.Value.Where(x => x.Grade == "G" + grade && x.CompetenceCode == code &&
+            (Normal(x.Topic) == Normal(topic) || Normal(x.Subtopic) == Normal(topic))).Select(x => x.Subject).Distinct().ToArray();
+        return subjects.Length == 1 ? subjects[0] : null;
+    }
     private static SyllabusReference[] Load()
     {
         using var stream = typeof(LessonSyllabus).Assembly.GetManifestResourceStream("MwabuLearn.Infrastructure.Lessons.Reference.syllabus-2023.json")

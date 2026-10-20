@@ -24,6 +24,10 @@ public partial class MwabuDbContext(DbContextOptions<MwabuDbContext> options, Mw
     public DbSet<ContentItem> ContentItems => Set<ContentItem>();
     public DbSet<ContentAsset> ContentAssets => Set<ContentAsset>();
     public DbSet<ScormApproval> ScormApprovals => Set<ScormApproval>();
+    public DbSet<ContentImportBatch> ContentImportBatches => Set<ContentImportBatch>();
+    public DbSet<ContentImportRecord> ContentImportRecords => Set<ContentImportRecord>();
+    public DbSet<ImportedLessonTemplate> ImportedLessonTemplates => Set<ImportedLessonTemplate>();
+    public DbSet<ImportedLessonResource> ImportedLessonResources => Set<ImportedLessonResource>();
     public DbSet<Collection> Collections => Set<Collection>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<ContentCollection> ContentCollections => Set<ContentCollection>();

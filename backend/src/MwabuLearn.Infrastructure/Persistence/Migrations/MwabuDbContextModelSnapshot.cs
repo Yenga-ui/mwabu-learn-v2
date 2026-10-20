@@ -515,6 +515,128 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentImportBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ActorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ArchiveChecksum")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurriculumYear")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)");
+
+                    b.Property<string>("ReviewEvidence")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("SourceCollection")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.HasIndex("SourceCollection", "CurriculumYear", "ArchiveChecksum")
+                        .IsUnique();
+
+                    b.ToTable("ContentImportBatches", (string)null);
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentImportRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Checksum")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid?>("ContentItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("Format")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Issue")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<string>("ParsedJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ReviewEvidence")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid?>("ReviewerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SourcePath")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("State")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentItemId");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.HasIndex("BatchId", "SourcePath")
+                        .IsUnique();
+
+                    b.ToTable("ContentImportRecords", (string)null);
+                });
+
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -632,6 +754,124 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("ContentTags", (string)null);
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ImportedLessonResource", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Checksum")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("ReviewerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SourceDependency")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("TemplateId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AssetId");
+
+                    b.HasIndex("ReviewerId");
+
+                    b.HasIndex("TemplateId", "AssetId")
+                        .IsUnique();
+
+                    b.ToTable("ImportedLessonResources", (string)null);
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ImportedLessonTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ContentItemId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("CurriculumYear")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("DocumentJson")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("Grade")
+                        .HasColumnType("integer");
+
+                    b.Property<Guid>("ImportRecordId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OriginalChecksum")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("SubTopic")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Term")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentItemId")
+                        .IsUnique();
+
+                    b.HasIndex("ImportRecordId");
+
+                    b.HasIndex("CurriculumYear", "OriginalChecksum")
+                        .IsUnique();
+
+                    b.HasIndex("CurriculumYear", "Grade", "Subject");
+
+                    b.ToTable("ImportedLessonTemplates", (string)null);
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.QuestionBank", b =>
@@ -3579,6 +3819,38 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.Navigation("Topic");
                 });
 
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentImportBatch", b =>
+                {
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentImportRecord", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentImportBatch", "Batch")
+                        .WithMany("Records")
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentItem", "ContentItem")
+                        .WithMany()
+                        .HasForeignKey("ContentItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Batch");
+
+                    b.Navigation("ContentItem");
+                });
+
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentItem", b =>
                 {
                     b.HasOne("MwabuLearn.Domain.Entities.Content.ContentItem", null)
@@ -3604,6 +3876,48 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.Navigation("ContentItem");
 
                     b.Navigation("Tag");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ImportedLessonResource", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentAsset", "Asset")
+                        .WithMany()
+                        .HasForeignKey("AssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ImportedLessonTemplate", "Template")
+                        .WithMany()
+                        .HasForeignKey("TemplateId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Asset");
+
+                    b.Navigation("Template");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ImportedLessonTemplate", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentItem", "ContentItem")
+                        .WithMany()
+                        .HasForeignKey("ContentItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentImportRecord", null)
+                        .WithMany()
+                        .HasForeignKey("ImportRecordId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentItem");
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.QuestionBank", b =>
@@ -4112,6 +4426,11 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.Collection", b =>
                 {
                     b.Navigation("Contents");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentImportBatch", b =>
+                {
+                    b.Navigation("Records");
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentItem", b =>

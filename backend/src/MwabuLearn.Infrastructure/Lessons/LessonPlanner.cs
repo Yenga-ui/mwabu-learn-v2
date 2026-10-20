@@ -50,7 +50,7 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
         return new(rows.Items.Select(x => {
             var document = LessonJson.Read<LessonDocument>(snapshots[x.Id]);
             return Summary(x) with { Grade = document.Curriculum?.Grade ?? document.Setup.TargetLearners,
-                Subject = document.Curriculum?.Subject ?? document.Setup.Subject, Topic = document.Curriculum?.Topic,
+                Subject = document.Curriculum?.Subject ?? document.Setup.Subject, Topic = document.Curriculum?.Topic ?? document.MinistryForm?.Topic,
                 SubTopic = document.MinistryForm?.SubTopic, DurationMinutes = document.Setup.DurationMinutes,
                 ResourceCount = (document.TeachingSteps ?? []).SelectMany(s => s.Resources).Select(r => r.ContentItemId)
                     .Concat(document.References.Where(r => r.Kind == LessonSourceKind.Mwabu && r.ContentItemId.HasValue).Select(r => r.ContentItemId!.Value)).Distinct().Count(),
@@ -103,10 +103,12 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
             var steps = JourneyRules.Validate(request.TeachingSteps ?? previousDocument?.TeachingSteps ?? [], sections);
             foreach (var resource in steps.SelectMany(x => x.Resources))
                 if (!await db.ContentAssets.AsNoTracking().AnyAsync(a => a.Id == resource.AssetId && a.ContentItemId == resource.ContentItemId &&
-                    a.Checksum == resource.Checksum && !a.IsPendingDeletion && JourneyRules.SupportedMedia.Contains(a.MimeType) && db.ContentItems.Any(c => c.Id == a.ContentItemId && c.Status == Domain.Entities.Content.ContentStatus.Published), ct))
+                    a.Checksum == resource.Checksum && !a.IsPendingDeletion && JourneyRules.SupportedMedia.Contains(a.MimeType) &&
+                    (a.MimeType != "application/zip" && a.MimeType != "application/x-zip-compressed" || db.ScormApprovals.Any(s => s.ContentAssetId == a.Id && s.Checksum == a.Checksum && !s.Revoked)) &&
+                    db.ContentItems.Any(c => c.Id == a.ContentItemId && c.Status == Domain.Entities.Content.ContentStatus.Published), ct))
                     throw LessonRules.Invalid("A teaching resource version is unavailable, unpublished or unsupported. Select an approved image, audio, video, PDF or declarative activity.");
             var document = new LessonDocument(setup, context, sections, refs,
-                MinistryFormRules.Validate(form ?? MinistryFormRules.FromSections(sections), setup.DurationMinutes), 3, steps);
+                MinistryFormRules.Validate(form ?? MinistryFormRules.FromSections(sections), setup.DurationMinutes), 3, steps, previousDocument?.ImportedFrom);
             document = document with { MinistryForm = MinistryFormRules.Validate(MinistryFormRules.SyncSections(document, previousDocument), setup.DurationMinutes) };
             if (request.TeachingSteps is null && request.MinistryForm is not null)
             {
@@ -116,7 +118,8 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
                 if (previousDocument?.TeachingSteps is not { Length: > 0 } && document.TeachingSteps.Length > 0)
                 {
                     var contentIds = refs.Where(r => r.Kind == LessonSourceKind.Mwabu && r.ContentItemId.HasValue).Select(r => r.ContentItemId!.Value).ToArray();
-                    var assets = await db.ContentAssets.AsNoTracking().Where(a => contentIds.Contains(a.ContentItemId) && !a.IsPendingDeletion && JourneyRules.SupportedMedia.Contains(a.MimeType) && a.ContentItem.Status == Domain.Entities.Content.ContentStatus.Published)
+                    var assets = await db.ContentAssets.AsNoTracking().Where(a => contentIds.Contains(a.ContentItemId) && !a.IsPendingDeletion && JourneyRules.SupportedMedia.Contains(a.MimeType) &&
+                        (a.MimeType != "application/zip" && a.MimeType != "application/x-zip-compressed" || db.ScormApprovals.Any(s => s.ContentAssetId == a.Id && s.Checksum == a.Checksum && !s.Revoked)) && a.ContentItem.Status == Domain.Entities.Content.ContentStatus.Published)
                         .OrderBy(a => a.ContentItemId).ThenByDescending(a => a.IsPrimary).ThenBy(a => a.Id).Take(30)
                         .Select(a => new TeachingResource(a.ContentItemId, a.Id, a.Checksum, a.ContentItem.Title)).ToArrayAsync(ct);
                     document = document with { TeachingSteps = document.TeachingSteps.Select(step => {

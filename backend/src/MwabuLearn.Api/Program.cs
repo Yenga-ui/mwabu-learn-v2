@@ -27,6 +27,9 @@ builder.Services.AddControllers(options => options.Filters.AddService<CatalogueV
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<ActivityDocuments>();
 builder.Services.AddScoped<ScormService>();
+builder.Services.AddScoped<ContentImports>();
+builder.Services.AddScoped<DemoCleanup>();
+builder.Services.AddScoped<CurriculumLibrary>();
 builder.Services.AddSingleton<ScormTickets>();
 builder.Services.AddScoped<Assessments>();
 builder.Services.AddLessonPlanning(builder.Configuration);

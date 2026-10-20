@@ -30,7 +30,8 @@ public sealed record CurriculumContext(Guid CurriculumId, Guid VersionId, Guid G
 public sealed record SourceCitation(Guid Id, LessonSourceKind Kind, string Title, string? Url, string? Publisher,
     string? Licence, DateTime? AccessedAt, SourceRetrievalStatus RetrievalStatus, string EvidenceDescription, bool ReusePermitted, Guid? ContentItemId = null);
 public sealed record LessonDocument(LessonSetup Setup, CurriculumContext? Curriculum, LessonSection[] Sections, SourceCitation[] References,
-    MinistryLessonForm? MinistryForm = null, int SchemaVersion = 1, TeachingStep[]? TeachingSteps = null);
+    MinistryLessonForm? MinistryForm = null, int SchemaVersion = 1, TeachingStep[]? TeachingSteps = null,
+    MwabuLearn.Application.Content.SourcePlanContext? ImportedFrom = null);
 public sealed record TeachingResource(Guid ContentItemId, Guid AssetId, string Checksum, string Title);
 public sealed record ClassroomStep(string Id, string Title, string Phase, int Minutes, string LearnerExplanation, string Hint, string Answer, TeachingResource[] Resources);
 public sealed record ClassroomLesson(Guid LessonId, int Revision, string Title, string Language, string? LearningOutcome, ClassroomStep[] Steps);

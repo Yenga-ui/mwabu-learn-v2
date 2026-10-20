@@ -28,7 +28,7 @@ public static class JourneyRules
         }
         return result.ToArray();
     }
-    public static readonly string[] SupportedMedia = ["application/vnd.mwabu.activity+json", "image/png", "image/jpeg", "image/gif", "image/webp", "audio/mpeg", "audio/ogg", "audio/wav", "video/mp4", "video/webm", "application/pdf"];
+    public static readonly string[] SupportedMedia = ["application/vnd.mwabu.activity+json", "image/png", "image/jpeg", "image/gif", "image/webp", "audio/mpeg", "audio/ogg", "audio/wav", "video/mp4", "video/webm", "application/pdf", "application/zip", "application/x-zip-compressed"];
     public static ClassroomStep Project(TeachingStep step) => new(step.Id, step.Title, step.Phase, step.Minutes,
         step.LearnerExplanation, step.Hint, step.Answer, step.Resources);
     public static ClassroomStep[] ClassroomSteps(LessonDocument document)

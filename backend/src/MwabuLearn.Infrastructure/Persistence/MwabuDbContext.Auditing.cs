@@ -45,6 +45,17 @@ public partial class MwabuDbContext
         ChangeTracker.DetectChanges();
         PrepareJobs();
         var entries = ChangeTracker.Entries().ToArray();
+        if (entries.Any(x => x.Entity is MwabuLearn.Domain.Entities.Content.ImportedLessonTemplate && x.State is EntityState.Modified or EntityState.Deleted))
+            throw new InvalidOperationException("Imported source templates are immutable; create a new resource revision.");
+        foreach (var entry in entries.Where(x => x.State is EntityState.Modified or EntityState.Deleted))
+        {
+            string[]? mutable = entry.Entity switch {
+                MwabuLearn.Domain.Entities.Content.ContentImportBatch => ["ReviewEvidence", "UpdatedAt"],
+                MwabuLearn.Domain.Entities.Content.ContentImportRecord => ["State", "Issue", "ContentItemId", "ReviewEvidence", "ReviewerId", "UpdatedAt"],
+                MwabuLearn.Domain.Entities.Content.ImportedLessonResource => ["IsActive", "UpdatedAt"], _ => null };
+            if (mutable is not null && (entry.State == EntityState.Deleted || entry.Properties.Any(p => p.IsModified && !mutable.Contains(p.Metadata.Name))))
+                throw new InvalidOperationException("Source provenance and resource-match evidence are immutable.");
+        }
         if (entries.Any(x => x.Entity is MwabuLearn.Domain.Entities.Lessons.LessonRevision && x.State is EntityState.Modified or EntityState.Deleted))
             throw new InvalidOperationException("Lesson revision snapshots are immutable.");
         if (entries.Any(x => x.Entity is MwabuLearn.Domain.Entities.Sync.SyncChange && x.State is EntityState.Modified or EntityState.Deleted))

@@ -15,7 +15,7 @@ public sealed partial class ContentService(MwabuDbContext db, IContentStorage st
 {
     private static readonly Regex SlugFormat = new(@"\A[a-z0-9]+(?:-[a-z0-9]+)*\z", RegexOptions.CultureInvariant);
     private static readonly Regex LanguageFormat = new(@"\A[a-z]{2,3}(?:-[a-z0-9]{2,8})*\z", RegexOptions.CultureInvariant);
-    private static readonly Expression<Func<ContentItem, ContentResponse>> ContentProjection = x => new(
+    internal static readonly Expression<Func<ContentItem, ContentResponse>> ContentProjection = x => new(
         x.Id, x.Title, x.Slug, x.Summary, x.Description, x.ContentType, x.Status, x.LanguageCode,
         x.SortOrder, x.IsDownloadable, x.EstimatedDurationMinutes, x.CreatedAt, x.UpdatedAt, x.PublishedAt, x.SourceContentItemId);
 

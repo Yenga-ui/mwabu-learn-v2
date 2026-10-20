@@ -29,10 +29,10 @@ public sealed class CatalogueAuthorizationTests
         using var anonymous = factory.Client();
         using var teacher = await factory.User("Teacher", "OrganisationAdmin");
         teacher.Client.DefaultRequestHeaders.Add("X-Organisation-Id", teacher.Memberships.Last().OrganisationId.ToString());
-        var controllerTypes = new[] { typeof(CurriculaController), typeof(ContentController), typeof(CollectionsController), typeof(TagsController), typeof(ScormController) };
+        var controllerTypes = new[] { typeof(CurriculaController), typeof(ContentController), typeof(CollectionsController), typeof(TagsController), typeof(ScormController), typeof(ContentImportsController), typeof(CurriculumLibraryController) };
         var endpoints = factory.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>()
             .Where(x => controllerTypes.Contains(x.Metadata.GetMetadata<ControllerActionDescriptor>()?.ControllerTypeInfo.AsType())).ToArray();
-        Assert.Equal(62, endpoints.Length); // Includes mapping revisions and all four protected SCORM operations.
+        Assert.Equal(74, endpoints.Length); // Includes import, library, resource associations and scoped cleanup.
         foreach (var endpoint in endpoints)
         {
             var path = "/" + Regex.Replace(endpoint.RoutePattern.RawText!.TrimStart('/'), @"\{[^}]+\}", Guid.NewGuid().ToString());
@@ -56,7 +56,7 @@ public sealed class CatalogueAuthorizationTests
 
     private static HttpRequestMessage Request(string method, string path) => new(new HttpMethod(method), path)
     {
-        Content = method == "GET" ? null : method == "POST" && path.EndsWith("/assets", StringComparison.Ordinal)
+        Content = method == "GET" ? null : method == "POST" && (path.EndsWith("/assets", StringComparison.Ordinal) || path.EndsWith("/preview", StringComparison.Ordinal))
             ? new MultipartFormDataContent() : JsonContent.Create(new { })
     };
 
@@ -229,6 +229,6 @@ public sealed class CatalogueAuthorizationTests
                 count++;
             }
         }
-        Assert.Equal(62, count);
+        Assert.Equal(70, count); // Eight import/cleanup operations; learning and organisation routes are checked separately.
     }
 }
