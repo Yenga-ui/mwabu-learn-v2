@@ -198,7 +198,10 @@ try {
     MWABU_MIGRATIONS_CONNECTION: connection,
     MWABU_BROWSER_TEST_HOST: "true",
     MWABU_BROWSER_API_ROOT: resolve(root, "backend/src/MwabuLearn.Api"),
-    ASPNETCORE_TEST_CONTENTROOT_MWABULEARN_API: resolve(root, "backend/src/MwabuLearn.Api"),
+    ASPNETCORE_TEST_CONTENTROOT_MWABULEARN_API: resolve(
+      root,
+      "backend/src/MwabuLearn.Api",
+    ),
     MWABU_BROWSER_WEB_ROOT: resolve(
       process.env.MWABU_BROWSER_WEB_ROOT || "dist",
     ),
@@ -218,6 +221,7 @@ try {
     BootstrapAdministrator__OrganisationName: "Mwabu",
     BootstrapAdministrator__OrganisationCode: "MWABU",
     DevelopmentSeed__Enabled: "true",
+    ContentImports__Enabled: "true",
     BackgroundWork__Enabled: "true",
     LessonPlanner__Ai__MinimumRequestIntervalSeconds: "1",
     ContentStorage__RootPath: join(temporary, "content"),

@@ -11,6 +11,13 @@ import "./features/lessons/lessons.css";
 const Auth = lazy(() => import("./auth/AuthPages"));
 const Dashboard = lazy(() => import("./features/dashboard/Dashboard"));
 const Catalogue = lazy(() => import("./features/content/Catalogue"));
+const CurriculumLibrary = lazy(
+  () => import("./features/content/CurriculumLibrary"),
+);
+const ContentImports = lazy(() => import("./features/content/ContentImports"));
+const RolePermissions = lazy(
+  () => import("./features/organisations/RolePermissions"),
+);
 const Resource = lazy(() => import("./features/content/Resource"));
 const Assessments = lazy(() => import("./features/content/Assessments"));
 const Curriculum = lazy(() => import("./features/curriculum/Curriculum"));
@@ -71,6 +78,9 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: route(<Dashboard />) },
       { path: "resources", element: route(<Catalogue />) },
+      { path: "library", element: route(<CurriculumLibrary />) },
+      { path: "content-imports", element: route(<ContentImports />) },
+      { path: "role-permissions", element: route(<RolePermissions />) },
       { path: "assessments", element: route(<Assessments />) },
       { path: "resources/:id", element: route(<Resource />) },
       { path: "lessons", element: route(<LessonPlanner />) },

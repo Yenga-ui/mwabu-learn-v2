@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Download, RotateCcw } from "lucide-react";
 import { api, ensureSession, queryString } from "../../api/client";
@@ -7,6 +7,9 @@ import type { Resource as ResourceType, Asset } from "../../api/types";
 import { useSession } from "../../auth/Session";
 import AttachToLesson from "./AttachToLesson";
 import ScormPlayer, { isScormCandidate } from "./ScormPlayer";
+import OfficialSourcePlan, {
+  type OfficialTemplate,
+} from "./OfficialSourcePlan";
 import {
   Badge,
   Empty,
@@ -105,6 +108,13 @@ export function MediaViewer({ asset }: { asset: Asset }) {
 }
 export default function Resource() {
   const { id } = useParams();
+  const [params] = useSearchParams();
+  const requestedReturn = params.get("return") ?? "";
+  const returnPath =
+    /^\/app\/(library|lessons|resources)(?:[/?]|$)/.test(requestedReturn) &&
+    !requestedReturn.includes("\\")
+      ? requestedReturn
+      : "/app/resources";
   const session = useSession();
   const [selected, setSelected] = useState<string>();
   const query = useQuery({
@@ -112,6 +122,12 @@ export default function Resource() {
     queryFn: ({ signal }) =>
       api<ResourceType>("/api/learning/content/" + id, { signal }),
     enabled: session.can("content.read", "catalogue"),
+  });
+  const official = useQuery({
+    queryKey: ["official-source-plan", id],
+    queryFn: () => api<OfficialTemplate>(`/api/learning/library/plans/${id}`),
+    enabled: query.data?.content.contentType === "lesson-plan",
+    retry: false,
   });
   const resourceId = query.data?.content.id;
   const organisationId = session.organisationId;
@@ -135,8 +151,10 @@ export default function Resource() {
           resource.assets[0];
         return (
           <>
-            <Link className="back-link" to="/app/resources">
-              ← Learning resources
+            <Link className="back-link" to={returnPath}>
+              {returnPath.startsWith("/app/library")
+                ? "← Curriculum library"
+                : "← Learning resources"}
             </Link>
             <PageTitle
               eyebrow={resource.content.contentType.replaceAll("-", " ")}
@@ -153,9 +171,13 @@ export default function Resource() {
             >
               {resource.content.summary}
             </PageTitle>
+            {resource.content.contentType === "lesson-plan" && (
+              <OfficialSourcePlan id={resource.content.id} />
+            )}
             <div className="resource-layout">
               <section className="card media-card">
-                {asset ? (
+                {official.data &&
+                asset?.mimeType === "text/html" ? null : asset ? (
                   asset.mimeType === activityMime ? (
                     <PublishedActivity
                       key={asset.id}

@@ -73,6 +73,21 @@ export function Shell() {
   }[] = [
     { to: "/app", label: "Your workspace", icon: LayoutDashboard },
     {
+      to: "/app/role-permissions",
+      label: "Roles and permissions",
+      icon: ShieldCheck,
+      show:
+        !!session.access?.platformAuthority ||
+        session.can("memberships.manage"),
+    },
+    {
+      to: "/app/library",
+      label: "Find a lesson",
+      icon: BookOpen,
+      permission: "content.read",
+      scope: "catalogue",
+    },
+    {
       to: "/app/assessments",
       label: "Learning assessments",
       icon: GraduationCap,
@@ -80,7 +95,9 @@ export function Shell() {
     },
     {
       to: "/app/lessons",
-      label: session.access?.roleCodes.includes("Teacher") ? "Find a lesson" : "Lesson Planner",
+      label: session.access?.roleCodes.includes("Teacher")
+        ? "My lesson plans"
+        : "Lesson Planner",
       icon: BookOpen,
       permission: "lessons.read",
     },
@@ -94,6 +111,9 @@ export function Shell() {
     {
       to: "/app/curriculum",
       label: "Curriculum explorer",
+      show:
+        !session.access?.roleCodes.includes("Teacher") ||
+        session.can("curriculum.manage", "global"),
       icon: GraduationCap,
       permission: "curriculum.read",
       scope: "catalogue",
@@ -114,6 +134,13 @@ export function Shell() {
     {
       to: "/app/content",
       label: "Content studio",
+      icon: Files,
+      permission: "content.manage",
+      scope: "global",
+    },
+    {
+      to: "/app/content-imports",
+      label: "Content imports",
       icon: Files,
       permission: "content.manage",
       scope: "global",

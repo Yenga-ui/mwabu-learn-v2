@@ -173,11 +173,18 @@ async function sendApi<T>(
   if (options.organisationId)
     headers["X-Organisation-Id"] = options.organisationId;
   if (method !== "GET") headers["X-Mwabu-CSRF"] = await csrf();
-  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+  const multipart = options.body instanceof FormData;
+  if (options.body !== undefined && !multipart)
+    headers["Content-Type"] = "application/json";
   const init: RequestInit = {
     method,
     headers,
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
+    body:
+      options.body === undefined
+        ? undefined
+        : multipart
+          ? (options.body as FormData)
+          : JSON.stringify(options.body),
     signal: options.signal,
   };
   let response = await raw(path, init);

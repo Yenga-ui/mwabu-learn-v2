@@ -310,6 +310,25 @@ export default function LessonEditor({
           ? "Managed curriculum alignment"
           : "Free-form: no official alignment claimed"}
       </PageTitle>
+      {draft.document.importedFrom && (
+        <section className="card" aria-label="Original Mwabu source">
+          <p>
+            Adapted from {draft.document.importedFrom.curriculumYear} curriculum
+            · Grade {draft.document.importedFrom.grade} ·{" "}
+            {draft.document.importedFrom.subject} ·{" "}
+            {draft.document.importedFrom.topic}
+          </p>
+          <p>
+            Complete and review missing official fields and teaching durations.
+            The original Mwabu source remains unchanged.
+          </p>
+          <Link
+            to={`/app/resources/${draft.document.importedFrom.contentItemId}`}
+          >
+            View original plan and learning resources
+          </Link>
+        </section>
+      )}
       <div className="lesson-toolbar">
         <Badge>{draft.server.lesson.status}</Badge>
         <span role="status" aria-live="polite">

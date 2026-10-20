@@ -232,7 +232,7 @@ test("teacher searches curriculum by name and creates an aligned lesson with der
   await login(page);
   await page.getByRole("link", { name: "Find a lesson", exact: true }).click();
   await page
-    .getByRole("link", { name: "Create lesson plan", exact: true })
+    .getByRole("link", { name: "Blank lesson plan", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Choose curriculum first", exact: true })
@@ -841,9 +841,10 @@ test("learner cannot access teacher plans or generation endpoints with crafted r
     {},
   );
   expect(response.status).toBe(403);
+  await expect(page.locator('a[href="/app/lessons"]')).toHaveCount(0);
   await expect(
     page.getByRole("link", { name: "Find a lesson", exact: true }),
-  ).toHaveCount(0);
+  ).toHaveAttribute("href", "/app/library");
 });
 test("provider failure preserves the teacher's current saved and manual content", async ({
   page,

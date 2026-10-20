@@ -30,6 +30,7 @@ import NodePicker from "../curriculum/NodePicker";
 import ActivityComposer from "./activities/ActivityComposer";
 import ScormReview from "./ScormReview";
 import MappingRevision from "./MappingRevision";
+import SourcePlanResourceLinks from "./SourcePlanResourceLinks";
 import { activityMime } from "./activities/activityRuntime";
 import {
   resourceTypes,
@@ -375,11 +376,13 @@ export default function Management() {
                   <h2>Resource details</h2>
                   {resource.sourceContentItemId && (
                     <p>
-                      Mapping revision of{" "}
+                      Source revision of{" "}
                       <Link to={`/app/content/${resource.sourceContentItemId}`}>
                         the original resource
                       </Link>
-                      . Review and publish this draft separately.
+                      {resource.status === "Draft"
+                        ? ". Review and publish this draft separately."
+                        : ". The original record and its files are preserved."}
                     </p>
                   )}
                   <p className="preserve-lines">
@@ -420,6 +423,10 @@ export default function Management() {
               {resource.status === "Published" && (
                 <ScormReview id={resource.id} />
               )}
+              {resource.status === "Published" &&
+                resource.contentType === "lesson-plan" && (
+                  <SourcePlanResourceLinks id={resource.id} />
+                )}
               {["Published", "Approved"].includes(resource.status) && (
                 <MappingRevision key={resource.id} resource={resource} />
               )}

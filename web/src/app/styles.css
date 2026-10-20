@@ -1999,3 +1999,18 @@
   overflow-wrap: anywhere;
   font-size: 0.85rem;
 }
+.table-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.table-scroll table {
+  width: 100%;
+  min-width: 680px;
+}
+.table-scroll td {
+  overflow-wrap: anywhere;
+  vertical-align: top;
+}
+.table-scroll small {
+  display: block;
+}

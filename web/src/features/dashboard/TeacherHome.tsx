@@ -35,7 +35,7 @@ export default function TeacherHome() {
         className="card teacher-home-search"
         onSubmit={(e) => {
           e.preventDefault();
-          navigate("/app/lessons?q=" + encodeURIComponent(search.trim()));
+          navigate("/app/library?text=" + encodeURIComponent(search.trim()));
         }}
       >
         <label>
@@ -53,10 +53,15 @@ export default function TeacherHome() {
         </button>
       </form>
       <nav className="teacher-tasks" aria-label="Teaching tasks">
-        <Link className="card" to="/app/lessons">
+        <Link className="card" to="/app/library">
           <BookOpen aria-hidden="true" />
           <strong>Find a lesson</strong>
           <span>Search by grade, subject or topic.</span>
+        </Link>
+        <Link className="card" to="/app/lessons?mine=true">
+          <BookOpen aria-hidden="true" />
+          <strong>My lesson plans</strong>
+          <span>Reopen and adapt your saved plans.</span>
         </Link>
         {session.can("lessons.manage") && (
           <Link className="card" to="/app/lessons/new">

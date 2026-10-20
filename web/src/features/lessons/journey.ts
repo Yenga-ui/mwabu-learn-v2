@@ -2,6 +2,8 @@ import type { Detail, TeachingStep } from "./types";
 export const supportedTeachingMedia = [
   "application/vnd.mwabu.activity+json",
   "application/pdf",
+  "application/zip",
+  "application/x-zip-compressed",
   "image/png",
   "image/jpeg",
   "image/gif",
@@ -13,6 +15,8 @@ export const supportedTeachingMedia = [
   "video/webm",
 ];
 export function resourceKind(mime: string) {
+  if (mime === "application/zip" || mime === "application/x-zip-compressed")
+    return "Reviewed SCORM lesson (online playback)";
   if (mime === "application/vnd.mwabu.activity+json")
     return "Interactive activity";
   if (mime === "application/pdf") return "PDF document";

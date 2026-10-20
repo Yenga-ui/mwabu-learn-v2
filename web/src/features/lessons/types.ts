@@ -48,6 +48,7 @@ export interface Citation {
   contentItemId: string | null;
 }
 export interface LessonDocument {
+  importedFrom?: SourcePlanContext | null;
   teachingSteps?: TeachingStep[] | null;
   schemaVersion?: number;
   ministryForm?: MinistryLessonForm | null;
@@ -55,6 +56,18 @@ export interface LessonDocument {
   curriculum: CurriculumContext | null;
   sections: Section[];
   references: Citation[];
+}
+export interface SourcePlanContext {
+  contentItemId: string;
+  curriculumYear: number;
+  grade: number;
+  subject: string;
+  topic: string;
+  subTopic: string;
+  term: string | null;
+  sourcePath: string;
+  checksum: string;
+  notice: string;
 }
 export interface TeachingResource {
   contentItemId: string;
