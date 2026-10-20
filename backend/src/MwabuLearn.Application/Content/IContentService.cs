@@ -29,4 +29,5 @@ public interface IContentService
     Task<IReadOnlyList<MappingResponse>> ListMappingsAsync(Guid id, CancellationToken ct);
     Task<MappingResponse> AddMappingAsync(Guid id, MappingRequest request, CancellationToken ct);
     Task RemoveMappingAsync(Guid id, Guid mappingId, CancellationToken ct);
+    Task<ContentResponse> CreateMappingRevisionAsync(Guid id, MappingRevisionRequest request, CancellationToken ct);
 }

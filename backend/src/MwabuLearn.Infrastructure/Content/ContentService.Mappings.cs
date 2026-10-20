@@ -22,16 +22,19 @@ public sealed partial class ContentService
         if (!Enum.IsDefined(request.NodeType) || request.NodeId == Guid.Empty) throw Invalid("A valid curriculum node type and nonempty node ID are required.");
         var content = await Tracked(id, ct);
         Editable(content);
+        var evidence = Optional(request.Evidence, 2000, "Mapping evidence");
+        if (evidence is not null && (evidence.Length < 20 || current?.UserId is null))
+            throw Invalid("Mapping evidence needs at least 20 characters and an authenticated reviewer.");
         var target = request.NodeId;
         var exists = request.NodeType switch
         {
-            CurriculumNodeType.CurriculumVersion => await db.CurriculumVersions.AnyAsync(x => x.Id == target, ct),
-            CurriculumNodeType.Grade => await db.Grades.AnyAsync(x => x.Id == target, ct),
-            CurriculumNodeType.Subject => await db.Subjects.AnyAsync(x => x.Id == target, ct),
-            CurriculumNodeType.Term => await db.Terms.AnyAsync(x => x.Id == target, ct),
-            CurriculumNodeType.Topic => await db.Topics.AnyAsync(x => x.Id == target, ct),
-            CurriculumNodeType.Competency => await db.Competencies.AnyAsync(x => x.Id == target, ct),
-            CurriculumNodeType.LearningOutcome => await db.LearningOutcomes.AnyAsync(x => x.Id == target, ct),
+            CurriculumNodeType.CurriculumVersion => await db.CurriculumVersions.AnyAsync(x => x.Id == target && x.IsActive && x.Curriculum.IsActive, ct),
+            CurriculumNodeType.Grade => await db.Grades.AnyAsync(x => x.Id == target && x.IsActive && x.CurriculumVersion.IsActive && x.CurriculumVersion.Curriculum.IsActive, ct),
+            CurriculumNodeType.Subject => await db.Subjects.AnyAsync(x => x.Id == target && x.IsActive && x.Grade.IsActive && x.Grade.CurriculumVersion.IsActive && x.Grade.CurriculumVersion.Curriculum.IsActive, ct),
+            CurriculumNodeType.Term => await db.Terms.AnyAsync(x => x.Id == target && x.IsActive && x.Subject.IsActive && x.Subject.Grade.IsActive && x.Subject.Grade.CurriculumVersion.IsActive && x.Subject.Grade.CurriculumVersion.Curriculum.IsActive, ct),
+            CurriculumNodeType.Topic => await db.Topics.AnyAsync(x => x.Id == target && x.IsActive && x.Term.IsActive && x.Term.Subject.IsActive && x.Term.Subject.Grade.IsActive && x.Term.Subject.Grade.CurriculumVersion.IsActive && x.Term.Subject.Grade.CurriculumVersion.Curriculum.IsActive, ct),
+            CurriculumNodeType.Competency => await db.Competencies.AnyAsync(x => x.Id == target && x.IsActive && x.Topic.IsActive && x.Topic.Term.IsActive && x.Topic.Term.Subject.IsActive && x.Topic.Term.Subject.Grade.IsActive && x.Topic.Term.Subject.Grade.CurriculumVersion.IsActive && x.Topic.Term.Subject.Grade.CurriculumVersion.Curriculum.IsActive, ct),
+            CurriculumNodeType.LearningOutcome => await db.LearningOutcomes.AnyAsync(x => x.Id == target && x.IsActive && x.Competency.IsActive && x.Competency.Topic.IsActive && x.Competency.Topic.Term.IsActive && x.Competency.Topic.Term.Subject.IsActive && x.Competency.Topic.Term.Subject.Grade.IsActive && x.Competency.Topic.Term.Subject.Grade.CurriculumVersion.IsActive && x.Competency.Topic.Term.Subject.Grade.CurriculumVersion.Curriculum.IsActive, ct),
             _ => false
         };
         if (!exists) throw Missing("Curriculum node");
@@ -48,7 +51,7 @@ public sealed partial class ContentService
             _ => throw Invalid("Invalid curriculum node type.")
         };
         if (await query.AnyAsync(ct)) throw Conflict("This curriculum mapping already exists.");
-        var entity = new ContentCurriculumMapping { ContentItemId = id };
+        var entity = new ContentCurriculumMapping { ContentItemId = id, Evidence = evidence, ReviewerId = evidence is null ? null : current?.UserId };
         switch (request.NodeType)
         {
             case CurriculumNodeType.CurriculumVersion: entity.CurriculumVersionId = target; break;
@@ -88,6 +91,6 @@ public sealed partial class ContentService
             { LearningOutcomeId: Guid id } => (CurriculumNodeType.LearningOutcome, id),
             _ => throw new InvalidOperationException("The curriculum mapping has no target.")
         };
-        return new MappingResponse(x.Id, x.ContentItemId, type, node, x.CreatedAt);
+        return new MappingResponse(x.Id, x.ContentItemId, type, node, x.CreatedAt, Evidence: x.Evidence, ReviewerId: x.ReviewerId);
     }
 }

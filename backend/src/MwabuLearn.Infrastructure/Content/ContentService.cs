@@ -17,7 +17,7 @@ public sealed partial class ContentService(MwabuDbContext db, IContentStorage st
     private static readonly Regex LanguageFormat = new(@"\A[a-z]{2,3}(?:-[a-z0-9]{2,8})*\z", RegexOptions.CultureInvariant);
     private static readonly Expression<Func<ContentItem, ContentResponse>> ContentProjection = x => new(
         x.Id, x.Title, x.Slug, x.Summary, x.Description, x.ContentType, x.Status, x.LanguageCode,
-        x.SortOrder, x.IsDownloadable, x.EstimatedDurationMinutes, x.CreatedAt, x.UpdatedAt, x.PublishedAt);
+        x.SortOrder, x.IsDownloadable, x.EstimatedDurationMinutes, x.CreatedAt, x.UpdatedAt, x.PublishedAt, x.SourceContentItemId);
 
     public async Task<ContentResponse> GetAsync(Guid id, CancellationToken ct) =>
         await db.ContentItems.AsNoTracking().Where(x => x.Id == id).Select(ContentProjection).SingleOrDefaultAsync(ct) ?? throw Missing("Content");
@@ -129,7 +129,7 @@ public sealed partial class ContentService(MwabuDbContext db, IContentStorage st
 
     private static void Touch(ContentItem entity) => entity.UpdatedAt = DateTime.UtcNow;
     private static ContentResponse Map(ContentItem x) => new(x.Id, x.Title, x.Slug, x.Summary, x.Description,
-        x.ContentType, x.Status, x.LanguageCode, x.SortOrder, x.IsDownloadable, x.EstimatedDurationMinutes, x.CreatedAt, x.UpdatedAt, x.PublishedAt);
+        x.ContentType, x.Status, x.LanguageCode, x.SortOrder, x.IsDownloadable, x.EstimatedDurationMinutes, x.CreatedAt, x.UpdatedAt, x.PublishedAt, x.SourceContentItemId);
     private static string Required(string? value, int limit, string field)
     {
         var text = value?.Trim() ?? "";

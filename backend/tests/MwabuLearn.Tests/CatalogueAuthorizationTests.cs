@@ -29,10 +29,10 @@ public sealed class CatalogueAuthorizationTests
         using var anonymous = factory.Client();
         using var teacher = await factory.User("Teacher", "OrganisationAdmin");
         teacher.Client.DefaultRequestHeaders.Add("X-Organisation-Id", teacher.Memberships.Last().OrganisationId.ToString());
-        var controllerTypes = new[] { typeof(CurriculaController), typeof(ContentController), typeof(CollectionsController), typeof(TagsController) };
+        var controllerTypes = new[] { typeof(CurriculaController), typeof(ContentController), typeof(CollectionsController), typeof(TagsController), typeof(ScormController) };
         var endpoints = factory.Services.GetRequiredService<EndpointDataSource>().Endpoints.OfType<RouteEndpoint>()
             .Where(x => controllerTypes.Contains(x.Metadata.GetMetadata<ControllerActionDescriptor>()?.ControllerTypeInfo.AsType())).ToArray();
-        Assert.Equal(57, endpoints.Length); // Includes validated activity authoring and management-only draft preview.
+        Assert.Equal(62, endpoints.Length); // Includes mapping revisions and all four protected SCORM operations.
         foreach (var endpoint in endpoints)
         {
             var path = "/" + Regex.Replace(endpoint.RoutePattern.RawText!.TrimStart('/'), @"\{[^}]+\}", Guid.NewGuid().ToString());
@@ -45,7 +45,8 @@ public sealed class CatalogueAuthorizationTests
                 using var scopedRequest = Request(method, path);
                 using var scoped = await teacher.Client.SendAsync(scopedRequest);
                 var managementOnly = endpoint.Metadata.GetOrderedMetadata<IAuthorizeData>().Any(x => x.Policy?.StartsWith("permission:CatalogueManagement:", StringComparison.Ordinal) == true);
-                if (method == "GET" && !managementOnly)
+                var playbackLaunch = endpoint.Metadata.GetMetadata<ControllerActionDescriptor>()?.ControllerTypeInfo.AsType() == typeof(ScormController) && path.EndsWith("/launch", StringComparison.Ordinal);
+                if ((method == "GET" && !managementOnly) || playbackLaunch)
                     Assert.True(scoped.StatusCode is HttpStatusCode.OK or HttpStatusCode.NotFound, $"Reader GET {path}: {scoped.StatusCode}");
                 else
                     Assert.True(scoped.StatusCode == HttpStatusCode.Forbidden, $"Organisation manager {method} {path}: {scoped.StatusCode}");
@@ -228,6 +229,6 @@ public sealed class CatalogueAuthorizationTests
                 count++;
             }
         }
-        Assert.Equal(57, count);
+        Assert.Equal(62, count);
     }
 }

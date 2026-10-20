@@ -26,6 +26,8 @@ builder.Services.AddControllers(options => options.Filters.AddService<CatalogueV
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false)));
 builder.Services.AddScoped<IContentService, ContentService>();
 builder.Services.AddScoped<ActivityDocuments>();
+builder.Services.AddScoped<ScormService>();
+builder.Services.AddSingleton<ScormTickets>();
 builder.Services.AddScoped<Assessments>();
 builder.Services.AddLessonPlanning(builder.Configuration);
 builder.Services.AddScoped<ILearningCatalogue, LearningCatalogue>();
@@ -111,6 +113,7 @@ builder.Services.AddMwabuDatabase(builder.Configuration, builder.Environment.IsP
 
 var app = builder.Build();
 app.UseForwardedHeaders();
+app.UseMiddleware<ScormRuntimeMiddleware>();
 app.UseMiddleware<RequestTelemetryMiddleware>();
 app.UseExceptionHandler(new ExceptionHandlerOptions { SuppressDiagnosticsCallback = _ => true });
 if (!app.Environment.IsDevelopment()) app.UseHsts();

@@ -40,7 +40,7 @@ public sealed class ContentSearchRequest
 
 public sealed record ContentResponse(Guid Id, string Title, string Slug, string? Summary, string? Description,
     string ContentType, ContentStatus Status, string LanguageCode, int SortOrder, bool IsDownloadable,
-    int? EstimatedDurationMinutes, DateTime CreatedAt, DateTime? UpdatedAt, DateTime? PublishedAt);
+    int? EstimatedDurationMinutes, DateTime CreatedAt, DateTime? UpdatedAt, DateTime? PublishedAt, Guid? SourceContentItemId = null);
 public sealed record PagedResponse<T>(IReadOnlyList<T> Items, int Page, int PageSize, int TotalCount);
 public sealed record AssetRequest(string FileName, string MimeType, AssetType AssetType, int SortOrder, bool IsPrimary);
 public sealed record AssetResponse(Guid Id, Guid ContentItemId, string FileName, [property: JsonIgnore] string StorageKey, string MimeType,
@@ -65,5 +65,6 @@ public sealed record TagResponse(Guid Id, string Name, string Slug, DateTime Cre
 public sealed record CollectionAssignmentRequest(Guid CollectionId, int SortOrder = 0);
 public sealed record CollectionAssignmentResponse(Guid Id, CollectionResponse Collection, int SortOrder);
 public sealed record TagAssignmentRequest(Guid TagId);
-public sealed record MappingRequest([property: JsonRequired] CurriculumNodeType NodeType, Guid NodeId);
-public sealed record MappingResponse(Guid Id, Guid ContentItemId, CurriculumNodeType NodeType, Guid NodeId, DateTime CreatedAt, string? NodeName = null);
+public sealed record MappingRequest([property: JsonRequired] CurriculumNodeType NodeType, Guid NodeId, string? Evidence = null);
+public sealed record MappingResponse(Guid Id, Guid ContentItemId, CurriculumNodeType NodeType, Guid NodeId, DateTime CreatedAt, string? NodeName = null, string? Evidence = null, Guid? ReviewerId = null);
+public sealed record MappingRevisionRequest(string Slug, MappingRequest Mapping);

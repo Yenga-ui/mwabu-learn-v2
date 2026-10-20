@@ -445,10 +445,17 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("CurriculumVersionId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("Evidence")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
                     b.Property<Guid?>("GradeId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("LearningOutcomeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ReviewerId")
                         .HasColumnType("uuid");
 
                     b.Property<Guid?>("SubjectId")
@@ -472,6 +479,8 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.HasIndex("GradeId");
 
                     b.HasIndex("LearningOutcomeId");
+
+                    b.HasIndex("ReviewerId");
 
                     b.HasIndex("SubjectId");
 
@@ -546,6 +555,9 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.Property<int>("SortOrder")
                         .HasColumnType("integer");
 
+                    b.Property<Guid?>("SourceContentItemId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Status")
                         .IsConcurrencyToken()
                         .IsRequired()
@@ -573,6 +585,8 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Slug")
                         .IsUnique();
+
+                    b.HasIndex("SourceContentItemId");
 
                     b.HasIndex("UpdatedAt");
 
@@ -665,6 +679,47 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("QuestionBanks");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ScormApproval", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Checksum")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("ContentAssetId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Evidence")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)");
+
+                    b.Property<Guid>("ReviewerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("Revoked")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ContentAssetId")
+                        .IsUnique();
+
+                    b.HasIndex("ReviewerId");
+
+                    b.ToTable("ScormApprovals", (string)null);
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.Tag", b =>
@@ -3487,6 +3542,11 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .HasForeignKey("LearningOutcomeId")
                         .OnDelete(DeleteBehavior.Restrict);
 
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("MwabuLearn.Domain.Entities.Subject", "Subject")
                         .WithMany()
                         .HasForeignKey("SubjectId")
@@ -3517,6 +3577,14 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.Navigation("Term");
 
                     b.Navigation("Topic");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentItem", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentItem", null)
+                        .WithMany()
+                        .HasForeignKey("SourceContentItemId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ContentTag", b =>
@@ -3557,6 +3625,23 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .HasForeignKey("OrganisationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Content.ScormApproval", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Content.ContentAsset", "ContentAsset")
+                        .WithMany()
+                        .HasForeignKey("ContentAssetId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("ContentAsset");
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.CurriculumVersion", b =>

@@ -23,6 +23,7 @@ public partial class MwabuDbContext(DbContextOptions<MwabuDbContext> options, Mw
     public DbSet<LearningOutcome> LearningOutcomes => Set<LearningOutcome>();
     public DbSet<ContentItem> ContentItems => Set<ContentItem>();
     public DbSet<ContentAsset> ContentAssets => Set<ContentAsset>();
+    public DbSet<ScormApproval> ScormApprovals => Set<ScormApproval>();
     public DbSet<Collection> Collections => Set<Collection>();
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<ContentCollection> ContentCollections => Set<ContentCollection>();

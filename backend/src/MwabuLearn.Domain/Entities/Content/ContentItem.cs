@@ -9,6 +9,7 @@ public enum CurriculumNodeType { CurriculumVersion, Grade, Subject, Term, Topic,
 public sealed class ContentItem : BaseEntity
 {
     public string Title { get; set; } = string.Empty;
+    public Guid? SourceContentItemId { get; set; }
     public string Slug { get; set; } = string.Empty;
     public string? Summary { get; set; }
     public string? Description { get; set; }

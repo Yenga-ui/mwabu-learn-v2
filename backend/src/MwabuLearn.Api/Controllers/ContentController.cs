@@ -19,6 +19,9 @@ namespace MwabuLearn.Api.Controllers;
 [ProducesResponseType<ProblemDetails>(409)]
 public sealed class ContentController(IContentService service, IOptions<ContentOptions> options, IAuthorizationService authorization) : ControllerBase
 {
+    [HttpPost("{id:guid}/mapping-revisions"), RequirePermission(PermissionCodes.ContentManage, PermissionScope.CatalogueManagement), Microsoft.AspNetCore.RateLimiting.EnableRateLimiting("upload")]
+    public async Task<ActionResult<ContentResponse>> MappingRevision(Guid id, MappingRevisionRequest request, CancellationToken ct) =>
+        Ok(await service.CreateMappingRevisionAsync(id, request, ct));
     [HttpPost("{id:guid}/activities"), RequirePermission(PermissionCodes.ContentManage, PermissionScope.CatalogueManagement), RequestSizeLimit(100000)]
     public async Task<IActionResult> SaveActivity(Guid id, ActivityDefinition definition, [FromServices] MwabuLearn.Infrastructure.Content.ActivityDocuments activities, CancellationToken ct) => Ok(await activities.SaveAsync(id, definition, ct));
     [HttpGet("{id:guid}/activities/{assetId:guid}"), RequirePermission(PermissionCodes.ContentManage, PermissionScope.CatalogueManagement)]

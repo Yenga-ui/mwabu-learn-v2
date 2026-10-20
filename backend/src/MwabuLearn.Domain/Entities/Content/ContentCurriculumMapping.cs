@@ -7,6 +7,8 @@ namespace MwabuLearn.Domain.Entities.Content;
 public sealed class ContentCurriculumMapping : BaseEntity
 {
     public Guid ContentItemId { get; set; }
+    public string? Evidence { get; set; }
+    public Guid? ReviewerId { get; set; }
     public ContentItem ContentItem { get; set; } = null!;
     public Guid? CurriculumVersionId { get; set; }
     public CurriculumVersion? CurriculumVersion { get; set; }
