@@ -1,9 +1,23 @@
 import type { Detail, TeachingStep } from "./types";
+export const supportedTeachingMedia = [
+  "application/vnd.mwabu.activity+json",
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
+  "image/gif",
+  "image/webp",
+  "audio/mpeg",
+  "audio/ogg",
+  "audio/wav",
+  "video/mp4",
+  "video/webm",
+];
 export function resourceKind(mime: string) {
   if (mime === "application/vnd.mwabu.activity+json")
     return "Interactive activity";
   if (mime === "application/pdf") return "PDF document";
-  if (["image/png", "image/jpeg", "image/gif", "image/webp"].includes(mime)) return "Image";
+  if (["image/png", "image/jpeg", "image/gif", "image/webp"].includes(mime))
+    return "Image";
   if (["audio/mpeg", "audio/ogg", "audio/wav"].includes(mime)) return "Audio";
   if (["video/mp4", "video/webm"].includes(mime)) return "Video";
   return "Download-only file";

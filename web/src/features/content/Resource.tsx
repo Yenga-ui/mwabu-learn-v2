@@ -201,7 +201,7 @@ export default function Resource() {
                     className="button"
                     to={`/app/lessons/new?resourceId=${resource.content.id}`}
                   >
-                    Plan a lesson from this resource
+                    Create lesson using this resource
                   </Link>
                 )}
                 <h2>Resource guide</h2>

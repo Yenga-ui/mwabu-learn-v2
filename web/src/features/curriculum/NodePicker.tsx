@@ -7,12 +7,14 @@ import { ErrorNotice, Loading, Pagination } from "../../components/ui";
 export default function NodePicker({
   onSelect,
   onReset,
+  startWithGrade = false,
 }: {
   onSelect: (type: string, id: string, name: string, context: string[]) => void;
   onReset?: () => void;
+  startWithGrade?: boolean;
 }) {
   const [trail, setTrail] = useState<Pick<Structure, "id" | "name">[]>([]);
-  const [gradeFirst, setGradeFirst] = useState(false);
+  const [gradeFirst, setGradeFirst] = useState(startWithGrade);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [text, setText] = useState("");
@@ -114,7 +116,11 @@ export default function NodePicker({
                   setSearch("");
                   setText("");
                   onReset?.();
-                  onSelect("Grade", row.id, row.name, [row.curriculumName, row.versionName, row.name]);
+                  onSelect("Grade", row.id, row.name, [
+                    row.curriculumName,
+                    row.versionName,
+                    row.name,
+                  ]);
                 }
               }}
             >

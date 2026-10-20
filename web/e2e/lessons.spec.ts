@@ -58,6 +58,9 @@ async function createFree(page: Page, title: string) {
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Structured editor", exact: true })
+    .click();
   return page.url().split("/").at(-1)!;
 }
 async function proposal(page: Page, instructions = "") {
@@ -94,6 +97,17 @@ test("Ministry teacher fields and progression survive save/reload and export a s
     page.getByRole("status").filter({ hasText: /Saved · revision/ }),
   ).toBeVisible();
   await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Structured editor", exact: true }),
+  ).toBeVisible();
+  if (
+    await page
+      .getByRole("button", { name: "Structured editor", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "Structured editor", exact: true })
+      .click();
   await expect(
     page.getByText("Ministry lesson plan form and progression", {
       exact: true,
@@ -142,6 +156,14 @@ test("Ministry teacher fields and progression survive save/reload and export a s
       }),
     ).toBeVisible();
     await page.reload();
+    if (
+      await page
+        .getByRole("button", { name: "Structured editor", exact: true })
+        .isVisible()
+    )
+      await page
+        .getByRole("button", { name: "Structured editor", exact: true })
+        .click();
     await expect(
       page.getByRole("heading", { name: "Lesson progression", exact: true }),
     ).toBeVisible();
@@ -211,13 +233,24 @@ test("teacher searches curriculum by name and creates an aligned lesson with der
   page,
 }) => {
   await login(page);
-  await page.getByRole("link", { name: "Lesson Planner", exact: true }).click();
+  await page.getByRole("link", { name: "Find a lesson", exact: true }).click();
   await page
     .getByRole("link", { name: "Create lesson plan", exact: true })
     .click();
   await page
+    .getByRole("button", { name: "Choose curriculum first", exact: true })
+    .click();
+  await page
     .getByRole("searchbox", { name: "Search curriculum", exact: true })
     .fill("Demonstration");
+  if (
+    await page
+      .getByRole("button", { name: "Choose curriculum first", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "Choose curriculum first", exact: true })
+      .click();
   for (const [label, value] of [
     ["Curriculum", "Demonstration Learning Framework"],
     ["Versions", "Demonstration 2026"],
@@ -234,6 +267,9 @@ test("teacher searches curriculum by name and creates an aligned lesson with der
   await expect(page.getByLabel("Lesson title", { exact: true })).toHaveValue(
     "Represent one half using familiar objects",
   );
+  await page
+    .getByText("Optional teaching context and reuse settings", { exact: true })
+    .click();
   await expect(
     page.getByRole("textbox", {
       name: "Initial learning objectives",
@@ -250,6 +286,9 @@ test("teacher searches curriculum by name and creates an aligned lesson with der
     .getByLabel("Lesson title", { exact: true })
     .fill("Aligned teaching of halves");
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Structured editor", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Selected curriculum context" }),
   ).toBeVisible();
@@ -268,6 +307,9 @@ test("free-form mode retains setup when switching and does not claim official al
     .getByLabel("Lesson title", { exact: true })
     .fill("Free-form resource lesson");
   await page
+    .getByText("Optional teaching context and reuse settings", { exact: true })
+    .click();
+  await page
     .getByLabel("Initial learning objectives")
     .fill("Explain equal shares using familiar objects");
   await page.getByRole("button", { name: "Free-form", exact: true }).click();
@@ -284,6 +326,9 @@ test("free-form mode retains setup when switching and does not claim official al
     "Mathematics",
   );
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Structured editor", exact: true })
+    .click();
   await expect(
     page.getByText(/Free-form: no official alignment claimed/).first(),
   ).toBeVisible();
@@ -490,6 +535,14 @@ test("background generation survives navigation and reload and remains a reviewa
   await page.goto("/app/lessons");
   await page.goto(lessonUrl);
   await page.reload();
+  if (
+    await page
+      .getByRole("button", { name: "Structured editor", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "Structured editor", exact: true })
+      .click();
   await page.getByRole("button", { name: "AI proposals", exact: true }).click();
   await expect(
     page.getByRole("button", {
@@ -752,6 +805,10 @@ test("a separate reviewer approves a submitted lesson and approved PDF reflects 
     await expect(
       offlinePage.getByText(/Published lesson revision/),
     ).toBeVisible();
+    // Official plans now have a teaching sequence; cited media belongs to development.
+    await offlinePage
+      .getByRole("combobox", { name: "Teaching step", exact: true })
+      .selectOption({ label: "2. Lesson development" });
     await expect(offlinePage.locator("iframe")).toBeVisible();
     await expect(
       offlinePage.getByText("Approved offline teaching guidance.", {
@@ -816,7 +873,7 @@ test("learner cannot access teacher plans or generation endpoints with crafted r
   );
   expect(response.status).toBe(403);
   await expect(
-    page.getByRole("link", { name: "Lesson Planner", exact: true }),
+    page.getByRole("link", { name: "Find a lesson", exact: true }),
   ).toHaveCount(0);
 });
 test("provider failure preserves the teacher's current saved and manual content", async ({
@@ -926,6 +983,14 @@ test("teacher presents a pinned saved revision with navigation, approved resourc
   );
   expect(saved.status).toBe(200);
   await page.reload();
+  if (
+    await page
+      .getByRole("button", { name: "Structured editor", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "Structured editor", exact: true })
+      .click();
   await page
     .getByRole("button", { name: "Prepare Lesson Journey", exact: true })
     .click();
@@ -980,6 +1045,14 @@ test("teacher presents a pinned saved revision with navigation, approved resourc
       .getByRole("button", { name: "Exit fullscreen", exact: true })
       .click();
   await page.reload();
+  if (
+    await page
+      .getByRole("button", { name: "Structured editor", exact: true })
+      .isVisible()
+  )
+    await page
+      .getByRole("button", { name: "Structured editor", exact: true })
+      .click();
   await expect(page.getByText(/Saved revision 2/)).toBeVisible();
   await page
     .getByRole("link", { name: "Exit to preparation", exact: true })
@@ -1062,6 +1135,9 @@ test("Grade 4 fractions journey works on phone portrait and landscape, with revi
     await page.setViewportSize({ width: 390, height: 844 });
     await login(page);
     await page.goto("/app/lessons/new");
+    await page
+      .getByRole("button", { name: "Choose curriculum first", exact: true })
+      .click();
     for (const [label, value] of [
       ["Curriculum", "Demonstration Learning Framework"],
       ["Versions", "Demonstration 2026"],
@@ -1080,6 +1156,9 @@ test("Grade 4 fractions journey works on phone portrait and landscape, with revi
       .fill("Grade 4 Mathematics — Fractions classroom journey");
     await page
       .getByRole("button", { name: "Create draft", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Structured editor", exact: true })
       .click();
     await expect(
       page.getByRole("heading", {

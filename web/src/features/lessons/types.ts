@@ -25,6 +25,7 @@ export interface Section {
   sourceIds: string[];
 }
 export interface CurriculumContext {
+  topicId?: string;
   curriculum: string;
   version: string;
   grade: string;
@@ -75,6 +76,14 @@ export interface TeachingStep {
   resources: TeachingResource[];
 }
 export interface MinistryLessonForm {
+  subject?: string;
+  topic?: string;
+  subTopic?: string;
+  specificCompetenceNumber?: string;
+  specificCompetence?: string;
+  priorKnowledge?: string;
+  references?: string;
+  materials?: string;
   syllabusProvenance?: string;
   referenceCompetenceCode?: string;
   school: string;
@@ -98,6 +107,14 @@ export interface MinistryLessonForm {
   }[];
 }
 export interface Lesson {
+  grade?: string | null;
+  subject?: string | null;
+  topic?: string | null;
+  subTopic?: string | null;
+  durationMinutes?: number | null;
+  resourceCount?: number;
+  canEdit?: boolean;
+  canReuse?: boolean;
   id: string;
   organisationId: string;
   ownerUserId: string;

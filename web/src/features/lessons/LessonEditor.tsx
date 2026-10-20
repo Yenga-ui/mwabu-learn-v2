@@ -4,6 +4,7 @@ import {
   useBeforeUnload,
   useBlocker,
   useNavigate,
+  useSearchParams,
 } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, Printer, Save, Sparkles } from "lucide-react";
@@ -39,10 +40,11 @@ import SetupForm from "./LessonSetup";
 import SourceExplorer from "./SourceExplorer";
 import RevisionPanel, { DocumentComparison } from "./RevisionPanel";
 import LessonSharing from "./LessonSharing";
-import { LessonPrint } from "./LessonPrint";
 import { MinistryForm } from "./MinistryForm";
 import { offlineLessonHtml } from "./offlineLesson";
 import ContentAi from "./ContentAi";
+import OfficialPlanEditor from "./OfficialPlanEditor";
+import LessonResources from "./LessonResources";
 import LessonPackageDownload from "./LessonPackageDownload";
 
 export default function LessonEditor({
@@ -57,7 +59,10 @@ export default function LessonEditor({
   const navigate = useNavigate();
   const draft = useLessonDraft(initial, organisation);
   const path = lessonBase(organisation) + "/" + initial.lesson.id;
-  const [tab, setTab] = useState("editor");
+  const [viewParams] = useSearchParams();
+  const [tab, setTab] = useState(
+    viewParams.get("view") === "resources" ? "resources" : "plan",
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const [operation, setOperation] = useState("generate");
@@ -269,11 +274,11 @@ export default function LessonEditor({
     )?.organisationName ?? "Authorised organisation";
   async function exportPdf() {
     await run(async () => {
-      await draft.save();
+      const saved = await draft.save();
       if (!(await ensureSession()))
         throw new Error("Sign in again to export the saved lesson.");
       const link = document.createElement("a");
-      link.href = path + "/pdf";
+      link.href = path + `/pdf?revision=${saved.lesson.revision}`;
       link.download = "mwabu-lesson-plan.pdf";
       link.click();
     });
@@ -371,7 +376,6 @@ export default function LessonEditor({
             void run(async () => {
               await draft.save();
               setTab("print");
-              requestAnimationFrame(() => window.print());
             })
           }
         >
@@ -392,7 +396,7 @@ export default function LessonEditor({
               })
             }
           >
-            Duplicate lesson
+            Use this lesson
           </button>
         )}
         <Link className="button secondary" to="/app/lessons">
@@ -446,6 +450,8 @@ export default function LessonEditor({
       )}
       <nav className="lesson-tabs" aria-label="Lesson planner panels">
         {[
+          ["plan", "Lesson plan"],
+          ["resources", "View resources"],
           ["editor", "Structured editor"],
           ["sources", "Source Explorer"],
           ["ai", "AI proposals"],
@@ -463,6 +469,14 @@ export default function LessonEditor({
           </button>
         ))}
       </nav>
+      {tab === "plan" && (
+        <OfficialPlanEditor
+          document={draft.document}
+          disabled={!editable}
+          update={draft.update}
+        />
+      )}
+      {tab === "resources" && <LessonResources document={draft.document} />}
       {tab === "editor" && (
         <>
           <details className="panel">
@@ -1061,14 +1075,19 @@ export default function LessonEditor({
         </section>
       )}
       {tab === "print" && (
-        <LessonPrint
-          document={draft.document}
-          status={draft.server.lesson.status}
-          revision={draft.server.lesson.revision}
-          organisation={orgName}
-          teacher={draft.server.authorName || "Authorised teaching colleague"}
-          dirty={draft.dirty}
-        />
+        <section className="lesson-print card">
+          <h2>Official lesson plan PDF</h2>
+          <p>
+            {draft.dirty
+              ? "This preview shows your saved version. Save your changes to refresh it."
+              : "Use the PDF viewer to print or download the official template."}
+          </p>
+          <iframe
+            className="official-pdf-preview"
+            title="Official lesson plan PDF"
+            src={`${path}/pdf?revision=${draft.server.lesson.revision}&inline=true`}
+          />
+        </section>
       )}
       {blocker.state === "blocked" && (
         <Modal title="Unsaved lesson changes" onClose={() => blocker.reset()}>

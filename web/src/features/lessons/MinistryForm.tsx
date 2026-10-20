@@ -14,31 +14,43 @@ export const stageLabels = [
   ["extension", "Extension (optional)", "follow-up"],
 ] as const;
 export function ministryForm(document: LessonDocument): MinistryLessonForm {
-  return (
-    document.ministryForm ?? {
-      school: "",
-      teacherName: "",
-      className: "",
-      lessonTime: "",
-      lessonGoal: "",
-      rationale: "",
-      expectedStandard: "",
-      generalCompetences: [],
-      learningEnvironments: [],
-      environmentNote: "",
-      evaluation: "",
-      needsReview: stageLabels.map(([code]) => code),
-      progression: stageLabels.map(([code, , section]) => ({
-        code,
-        teacherActivities:
-          document.sections.find((x) => x.code === section)?.body ?? "",
-        learnerActivities: "",
-        assessmentCriteria: "",
-        minutes:
-          document.sections.find((x) => x.code === section)?.minutes ?? 0,
-      })),
-    }
-  );
+  const form = document.ministryForm ?? {
+    school: "",
+    teacherName: "",
+    className: "",
+    lessonTime: "",
+    lessonGoal: "",
+    rationale: "",
+    expectedStandard: "",
+    generalCompetences: [],
+    learningEnvironments: [],
+    environmentNote: "",
+    evaluation: "",
+    needsReview: stageLabels.map(([code]) => code),
+    progression: stageLabels.map(([code, , section]) => ({
+      code,
+      teacherActivities:
+        document.sections.find((x) => x.code === section)?.body ?? "",
+      learnerActivities: "",
+      assessmentCriteria: "",
+      minutes: document.sections.find((x) => x.code === section)?.minutes ?? 0,
+    })),
+  };
+  const body = (code: string) =>
+    document.sections.find((s) => s.code === code)?.body ?? "";
+  return {
+    ...form,
+    subject:
+      document.curriculum?.subject ?? form.subject ?? document.setup.subject,
+    topic: document.curriculum?.topic ?? form.topic ?? body("topic"),
+    subTopic: form.subTopic ?? "",
+    specificCompetenceNumber: form.specificCompetenceNumber ?? "",
+    specificCompetence:
+      form.specificCompetence ?? document.curriculum?.competency ?? "",
+    priorKnowledge: form.priorKnowledge ?? body("prerequisites"),
+    references: form.references ?? body("references"),
+    materials: form.materials ?? body("materials"),
+  };
 }
 
 export function MinistryForm({

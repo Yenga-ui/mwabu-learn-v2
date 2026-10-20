@@ -1,0 +1,109 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { BookOpen, FilePlus, Play, Search } from "lucide-react";
+import { api } from "../../api/client";
+import type { Page } from "../../api/types";
+import { useSession } from "../../auth/Session";
+import { PageTitle, QueryState } from "../../components/ui";
+import { lessonBase, type Lesson } from "../lessons/types";
+import RecentLessons from "../lessons/RecentLessons";
+
+export default function TeacherHome() {
+  const session = useSession();
+  const navigate = useNavigate();
+  const [search, setSearch] = useState("");
+  const drafts = useQuery({
+    queryKey: ["teacher-home-drafts", session.organisationId],
+    queryFn: ({ signal }) =>
+      api<Page<Lesson>>(
+        lessonBase(session.organisationId!) +
+          "?mine=true&pageSize=4&status=Draft",
+        { signal },
+      ),
+    enabled: !!session.organisationId && session.can("lessons.read"),
+  });
+  return (
+    <>
+      <PageTitle
+        eyebrow={`WELCOME, ${session.user?.firstName.toUpperCase()}`}
+        title="What would you like to teach?"
+      >
+        Find a lesson, make it your own and bring it to your classroom.
+      </PageTitle>
+      <form
+        className="card teacher-home-search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          navigate("/app/lessons?q=" + encodeURIComponent(search.trim()));
+        }}
+      >
+        <label>
+          Search lessons
+          <input
+            type="search"
+            value={search}
+            maxLength={200}
+            placeholder="Try Grade 4 mathematics or fractions"
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </label>
+        <button className="button">
+          <Search aria-hidden="true" size={20} /> Find a lesson
+        </button>
+      </form>
+      <nav className="teacher-tasks" aria-label="Teaching tasks">
+        <Link className="card" to="/app/lessons">
+          <BookOpen aria-hidden="true" />
+          <strong>Find a lesson</strong>
+          <span>Search by grade, subject or topic.</span>
+        </Link>
+        {session.can("lessons.manage") && (
+          <Link className="card" to="/app/lessons/new">
+            <FilePlus aria-hidden="true" />
+            <strong>Create a lesson</strong>
+            <span>Start with the official lesson plan.</span>
+          </Link>
+        )}
+        <Link className="card" to="/app/resources">
+          <Search aria-hidden="true" />
+          <strong>Learning resources</strong>
+          <span>Find videos, documents and activities.</span>
+        </Link>
+        <Link className="card" to="/app/lessons?teach=true">
+          <Play aria-hidden="true" />
+          <strong>Teach a lesson</strong>
+          <span>Open your saved Lesson Journey.</span>
+        </Link>
+      </nav>
+      <section className="card">
+        <div className="section-heading">
+          <h2>Continue where you left off</h2>
+          <Link to="/app/lessons?mine=true">My lesson plans</Link>
+        </div>
+        <QueryState query={drafts}>
+          {(page) =>
+            page.items.length ? (
+              <ul className="recent-lesson-list">
+                {page.items.map((lesson) => (
+                  <li key={lesson.id}>
+                    <Link to={`/app/lessons/${lesson.id}`}>{lesson.title}</Link>
+                    <span>
+                      {lesson.grade} {lesson.subject}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>
+                Your saved drafts will appear here. Start by finding a lesson to
+                use or creating your own.
+              </p>
+            )
+          }
+        </QueryState>
+      </section>
+      {session.organisationId && session.user && <RecentLessons />}
+    </>
+  );
+}

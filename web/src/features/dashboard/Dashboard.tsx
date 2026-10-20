@@ -20,7 +20,16 @@ import type {
 import { useSession } from "../../auth/Session";
 import { Empty, PageTitle, QueryState } from "../../components/ui";
 import { ContentCard } from "../content/Catalogue";
+import TeacherHome from "./TeacherHome";
 export default function Dashboard() {
+  const session = useSession();
+  return session.access?.roleCodes.includes("Teacher") ? (
+    <TeacherHome />
+  ) : (
+    <GeneralDashboard />
+  );
+}
+function GeneralDashboard() {
   const session = useSession();
   const org = session.organisationId;
   const roles = session.access?.roleCodes ?? [];

@@ -80,7 +80,7 @@ export function Shell() {
     },
     {
       to: "/app/lessons",
-      label: "Lesson Planner",
+      label: session.access?.roleCodes.includes("Teacher") ? "Find a lesson" : "Lesson Planner",
       icon: BookOpen,
       permission: "lessons.read",
     },

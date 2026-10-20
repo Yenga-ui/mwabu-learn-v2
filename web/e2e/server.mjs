@@ -198,7 +198,10 @@ try {
     MWABU_MIGRATIONS_CONNECTION: connection,
     MWABU_BROWSER_TEST_HOST: "true",
     MWABU_BROWSER_API_ROOT: resolve(root, "backend/src/MwabuLearn.Api"),
-    MWABU_BROWSER_WEB_ROOT: resolve("dist"),
+    ASPNETCORE_TEST_CONTENTROOT_MWABULEARN_API: resolve(root, "backend/src/MwabuLearn.Api"),
+    MWABU_BROWSER_WEB_ROOT: resolve(
+      process.env.MWABU_BROWSER_WEB_ROOT || "dist",
+    ),
     ASPNETCORE_ENVIRONMENT: "Development",
     ASPNETCORE_URLS: "https://127.0.0.1:7443",
     ConnectionStrings__MwabuLearnDb: connection,
@@ -251,11 +254,14 @@ try {
     "dotnet",
     [
       resolve(
-        root,
-        "backend/tests/MwabuLearn.BrowserHost/bin/Release/net10.0/MwabuLearn.BrowserHost.dll",
+        process.env.MWABU_BROWSER_HOST_DLL ||
+          resolve(
+            root,
+            "backend/tests/MwabuLearn.BrowserHost/bin/Release/net10.0/MwabuLearn.BrowserHost.dll",
+          ),
       ),
       "--webroot",
-      resolve("dist"),
+      resolve(process.env.MWABU_BROWSER_WEB_ROOT || "dist"),
     ],
     {
       cwd: resolve(root, "backend/src/MwabuLearn.Api"),

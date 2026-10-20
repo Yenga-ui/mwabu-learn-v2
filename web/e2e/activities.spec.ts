@@ -355,9 +355,7 @@ test("Content Studio generates a curriculum-grounded proposal through the durabl
   ).toBeVisible();
   const resource = page.url().split("/").at(-1)!;
   await page.goto("/app/lessons/new");
-  await page
-    .getByRole("button", { name: "Start with your grade", exact: true })
-    .click();
+
   await page
     .getByRole("combobox", { name: "Grade and curriculum", exact: true })
     .selectOption({

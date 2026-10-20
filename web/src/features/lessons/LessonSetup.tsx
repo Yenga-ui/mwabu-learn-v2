@@ -4,10 +4,12 @@ export default function LessonSetup({
   value,
   change,
   disabled = false,
+  simple = false,
 }: {
   value: Setup;
   change: (value: Setup) => void;
   disabled?: boolean;
+  simple?: boolean;
 }) {
   const set = <K extends keyof Setup>(key: K, item: Setup[K]) =>
     change({ ...value, [key]: item });
@@ -51,6 +53,7 @@ export default function LessonSetup({
       {value.mode === "CurriculumAligned" ? (
         <>
           <NodePicker
+            startWithGrade={simple}
             onReset={() => set("learningOutcomeId", null)}
             onSelect={(type, id, name, context) =>
               change({
@@ -154,49 +157,52 @@ export default function LessonSetup({
           />
         </label>
       </div>
-      {[
-        ["objectives", "Initial learning objectives", 4000],
-        ["teachingContext", "Teaching context", 4000],
-        ["availableResources", "Available teaching resources", 2000],
-        [
-          "supportRequirements",
-          "Learner ability and support requirements (no individual names)",
-          2000,
-        ],
-        ["instructions", "Additional teaching instructions", 4000],
-      ].map(([key, label, limit]) => (
-        <label key={key}>
-          {label}
-          <textarea
-            rows={3}
-            maxLength={Number(limit)}
-            value={value[key as keyof Setup] as string}
-            onChange={(e) => set(key as keyof Setup, e.target.value)}
-          />
+      <details open={!simple}>
+        <summary>Optional teaching context and reuse settings</summary>
+        {[
+          ["objectives", "Initial learning objectives", 4000],
+          ["teachingContext", "Teaching context", 4000],
+          ["availableResources", "Available teaching resources", 2000],
+          [
+            "supportRequirements",
+            "Learner ability and support requirements (no individual names)",
+            2000,
+          ],
+          ["instructions", "Additional teaching instructions", 4000],
+        ].map(([key, label, limit]) => (
+          <label key={key}>
+            {label}
+            <textarea
+              rows={3}
+              maxLength={Number(limit)}
+              value={value[key as keyof Setup] as string}
+              onChange={(e) => set(key as keyof Setup, e.target.value)}
+            />
+          </label>
+        ))}
+        <label>
+          Teacher-created lesson reuse licence
+          <select
+            value={value.reuseLicence}
+            onChange={(e) => set("reuseLicence", e.target.value)}
+          >
+            {["Internal", "CC0-1.0", "CC-BY-4.0", "CC-BY-SA-4.0"].map(
+              (licence) => (
+                <option key={licence}>{licence}</option>
+              ),
+            )}
+          </select>
         </label>
-      ))}
-      <label>
-        Teacher-created lesson reuse licence
-        <select
-          value={value.reuseLicence}
-          onChange={(e) => set("reuseLicence", e.target.value)}
-        >
-          {["Internal", "CC0-1.0", "CC-BY-4.0", "CC-BY-SA-4.0"].map(
-            (licence) => (
-              <option key={licence}>{licence}</option>
-            ),
-          )}
-        </select>
-      </label>
-      <small>
-        Only license your own teaching contribution. Third-party
-        curricula/resources retain their rights; selected share-alike evidence
-        requires a compatible lesson licence.
-      </small>
-      <small>
-        Use anonymous class-level needs. Do not enter identifiable learner
-        information in material intended for AI assistance.
-      </small>
+        <small>
+          Only license your own teaching contribution. Third-party
+          curricula/resources retain their rights; selected share-alike evidence
+          requires a compatible lesson licence.
+        </small>
+        <small>
+          Use anonymous class-level needs. Do not enter identifiable learner
+          information in material intended for AI assistance.
+        </small>
+      </details>
     </fieldset>
   );
 }
