@@ -29,6 +29,11 @@ import {
 import NodePicker from "../curriculum/NodePicker";
 import ActivityComposer from "./activities/ActivityComposer";
 import { activityMime } from "./activities/activityRuntime";
+import {
+  resourceTypes,
+  resourceLanguages,
+  withExistingOption,
+} from "./resourceOptions";
 const contentFields: Field[] = [
   { name: "title", label: "Resource title", required: true, maxLength: 200 },
   {
@@ -53,16 +58,17 @@ const contentFields: Field[] = [
   {
     name: "contentType",
     label: "Resource type",
+    type: "select",
     required: true,
-    maxLength: 64,
+    options: resourceTypes,
     defaultValue: "lesson",
-    hint: "e.g. lesson, lesson-plan, teacher-guide, audio, video",
   },
   {
     name: "languageCode",
-    label: "Language code",
+    label: "Language",
+    type: "select",
     required: true,
-    maxLength: 35,
+    options: resourceLanguages,
     defaultValue: "en",
   },
   {
@@ -419,7 +425,25 @@ export default function Management() {
           }}
         >
           <Form
-            fields={contentFields}
+            fields={contentFields.map((field) =>
+              field.name === "contentType"
+                ? {
+                    ...field,
+                    options: withExistingOption(
+                      resourceTypes,
+                      content?.contentType,
+                    ),
+                  }
+                : field.name === "languageCode"
+                  ? {
+                      ...field,
+                      options: withExistingOption(
+                        resourceLanguages,
+                        content?.languageCode,
+                      ),
+                    }
+                  : field,
+            )}
             initial={
               content
                 ? {

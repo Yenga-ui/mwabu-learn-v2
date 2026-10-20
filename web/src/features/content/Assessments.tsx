@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import { useSession } from "../../auth/Session";
-import { Empty, ErrorNotice, QueryState } from "../../components/ui";
+import { Empty, ErrorNotice, PageTitle, QueryState } from "../../components/ui";
 type Bank = { id: string; title: string; assetId: string };
 type Attempt = {
   id: string;
@@ -63,38 +64,50 @@ export default function Assessments() {
   if (!enabled)
     return <Empty title="Select an organisation with assessment access" />;
   return (
-    <section className="panel">
-      <h1>Learning assessments</h1>
-      <p>
+    <div className="assessment-page">
+      <PageTitle eyebrow="LEARNING & PROGRESS" title="Learning assessments">
         These online attempts are marked and saved by your organisation.
         Anonymous resource practice stays separate. No answers or progress are
         saved offline. Results expire after 365 days; you can delete your own
         results sooner.
-      </p>
+      </PageTitle>
       {!!error && <ErrorNotice error={error} />}
       <QueryState query={banks}>
-        {(rows) => (
-          <label>
-            Choose an assessment
-            <select
-              value={selected}
-              onChange={(e) => setSelected(e.target.value)}
-            >
-              <option value="">Choose…</option>
-              {rows.map((bank) => (
-                <option key={bank.id} value={bank.id}>
-                  {bank.title}
-                </option>
-              ))}
-            </select>
-            {rows.length === 0 && (
-              <span>
-                No assessments yet. Teachers can add a published interactive
-                resource to the question bank from its resource page.
-              </span>
-            )}
-          </label>
-        )}
+        {(rows) =>
+          rows.length ? (
+            <section className="card assessment-picker">
+              <label>
+                Choose an assessment
+                <select
+                  value={selected}
+                  onChange={(e) => setSelected(e.target.value)}
+                >
+                  <option value="">Choose…</option>
+                  {rows.map((bank) => (
+                    <option key={bank.id} value={bank.id}>
+                      {bank.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </section>
+          ) : (
+            <section className="card">
+              <Empty title="No assessments available yet">
+                {session.can("assessments.manage")
+                  ? "Add a published interactive resource to your organisation's question bank from its resource page."
+                  : "Your teacher will make assessments available here. You can explore learning resources while you wait."}
+              </Empty>
+              {session.can("content.read", "catalogue") && (
+                <div className="actions">
+                  <Link className="button secondary" to="/app/resources">
+                    Explore learning resources
+                  </Link>
+                </div>
+              )}
+            </section>
+          )
+        }
       </QueryState>
       {selected && (
         <QueryState query={form}>
@@ -133,70 +146,90 @@ export default function Assessments() {
         </button>
       )}
       {selected && session.can("assessments.report") && (
-        <section>
+        <section className="card">
           <h2>Teacher performance summary</h2>
           <p>
             Up to 100 learners. These organisation results are visible only to
             authorised staff.
           </p>
           <QueryState query={summary}>
-            {(rows) => (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Learner</th>
-                    <th>Attempts</th>
-                    <th>Best result</th>
-                    <th>Last submitted</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((row) => (
-                    <tr key={row.learnerUserId}>
-                      <td>{row.learnerName}</td>
-                      <td>{row.attempts}</td>
-                      <td>
-                        {row.bestScore} / {row.total}
-                      </td>
-                      <td>{new Date(row.lastSubmittedAt).toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+            {(rows) =>
+              rows.length ? (
+                <div className="table-wrap">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Learner</th>
+                        <th>Attempts</th>
+                        <th>Best result</th>
+                        <th>Last submitted</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row) => (
+                        <tr key={row.learnerUserId}>
+                          <td>{row.learnerName}</td>
+                          <td>{row.attempts}</td>
+                          <td>
+                            {row.bestScore} / {row.total}
+                          </td>
+                          <td>
+                            {new Date(row.lastSubmittedAt).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <Empty title="No submitted results yet">
+                  Learner results will appear after an assessment is submitted.
+                </Empty>
+              )
+            }
           </QueryState>
         </section>
       )}
-      <h2>Your attempt history</h2>
-      <QueryState query={history}>
-        {(rows) => (
-          <ul>
-            {rows.map((row) => (
-              <li key={row.id}>
-                {banks.data?.find((x) => x.id === row.questionBankId)?.title ??
-                  "Retired assessment"}
-                : {row.score} / {row.total} ·{" "}
-                {new Date(row.createdAt).toLocaleString()}{" "}
-                <button
-                  className="button secondary"
-                  onClick={() => {
-                    void api(base + `/attempts/${row.id}`, { method: "DELETE" })
-                      .then(() =>
-                        client.invalidateQueries({
-                          queryKey: ["assessment-history", org],
-                        }),
-                      )
-                      .catch(setError);
-                  }}
-                >
-                  Delete result
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </QueryState>
-    </section>
+      <section className="card">
+        <h2>Your attempt history</h2>
+        <QueryState query={history}>
+          {(rows) =>
+            rows.length ? (
+              <ul className="assessment-history">
+                {rows.map((row) => (
+                  <li key={row.id}>
+                    {banks.data?.find((x) => x.id === row.questionBankId)
+                      ?.title ?? "Retired assessment"}
+                    : {row.score} / {row.total} ·{" "}
+                    {new Date(row.createdAt).toLocaleString()}{" "}
+                    <button
+                      className="button secondary"
+                      onClick={() => {
+                        void api(base + `/attempts/${row.id}`, {
+                          method: "DELETE",
+                        })
+                          .then(() =>
+                            client.invalidateQueries({
+                              queryKey: ["assessment-history", org],
+                            }),
+                          )
+                          .catch(setError);
+                      }}
+                    >
+                      Delete result
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <Empty title="No attempts yet">
+                Your submitted assessments and results will appear here.
+              </Empty>
+            )
+          }
+        </QueryState>
+      </section>
+    </div>
   );
 }
 export function AssessmentForm({
@@ -230,6 +263,7 @@ export function AssessmentForm({
   };
   return (
     <form
+      className="card assessment-form"
       onSubmit={(event) => {
         event.preventDefault();
         setBusy(true);

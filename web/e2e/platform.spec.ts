@@ -494,7 +494,9 @@ test("two tabs coordinate one refresh without replaying the rotated credential",
   expect(rotations).toBe(1);
   expect((await read(second, "/api/auth/me")).status).toBe(200);
 });
-test("logout revokes the session and returns to login", async ({ page }) => {
+test("logout revokes the session and signing back in redirects without reloading", async ({
+  page,
+}) => {
   await login(page);
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await page
@@ -503,6 +505,24 @@ test("logout revokes the session and returns to login", async ({ page }) => {
     .click();
   await expect(page).toHaveURL(/login/);
   expect((await read(page, "/api/auth/me")).status).toBe(401);
+  for (const role of ["Teacher", "Learner"]) {
+    const account = fixture().roles[role];
+    // Stay on the logout redirect: goto/reload would hide the cached-session bug.
+    await page.getByLabel("Email address").fill(account.email);
+    await page.getByLabel(/^Password/).fill(account.password);
+    await page.getByRole("button", { name: "Sign in", exact: true }).click();
+    await expect(page.locator("#main")).toBeVisible();
+    const profile = await read(page, "/api/auth/me");
+    expect(profile.status).toBe(200);
+    expect(profile.body.email).toBe(account.email);
+    await page.getByRole("button", { name: "Sign out", exact: true }).click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "Confirm" })
+      .click();
+    await expect(page).toHaveURL(/login/);
+    expect((await read(page, "/api/auth/me")).status).toBe(401);
+  }
 });
 test("mobile workspace fits the viewport and keyboard navigation reaches the menu", async ({
   page,

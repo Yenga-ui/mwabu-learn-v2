@@ -1,5 +1,6 @@
 import { Brand } from "../components/Brand";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { BookOpen, ArrowRight } from "lucide-react";
 import { api, sessionChanged } from "../api/client";
@@ -12,6 +13,7 @@ export default function AuthPages({
   mode?: "login" | "recovery" | "reset";
 }) {
   const navigate = useNavigate();
+  const client = useQueryClient();
   const [search] = useSearchParams();
   const [message, setMessage] = useState("");
   const fields: Field[] = [
@@ -118,6 +120,10 @@ export default function AuthPages({
                     body: values,
                     retryAuth: false,
                   });
+                  // Logout/expiry can leave a fresh null profile cached. Fetch
+                  // the new session instead of immediately redirecting it out.
+                  await client.cancelQueries();
+                  client.clear();
                   sessionChanged();
                   navigate(safeReturn(search.get("return")), { replace: true });
                 } else {

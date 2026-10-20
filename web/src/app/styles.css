@@ -549,7 +549,8 @@
     flex-wrap: wrap;
     align-items: center;
   }
-  .card {
+  .card,
+  .panel {
     background: var(--surface);
     border: 1px solid var(--border);
     padding: 25px;
@@ -1395,6 +1396,13 @@
   }
 }
 @layer responsive {
+  @media (min-width: 901px) {
+    .mobile-nav.icon-button,
+    .mobile-close.icon-button,
+    .nav-scrim {
+      display: none;
+    }
+  }
   @media (min-width: 1600px) {
     main#main {
       padding-top: 35px;
@@ -1922,4 +1930,42 @@
 .fraction-parts button[aria-pressed="true"] {
   background: #250e62;
   color: white;
+}
+
+@layer components {
+  .assessment-page {
+    display: grid;
+    gap: 24px;
+    min-width: 0;
+  }
+  .assessment-page > .card {
+    margin: 0;
+    min-width: 0;
+  }
+  .assessment-picker label,
+  .assessment-form,
+  .assessment-form fieldset,
+  .assessment-form label {
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+  }
+  .assessment-picker select {
+    max-width: 640px;
+  }
+  .assessment-form fieldset {
+    margin: 0;
+    padding: 16px;
+  }
+  .assessment-history {
+    margin: 0;
+    padding-left: 20px;
+  }
+  .assessment-history li {
+    padding-block: 12px;
+    overflow-wrap: anywhere;
+  }
+  .assessment-history .button {
+    margin: 8px;
+  }
 }
