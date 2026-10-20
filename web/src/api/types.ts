@@ -66,6 +66,7 @@ export interface Curriculum extends Structure {
   versions?: Structure[];
 }
 export interface Content {
+  sourceContentItemId?: string;
   id: string;
   title: string;
   slug: string;
@@ -91,6 +92,8 @@ export interface Collection extends Tag {
   isActive: boolean;
 }
 export interface Mapping {
+  evidence?: string;
+  reviewerId?: string;
   nodeName?: string;
   id: string;
   nodeId: string;

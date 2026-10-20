@@ -28,6 +28,8 @@ import {
 } from "../../components/ui";
 import NodePicker from "../curriculum/NodePicker";
 import ActivityComposer from "./activities/ActivityComposer";
+import ScormReview from "./ScormReview";
+import MappingRevision from "./MappingRevision";
 import { activityMime } from "./activities/activityRuntime";
 import {
   resourceTypes,
@@ -371,6 +373,15 @@ export default function Management() {
               <div className="two-column">
                 <section className="card">
                   <h2>Resource details</h2>
+                  {resource.sourceContentItemId && (
+                    <p>
+                      Mapping revision of{" "}
+                      <Link to={`/app/content/${resource.sourceContentItemId}`}>
+                        the original resource
+                      </Link>
+                      . Review and publish this draft separately.
+                    </p>
+                  )}
                   <p className="preserve-lines">
                     {resource.description ??
                       resource.summary ??
@@ -406,6 +417,12 @@ export default function Management() {
                 id={resource.id}
                 editable={["Draft", "InReview"].includes(resource.status)}
               />
+              {resource.status === "Published" && (
+                <ScormReview id={resource.id} />
+              )}
+              {["Published", "Approved"].includes(resource.status) && (
+                <MappingRevision key={resource.id} resource={resource} />
+              )}
             </>
           )}
         </QueryState>
@@ -658,6 +675,11 @@ function Assignments({ id, editable }: { id: string; editable: boolean }) {
                   <span>
                     {x.nodeType.replace(/([A-Z])/g, " $1").trim()}
                     {x.nodeName && ": " + x.nodeName}
+                    {x.evidence && (
+                      <small className="preserve-lines">
+                        Source evidence: {x.evidence}
+                      </small>
+                    )}
                   </span>
                   {editable && (
                     <Action

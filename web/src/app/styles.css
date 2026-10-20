@@ -1969,3 +1969,33 @@
     margin: 8px;
   }
 }
+/* Reviewed SCORM packages remain inside an opaque, script-only sandbox. */
+.scorm-player {
+  min-width: 0;
+}
+.scorm-player .action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1rem 0;
+}
+.scorm-frame {
+  width: 100%;
+  min-height: 540px;
+  height: 70vh;
+  border: 1px solid var(--border, #ddd);
+  border-radius: 0.5rem;
+  background: #282828;
+}
+.scorm-player:fullscreen {
+  background: white;
+  overflow: auto;
+  padding: 1rem;
+}
+.scorm-player:fullscreen .scorm-frame {
+  height: calc(100vh - 220px);
+}
+.checksum {
+  overflow-wrap: anywhere;
+  font-size: 0.85rem;
+}

@@ -6,6 +6,7 @@ import { api, ensureSession, queryString } from "../../api/client";
 import type { Resource as ResourceType, Asset } from "../../api/types";
 import { useSession } from "../../auth/Session";
 import AttachToLesson from "./AttachToLesson";
+import ScormPlayer, { isScormCandidate } from "./ScormPlayer";
 import {
   Badge,
   Empty,
@@ -32,6 +33,7 @@ export function MediaViewer({ asset }: { asset: Asset }) {
         retry={() => void retry()}
       />
     );
+  if (isScormCandidate(asset)) return <ScormPlayer asset={asset} />;
   if (asset.mimeType.startsWith("audio/"))
     return (
       <div className="audio-viewer">
