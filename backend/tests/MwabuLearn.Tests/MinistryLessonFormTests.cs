@@ -71,6 +71,6 @@ public sealed class MinistryLessonFormTests
         Assert.Equal(HttpStatusCode.OK, (await teacher.Client.PutAsJsonAsync(path, new SaveLessonRequest(2, detail.Document.Setup, detail.Document.Sections), CatalogueApiFactory.Json)).StatusCode);
         Assert.Equal("Synthetic school", (await teacher.Client.GetFromJsonAsync<LessonDetail>(path, CatalogueApiFactory.Json))!.Document.MinistryForm!.School);
         var historical = (await teacher.Client.GetFromJsonAsync<LessonDetail>(path + "?revision=1", CatalogueApiFactory.Json))!;
-        Assert.Equal("", historical.Document.MinistryForm!.School);
+        Assert.Equal(detail.Document.MinistryForm!.School, historical.Document.MinistryForm!.School);
     }
 }

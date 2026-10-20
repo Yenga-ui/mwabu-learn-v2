@@ -15,6 +15,7 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
     public async Task<Page<LessonSummary>> ListAsync(Guid org, PageRequest page, string? status, CancellationToken ct, LessonDiscoveryFilter? filter = null)
     {
         var query = (await access.Visible(org, ct)).AsNoTracking();
+        if (filter?.Mine == true) query = query.Where(x => x.OwnerUserId == access.User);
         if (filter?.NodeId is Guid node)
         {
             var outcomes = db.LearningOutcomes.AsNoTracking();
@@ -31,15 +32,50 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
         }
         if (!string.IsNullOrWhiteSpace(status))
         { if (!Enum.TryParse<LessonStatus>(status, out var state) || !Enum.IsDefined(state)) throw LessonRules.Invalid("Invalid lesson status."); query = query.Where(x => x.Status == state); }
-        var text = page.Text?.Trim(); if (!string.IsNullOrEmpty(text)) query = query.Where(x => x.Title.ToLower().Contains(text.ToLower()));
+        var terms = (page.Text ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (terms.Length > 12) throw LessonRules.Invalid("Use up to 12 search keywords, or choose a grade and subject.");
+        foreach (var term in terms)
+        {
+            var text = term.ToLowerInvariant(); var searchIds = OfficialSearch(text);
+            query = query.Where(x => x.Title.ToLower().Contains(text) || searchIds.Contains(x.Id) ||
+                db.LearningOutcomes.Any(o => o.Id == x.LearningOutcomeId && (o.Name.ToLower().Contains(text) ||
+                o.Competency.Topic.Name.ToLower().Contains(text) || o.Competency.Topic.Term.Subject.Name.ToLower().Contains(text) ||
+                o.Competency.Topic.Term.Subject.Grade.Name.ToLower().Contains(text))));
+        }
         var rows = await query.OrderByDescending(x => x.UpdatedAt ?? x.CreatedAt).ThenBy(x => x.Id).PageAsync(page, ct);
-        return new(rows.Items.Select(Summary).ToList(), rows.PageNumber, rows.PageSize, rows.HasMore);
+        var ids = rows.Items.Select(x => x.Id).ToArray();
+        var snapshots = await db.LessonRevisions.AsNoTracking().Where(x => x.OrganisationId == org && ids.Contains(x.LessonPlanId) && db.LessonPlans.Any(p => p.Id == x.LessonPlanId && p.Revision == x.Number))
+            .ToDictionaryAsync(x => x.LessonPlanId, x => x.DocumentJson, ct);
+        var manage = await access.Can(org, PermissionCodes.LessonsManage, ct);
+        return new(rows.Items.Select(x => {
+            var document = LessonJson.Read<LessonDocument>(snapshots[x.Id]);
+            return Summary(x) with { Grade = document.Curriculum?.Grade ?? document.Setup.TargetLearners,
+                Subject = document.Curriculum?.Subject ?? document.Setup.Subject, Topic = document.Curriculum?.Topic,
+                SubTopic = document.MinistryForm?.SubTopic, DurationMinutes = document.Setup.DurationMinutes,
+                ResourceCount = (document.TeachingSteps ?? []).SelectMany(s => s.Resources).Select(r => r.ContentItemId)
+                    .Concat(document.References.Where(r => r.Kind == LessonSourceKind.Mwabu && r.ContentItemId.HasValue).Select(r => r.ContentItemId!.Value)).Distinct().Count(),
+                CanEdit = manage && x.OwnerUserId == access.User && x.Status == LessonStatus.Draft, CanReuse = manage && x.Status != LessonStatus.Archived };
+        }).ToList(), rows.PageNumber, rows.PageSize, rows.HasMore);
     }
+    // Search only official, shareable fields, never private preparation notes or uploaded evidence.
+    // Composable parameterised queries preserve organisation/visibility filtering and pagination.
+    private IQueryable<Guid> OfficialSearch(string text) => db.Database.IsNpgsql()
+        ? db.Database.SqlQuery<Guid>($"""
+            SELECT r."LessonPlanId" AS "Value" FROM "LessonRevisions" r JOIN "LessonPlans" p ON p."Id" = r."LessonPlanId" AND p."Revision" = r."Number"
+            WHERE strpos(lower(concat_ws(' ',r."DocumentJson"::jsonb -> 'ministryForm' ->> 'subTopic',r."DocumentJson"::jsonb -> 'ministryForm' ->> 'topic',r."DocumentJson"::jsonb -> 'ministryForm' ->> 'subject',r."DocumentJson"::jsonb -> 'ministryForm' ->> 'lessonGoal',r."DocumentJson"::jsonb -> 'setup' ->> 'objectives')),lower({text})) > 0
+            """)
+        : db.Database.SqlQuery<Guid>($"""
+            SELECT r."LessonPlanId" AS "Value" FROM "LessonRevisions" r JOIN "LessonPlans" p ON p."Id" = r."LessonPlanId" AND p."Revision" = r."Number"
+            WHERE instr(lower(coalesce(json_extract(r."DocumentJson",'$.ministryForm.subTopic'),'') || ' ' || coalesce(json_extract(r."DocumentJson",'$.ministryForm.topic'),'') || ' ' || coalesce(json_extract(r."DocumentJson",'$.ministryForm.subject'),'') || ' ' || coalesce(json_extract(r."DocumentJson",'$.ministryForm.lessonGoal'),'') || ' ' || coalesce(json_extract(r."DocumentJson",'$.setup.objectives'),'')),lower({text})) > 0
+            """);
     public async Task<LessonDetail> GetAsync(Guid org, Guid id, int? revision, CancellationToken ct)
     {
         var plan = await access.Read(org, id, false, ct);
         var row = await db.LessonRevisions.AsNoTracking().SingleOrDefaultAsync(x => x.LessonPlanId == id && x.OrganisationId == org && x.Number == (revision ?? plan.Revision), ct) ?? throw LessonRules.Missing();
         var document = LessonJson.Read<LessonDocument>(row.DocumentJson);
+        document = document with { MinistryForm = MinistryFormRules.Official(document) };
+        if (plan.OwnerUserId != access.User)
+            document = document with { TeachingSteps = document.TeachingSteps?.Select(s => s with { TeacherInstructions = "", TeacherNotes = "" }).ToArray() };
         var author = await db.Users.AsNoTracking().Where(x => x.Id == plan.OwnerUserId).Select(x => x.FirstName + " " + x.LastName).SingleAsync(ct);
         return new(Summary(plan), document, row.Number == plan.Revision && plan.OwnerUserId == access.User && plan.Status == LessonStatus.Draft && await access.Can(org, PermissionCodes.LessonsManage, ct),
             plan.OwnerUserId != access.User && await access.Can(org, PermissionCodes.LessonsReview, ct), row.Number, author);
@@ -49,6 +85,8 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
         await access.Demand(org, PermissionCodes.LessonsManage, ct);
         if (request.ExpectedRevision < 0) throw LessonRules.Invalid("Expected revision cannot be negative.");
         var setup = LessonRules.Setup(request.Setup); var context = await grounding.Resolve(setup, ct);
+        var teacher = await db.Users.AsNoTracking().Where(x => x.Id == access.User).Select(x => x.FirstName + " " + x.LastName).SingleAsync(ct);
+        var school = await db.Organisations.AsNoTracking().Where(x => x.Id == org).Select(x => x.Name).SingleAsync(ct);
         var reason = LessonRules.Text(request.Reason, 500, "Revision reason", true);
         await LessonTransactions.Run(db, async () =>
         {
@@ -60,6 +98,8 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
             var previous = id.HasValue ? await db.LessonRevisions.AsNoTracking().SingleAsync(x => x.LessonPlanId == plan.Id && x.Number == plan.Revision, ct) : null;
             var previousDocument = previous is null ? null : LessonJson.Read<LessonDocument>(previous.DocumentJson);
             var form = request.MinistryForm ?? previousDocument?.MinistryForm;
+            if (!id.HasValue) form = (form ?? MinistryFormRules.FromSections(sections)) with { School = form?.School is { Length: > 0 } ? form.School : school,
+                TeacherName = form?.TeacherName is { Length: > 0 } ? form.TeacherName : teacher, ClassName = form?.ClassName is { Length: > 0 } ? form.ClassName : context?.Grade ?? setup.TargetLearners };
             var steps = JourneyRules.Validate(request.TeachingSteps ?? previousDocument?.TeachingSteps ?? [], sections);
             foreach (var resource in steps.SelectMany(x => x.Resources))
                 if (!await db.ContentAssets.AsNoTracking().AnyAsync(a => a.Id == resource.AssetId && a.ContentItemId == resource.ContentItemId &&
@@ -67,6 +107,25 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
                     throw LessonRules.Invalid("A teaching resource version is unavailable, unpublished or unsupported. Select an approved image, audio, video, PDF or declarative activity.");
             var document = new LessonDocument(setup, context, sections, refs,
                 MinistryFormRules.Validate(form ?? MinistryFormRules.FromSections(sections), setup.DurationMinutes), 3, steps);
+            document = document with { MinistryForm = MinistryFormRules.Validate(MinistryFormRules.SyncSections(document, previousDocument), setup.DurationMinutes) };
+            if (request.TeachingSteps is null && request.MinistryForm is not null)
+            {
+                document = document with { TeachingSteps = JourneyRules.Validate(JourneyRules.FromOfficial(document, previousDocument), sections) };
+                // When converting a plan for the first time, pin approved library material
+                // to its cited stage (or development) rather than losing it in presentation.
+                if (previousDocument?.TeachingSteps is not { Length: > 0 } && document.TeachingSteps.Length > 0)
+                {
+                    var contentIds = refs.Where(r => r.Kind == LessonSourceKind.Mwabu && r.ContentItemId.HasValue).Select(r => r.ContentItemId!.Value).ToArray();
+                    var assets = await db.ContentAssets.AsNoTracking().Where(a => contentIds.Contains(a.ContentItemId) && !a.IsPendingDeletion && JourneyRules.SupportedMedia.Contains(a.MimeType) && a.ContentItem.Status == Domain.Entities.Content.ContentStatus.Published)
+                        .OrderBy(a => a.ContentItemId).ThenByDescending(a => a.IsPrimary).ThenBy(a => a.Id).Take(30)
+                        .Select(a => new TeachingResource(a.ContentItemId, a.Id, a.Checksum, a.ContentItem.Title)).ToArrayAsync(ct);
+                    document = document with { TeachingSteps = document.TeachingSteps.Select(step => {
+                        var section = sections.Single(s => s.Code == step.SectionCode);
+                        var cited = refs.Where(r => section.SourceIds.Contains(r.Id)).Select(r => r.ContentItemId).ToArray();
+                        return step with { Resources = assets.Where(a => cited.Contains(a.ContentItemId) || step.SectionCode == "development" && !sections.Any(s => s.SourceIds.Any(id => refs.Any(r => r.Id == id && r.ContentItemId == a.ContentItemId)))).Take(10).ToArray() };
+                    }).ToArray() };
+                }
+            }
             plan.Title = setup.Title; plan.Mode = setup.Mode; plan.LearningOutcomeId = context?.OutcomeId;
             Append(plan, document, reason);
             await db.SaveChangesAsync(ct); id = plan.Id; return true;
@@ -89,18 +148,37 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
     {
         await access.Demand(org, PermissionCodes.LessonsManage, ct);
         var original = await GetAsync(org, id, null, ct); Guid duplicate = Guid.Empty;
+        if (original.Lesson.Status == LessonStatus.Archived) throw LessonRules.Invalid("Choose an available lesson to use.");
         await Transaction(db, async () =>
         {
             var plan = new LessonPlan { OrganisationId = org, OwnerUserId = access.User, Title = LessonRules.Text(original.Lesson.Title[..Math.Min(190, original.Lesson.Title.Length)] + " (copy)", 200, "Copied title", true),
                 Mode = original.Lesson.Mode, LearningOutcomeId = original.Document.Curriculum?.OutcomeId, DerivedFromId = id };
             db.LessonPlans.Add(plan);
             var refs = await db.LessonSources.AsNoTracking().Where(x => x.LessonPlanId == id && x.OrganisationId == org && !x.IsExcluded).Take(101).ToListAsync(ct);
+            if (original.Lesson.OwnerUserId != access.User)
+            {
+                var candidates = refs.Where(x => x.ContentItemId.HasValue).Select(x => x.ContentItemId!.Value).ToArray();
+                var available = await db.ContentItems.AsNoTracking().Where(x => candidates.Contains(x.Id) && x.Status == Domain.Entities.Content.ContentStatus.Published).Select(x => x.Id).ToListAsync(ct);
+                refs = refs.Where(x => x.Kind == LessonSourceKind.Mwabu && x.ContentItemId.HasValue && available.Contains(x.ContentItemId.Value)).ToList();
+            }
             var ids = new Dictionary<Guid, Guid>();
             foreach (var source in refs)
             { var previous = source.Id; source.Id = Guid.NewGuid(); source.LessonPlanId = plan.Id; source.CreatedAt = DateTime.UtcNow; source.UpdatedAt = null; ids.Add(previous, source.Id); db.LessonSources.Add(source); }
             var document = original.Document with { Setup = original.Document.Setup with { Title = plan.Title },
                 Sections = original.Document.Sections.Select(x => x with { SourceIds = x.SourceIds.Where(ids.ContainsKey).Select(k => ids[k]).ToArray() }).ToArray(),
                 References = original.Document.References.Where(x => ids.ContainsKey(x.Id)).Select(x => x with { Id = ids[x.Id] }).ToArray() };
+            var resourceIds = document.TeachingSteps?.SelectMany(s => s.Resources).Select(r => r.AssetId).Distinct().ToArray() ?? [];
+            var availableAssets = await db.ContentAssets.AsNoTracking().Where(a => resourceIds.Contains(a.Id) && !a.IsPendingDeletion && a.ContentItem.Status == Domain.Entities.Content.ContentStatus.Published)
+                .Select(a => new { a.Id, a.Checksum }).ToDictionaryAsync(a => a.Id, a => a.Checksum, ct);
+            document = document with { TeachingSteps = document.TeachingSteps?.Select(s => s with {
+                Resources = s.Resources.Where(r => availableAssets.TryGetValue(r.AssetId, out var checksum) && checksum == r.Checksum).ToArray() }).ToArray() };
+            if (original.Lesson.OwnerUserId != access.User)
+            {
+                var teacher = await db.Users.AsNoTracking().Where(x => x.Id == access.User).Select(x => x.FirstName + " " + x.LastName).SingleAsync(ct);
+                var references = string.Join("\n", document.References.Select(r => r.Title));
+                document = document with { MinistryForm = document.MinistryForm! with { TeacherName = teacher, Evaluation = "", References = references },
+                    Sections = document.Sections.Select(s => s.Code is "reflection" ? s with { Body = "" } : s.Code == "references" ? s with { Body = references } : s).ToArray() };
+            }
             Append(plan, document, "Duplicated authorised lesson"); await db.SaveChangesAsync(ct); duplicate = plan.Id; return true;
         }, ct);
         return await GetAsync(org, duplicate, null, ct);

@@ -51,7 +51,13 @@ public sealed class LessonsController(ILessonPlanner plans, ILessonSources sourc
     [HttpPut("{id:guid}/shares"), RequirePermission(PermissionCodes.LessonsManage)]
     public async Task<IActionResult> Share(Guid organisationId, Guid id, ShareLessonRequest request, CancellationToken ct) { await plans.ShareAsync(organisationId, id, request, ct); return NoContent(); }
     [HttpGet("{id:guid}/pdf"), RequirePermission(PermissionCodes.LessonsRead)]
-    public async Task<IActionResult> Pdf(Guid organisationId, Guid id, [FromQuery] int? revision, CancellationToken ct) => File(await plans.ExportAsync(organisationId, id, revision, ct), "application/pdf", "mwabu-lesson-plan.pdf");
+    public async Task<IActionResult> Pdf(Guid organisationId, Guid id, [FromQuery] int? revision, [FromQuery] bool inline, CancellationToken ct)
+    {
+        var bytes = await plans.ExportAsync(organisationId, id, revision, ct);
+        Response.Headers.CacheControl = "no-store, private";
+        if (inline) { Response.Headers.ContentDisposition = "inline"; return File(bytes, "application/pdf"); }
+        return File(bytes, "application/pdf", "mwabu-lesson-plan.pdf");
+    }
     [HttpGet("{id:guid}/approved-download"), RequirePermission(PermissionCodes.LessonsRead)]
     public async Task<IActionResult> Download(Guid organisationId, Guid id, [FromQuery] int knownRevision, CancellationToken ct)
     { var detail = await plans.DownloadAsync(organisationId, id, knownRevision, ct); Response.Headers.ETag = $"\"lesson-{id}-{detail.Lesson.Revision}\""; return Ok(new { schemaVersion = 1, lesson = detail.Lesson, document = detail.Document }); }

@@ -3,6 +3,14 @@ namespace MwabuLearn.Domain.Entities.Lessons;
 /// <summary>Teacher-owned form values stored in an immutable lesson revision, never in the user profile.</summary>
 public sealed record MinistryLessonForm
 {
+    public string Subject { get; init; } = "";
+    public string Topic { get; init; } = "";
+    public string SubTopic { get; init; } = "";
+    public string SpecificCompetenceNumber { get; init; } = "";
+    public string SpecificCompetence { get; init; } = "";
+    public string PriorKnowledge { get; init; } = "";
+    public string References { get; init; } = "";
+    public string Materials { get; init; } = "";
     public string School { get; init; } = "";
     public string TeacherName { get; init; } = "";
     public string ClassName { get; init; } = "";

@@ -4,6 +4,30 @@ namespace MwabuLearn.Application.Lessons;
 // private instructions and notes are never part of the learner-facing projection.
 public static class JourneyRules
 {
+    public static TeachingStep[] FromOfficial(LessonDocument document, LessonDocument? previous)
+    {
+        var existing = document.TeachingSteps ?? [];
+        if (existing.Any(s => !s.Id.StartsWith("official-", StringComparison.Ordinal) && s.Id != "resource-introduction")) return existing;
+        var form = MinistryFormRules.Official(document);
+        var old = previous is null ? null : MinistryFormRules.Official(previous);
+        string[] sections = ["starter", "development", "formative-assessment", "extension", "conclusion", "differentiation", "follow-up"];
+        string[] labels = ["Introduction", "Lesson development", "Exercise/assessment", "Homework", "Conclusion", "Reinforcement", "Extension"];
+        var result = existing.Where(s => s.Id == "resource-introduction").ToList();
+        for (var i = 0; i < MinistryFormRules.Stages.Length; i++)
+        {
+            var stage = form.Progression.FirstOrDefault(s => s.Code == MinistryFormRules.Stages[i]);
+            var step = existing.FirstOrDefault(s => s.Id == "official-" + MinistryFormRules.Stages[i]);
+            if (stage is null || stage.TeacherActivities.Length + stage.LearnerActivities.Length + stage.AssessmentCriteria.Length == 0)
+            { if (step is not null && (step.Resources.Length > 0 || step.Hint.Length + step.Answer.Length + step.TeacherNotes.Length > 0)) result.Add(step); continue; }
+            var prior = old?.Progression.FirstOrDefault(s => s.Code == stage.Code);
+            result.Add(step is null ? new("official-" + stage.Code, sections[i], labels[i], labels[i], stage.Minutes,
+                stage.TeacherActivities, stage.LearnerActivities, "", "", "", []) : step with {
+                    TeacherInstructions = prior is not null && step.TeacherInstructions == prior.TeacherActivities ? stage.TeacherActivities : step.TeacherInstructions,
+                    LearnerExplanation = prior is not null && step.LearnerExplanation == prior.LearnerActivities ? stage.LearnerActivities : step.LearnerExplanation,
+                    Minutes = prior is not null && step.Minutes == prior.Minutes ? stage.Minutes : step.Minutes });
+        }
+        return result.ToArray();
+    }
     public static readonly string[] SupportedMedia = ["application/vnd.mwabu.activity+json", "image/png", "image/jpeg", "image/gif", "image/webp", "audio/mpeg", "audio/ogg", "audio/wav", "video/mp4", "video/webm", "application/pdf"];
     public static ClassroomStep Project(TeachingStep step) => new(step.Id, step.Title, step.Phase, step.Minutes,
         step.LearnerExplanation, step.Hint, step.Answer, step.Resources);

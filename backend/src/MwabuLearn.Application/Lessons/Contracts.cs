@@ -39,8 +39,10 @@ public sealed record TeachingStep(string Id, string SectionCode, string Title, s
     TeachingResource[] Resources);
 public sealed record SaveLessonRequest(int ExpectedRevision, LessonSetup Setup, LessonSection[] Sections, string Reason = "Teacher edit", MinistryLessonForm? MinistryForm = null, TeachingStep[]? TeachingSteps = null);
 public sealed record LessonSummary(Guid Id, Guid OrganisationId, Guid OwnerUserId, string Title, PlanningMode Mode,
-    LessonStatus Status, int Revision, bool IsOrganisationTemplate, DateTime CreatedAt, DateTime? UpdatedAt);
-public sealed record LessonDiscoveryFilter(string? NodeType = null, Guid? NodeId = null);
+    LessonStatus Status, int Revision, bool IsOrganisationTemplate, DateTime CreatedAt, DateTime? UpdatedAt,
+    string? Grade = null, string? Subject = null, string? Topic = null, string? SubTopic = null, int? DurationMinutes = null,
+    int ResourceCount = 0, bool CanEdit = false, bool CanReuse = false);
+public sealed record LessonDiscoveryFilter(string? NodeType = null, Guid? NodeId = null, bool Mine = false);
 public sealed record LessonDetail(LessonSummary Lesson, LessonDocument Document, bool CanEdit, bool CanReview, int ViewedRevision, string AuthorName = "");
 public sealed record CachedLesson(Guid Id, int Revision);
 public sealed record LessonReconcileRequest(CachedLesson[] Lessons);

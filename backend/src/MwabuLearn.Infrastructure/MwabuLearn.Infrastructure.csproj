@@ -30,6 +30,7 @@
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Lessons/Reference/syllabus-2023.json" />
+    <EmbeddedResource Include="Lessons/Reference/mwabu-lesson-plan.pdf" />
   </ItemGroup>
 
 </Project>
