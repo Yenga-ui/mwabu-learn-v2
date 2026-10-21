@@ -2,8 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import type { Detail, LessonDocument } from "./types";
 import { lessonBase } from "./types";
+import { useQueryClient } from "@tanstack/react-query";
 
 export function useLessonDraft(initial: Detail, organisation: string) {
+  const client = useQueryClient();
   const [server, setServer] = useState(initial);
   const [document, setDocument] = useState(initial.document);
   const [dirty, setDirty] = useState(false);
@@ -44,6 +46,14 @@ export function useLessonDraft(initial: Detail, organisation: string) {
       setError(undefined);
     }
   }, []);
+  useEffect(() => {
+    if (
+      !changed.current &&
+      !flight.current &&
+      initial.lesson.revision > saved.current.lesson.revision
+    )
+      adopt(initial);
+  }, [initial, adopt]);
   const save = useCallback(
     async function saveLatest(): Promise<Detail> {
       if (flight.current) {
@@ -73,6 +83,11 @@ export function useLessonDraft(initial: Detail, organisation: string) {
       try {
         const result = await pending;
         saved.current = result;
+        client.setQueryData(["lesson", organisation, result.lesson.id], result);
+        void client.invalidateQueries({ queryKey: ["lessons", organisation] });
+        void client.invalidateQueries({
+          queryKey: ["teacher-home-drafts", organisation],
+        });
         if (mounted.current) {
           setServer(result);
           if (JSON.stringify(current.current) === fingerprint) {
@@ -95,7 +110,7 @@ export function useLessonDraft(initial: Detail, organisation: string) {
         if (mounted.current) setSaving(false);
       }
     },
-    [organisation],
+    [organisation, client],
   );
   useEffect(() => {
     if (!dirty || blocked || saving || !server.canEdit) return;

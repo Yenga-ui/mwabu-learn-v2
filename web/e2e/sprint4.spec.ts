@@ -187,7 +187,32 @@ test("reviewed source import connects teacher discovery, native adaptation, PDF,
     await t
       .getByLabel("Lesson plan title", { exact: true })
       .fill("My adapted fractions " + suffix);
+    const adaptationSaved = t.waitForResponse(
+      (response) =>
+        response.request().method() === "PUT" &&
+        /\/lessons\/[0-9a-f-]+$/.test(new URL(response.url()).pathname),
+    );
     await t.getByRole("button", { name: "Save now", exact: true }).click();
+    const adapted = await (await adaptationSaved).json();
+    const sourceSearch = `/api/organisations/${adapted.lesson.organisationId}/lessons?text=${encodeURIComponent("My adapted fractions " + suffix)}`;
+    const matching = await t.request.get(
+      sourceSearch +
+        "&sourceYear=2023&sourceGrade=4&sourceSubject=Mathematics&sourceTopic=Fractions",
+    );
+    expect(matching.ok()).toBeTruthy();
+    expect(
+      (await matching.json()).items.map((item: { id: string }) => item.id),
+    ).toContain(adapted.lesson.id);
+    for (const mismatch of [
+      "sourceYear=2013",
+      "sourceGrade=3",
+      "sourceTerm=Term+1",
+      "sourceYear=2023&status=Published",
+    ]) {
+      const response = await t.request.get(sourceSearch + "&" + mismatch);
+      expect(response.ok()).toBeTruthy();
+      expect((await response.json()).items).toHaveLength(0);
+    }
     await expect(
       t.getByRole("status").filter({ hasText: /^Saved · revision/ }),
     ).toBeVisible();
@@ -228,6 +253,31 @@ test("reviewed source import connects teacher discovery, native adaptation, PDF,
       path: "../artifacts/sprint4/screenshots/teacher-scorm-classroom.png",
       fullPage: true,
     });
+    const teachingUrl = t.url();
+    await t
+      .getByRole("link", { name: "Exit to preparation", exact: true })
+      .click();
+    await t.getByRole("link", { name: "Workspace", exact: true }).click();
+    await t.reload();
+    await t
+      .getByRole("region", { name: "Continue teaching", exact: true })
+      .getByRole("link", { name: /Continue teaching:/ })
+      .click();
+    expect(new URL(t.url()).searchParams.get("revision")).toBe(
+      new URL(teachingUrl).searchParams.get("revision"),
+    );
+    await expect(
+      t.getByRole("heading", { name: "Lesson development", exact: true }),
+    ).toBeVisible();
+    await expect(
+      t.getByRole("combobox", { name: "Teaching resource", exact: true }),
+    ).not.toHaveValue("");
+    await expect(
+      t.getByRole("button", { name: "Start interactive lesson", exact: true }),
+    ).toBeVisible();
+    await expect(
+      t.getByText(/Interactive courses reopen from the beginning/),
+    ).toBeVisible();
     await t.getByRole("link", { name: "Finish lesson", exact: true }).click();
     await expect(t).toHaveURL(/\/app\/lessons/);
     const l = await learner.newPage();
@@ -276,6 +326,120 @@ test("reviewed source import connects teacher discovery, native adaptation, PDF,
       learner.close(),
     ]);
   }
+});
+
+test("a new plan retains selected library context without inventing managed alignment", async ({
+  page,
+}) => {
+  const suffix = randomUUID().slice(0, 8);
+  await login(page, "PlatformAdmin");
+  await preview(
+    page,
+    zip({
+      "context.html": source("Context source " + suffix).replace(
+        "<p>Topic: Fractions</p>",
+        "<p>Term: Term 1</p><p>Topic: Fractions</p>",
+      ),
+    }),
+    "context-" + suffix + ".zip",
+  );
+  await page
+    .getByRole("button", { name: "Select validated records", exact: true })
+    .click();
+  await apply(page);
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await login(page, "Teacher");
+  await page.goto(
+    "/app/library?year=2023&grade=4&subject=Mathematics&topic=Fractions&term=Term+1&text=no-match-" +
+      suffix,
+  );
+  await page
+    .getByRole("link", {
+      name: "Create a lesson from the selected context",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Selected library context" }),
+  ).toContainText(
+    "2023 Zambian curriculum · Grade 4 · Mathematics · Fractions · Term 1",
+  );
+  await expect(
+    page.getByRole("button", { name: "Free-form", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByLabel("Subject / learning area")).toHaveValue(
+    "Mathematics",
+  );
+  await expect(page.getByLabel("Target age / grade")).toHaveValue("Grade 4");
+  await expect(page.getByLabel("Lesson title", { exact: true })).toHaveValue(
+    "Fractions",
+  );
+  const draftTitle = "Context retained " + suffix;
+  await page.getByLabel("Lesson title", { exact: true }).fill(draftTitle);
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      /\/api\/organisations\/[^/]+\/lessons$/.test(
+        new URL(response.url()).pathname,
+      ),
+  );
+  await page.getByRole("button", { name: "Create draft", exact: true }).click();
+  const detail = await (await saved).json();
+  const searchPath = `/api/organisations/${detail.lesson.organisationId}/lessons`;
+  const filtered = await page.request.get(
+    searchPath + "?page=1&pageSize=1&text=" + encodeURIComponent(draftTitle),
+  );
+  expect(filtered.ok()).toBeTruthy();
+  const filteredPage = await filtered.json();
+  expect(filteredPage.pageSize).toBe(1);
+  expect(filteredPage.items.map((item: { id: string }) => item.id)).toEqual([
+    detail.lesson.id,
+  ]);
+  const nextPage = await page.request.get(
+    searchPath + "?page=2&pageSize=1&text=" + encodeURIComponent(draftTitle),
+  );
+  expect(nextPage.ok()).toBeTruthy();
+  expect((await nextPage.json()).items).toHaveLength(0);
+  expect(
+    (await page.request.get(searchPath + "?page=0&pageSize=1")).status(),
+  ).toBe(400);
+  const grades = await page.request.get(
+    "/api/curriculum/grades/search?page=1&pageSize=1",
+  );
+  expect(grades.ok()).toBeTruthy();
+  expect((await grades.json()).pageSize).toBe(1);
+  expect(detail.document.curriculum).toBeNull();
+  expect(detail.document.importedFrom ?? null).toBeNull();
+  expect(detail.document.setup.learningOutcomeId).toBeNull();
+  expect(detail.document.setup.teachingContext).toContain("Fractions · Term 1");
+  expect(detail.document.ministryForm.topic).toBe("Fractions");
+  await expect(page).toHaveURL(/\/app\/lessons\/[0-9a-f-]+$/);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: draftTitle, exact: true }),
+  ).toBeVisible();
+  await page.goto(
+    "/app/lessons?status=Published&text=" + encodeURIComponent(draftTitle),
+  );
+  await expect(
+    page.getByRole("combobox", { name: "Lesson status", exact: true }),
+  ).toHaveValue("Published");
+  await expect(
+    page.getByPlaceholder("Search lesson plans", { exact: true }),
+  ).toHaveValue(draftTitle);
+  await expect(
+    page.getByText("No lesson plans here yet", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("combobox", { name: "Lesson status", exact: true })
+    .selectOption("Draft");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(
+    page.getByRole("combobox", { name: "Lesson status", exact: true }),
+  ).toHaveValue("Draft");
+  await expect(
+    page.getByRole("heading", { name: draftTitle, exact: true }),
+  ).toBeVisible();
 });
 
 if (process.env.MWABU_SOURCE_PLAN_SAMPLE) {

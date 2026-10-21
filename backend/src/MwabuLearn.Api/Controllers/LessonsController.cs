@@ -16,7 +16,7 @@ public sealed class LessonsController(ILessonPlanner plans, ILessonSources sourc
     public async Task<IActionResult> Syllabus(Guid organisationId, [FromQuery] string grade, [FromQuery] string subject, CancellationToken ct)
         => Ok(await syllabus.ListAsync(organisationId, grade, subject, ct));
     [HttpGet, RequirePermission(PermissionCodes.LessonsRead), EnableRateLimiting("search")]
-    public async Task<IActionResult> List(Guid organisationId, [FromQuery] PageRequest page, [FromQuery] string? status, [FromQuery] LessonDiscoveryFilter filter, CancellationToken ct) => Ok(await plans.ListAsync(organisationId, page, status, ct, filter));
+    public async Task<IActionResult> List(Guid organisationId, [FromQuery(Name = "")] PageRequest page, [FromQuery] string? status, [FromQuery] LessonDiscoveryFilter filter, CancellationToken ct) => Ok(await plans.ListAsync(organisationId, page, status, ct, filter));
     [HttpPost("reconcile"), RequirePermission(PermissionCodes.LessonsRead), EnableRateLimiting("search")]
     public async Task<IActionResult> Reconcile(Guid organisationId, LessonReconcileRequest request, CancellationToken ct) => Ok(await plans.ReconcileAsync(organisationId, request, ct));
     [HttpGet("{id:guid}"), RequirePermission(PermissionCodes.LessonsRead)]
@@ -41,11 +41,11 @@ public sealed class LessonsController(ILessonPlanner plans, ILessonSources sourc
     [HttpPatch("{id:guid}/status"), RequirePermission(PermissionCodes.LessonsRead)]
     public async Task<IActionResult> Transition(Guid organisationId, Guid id, LessonTransition request, CancellationToken ct) => Ok(await plans.TransitionAsync(organisationId, id, request, ct));
     [HttpGet("{id:guid}/revisions"), RequirePermission(PermissionCodes.LessonsRead), EnableRateLimiting("search")]
-    public async Task<IActionResult> Revisions(Guid organisationId, Guid id, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await plans.RevisionsAsync(organisationId, id, page, ct));
+    public async Task<IActionResult> Revisions(Guid organisationId, Guid id, [FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await plans.RevisionsAsync(organisationId, id, page, ct));
     [HttpGet("colleagues"), RequirePermission(PermissionCodes.LessonsManage), EnableRateLimiting("search")]
-    public async Task<IActionResult> Colleagues(Guid organisationId, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await plans.ColleaguesAsync(organisationId, page, ct));
+    public async Task<IActionResult> Colleagues(Guid organisationId, [FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await plans.ColleaguesAsync(organisationId, page, ct));
     [HttpGet("{id:guid}/reviews"), RequirePermission(PermissionCodes.LessonsRead)]
-    public async Task<IActionResult> Reviews(Guid organisationId, Guid id, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await plans.ReviewsAsync(organisationId, id, page, ct));
+    public async Task<IActionResult> Reviews(Guid organisationId, Guid id, [FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await plans.ReviewsAsync(organisationId, id, page, ct));
     [HttpGet("{id:guid}/shares"), RequirePermission(PermissionCodes.LessonsRead)]
     public async Task<IActionResult> Shares(Guid organisationId, Guid id, CancellationToken ct) => Ok(await plans.SharesAsync(organisationId, id, ct));
     [HttpPut("{id:guid}/shares"), RequirePermission(PermissionCodes.LessonsManage)]
@@ -105,7 +105,7 @@ public sealed class LessonsController(ILessonPlanner plans, ILessonSources sourc
     public async Task<IActionResult> CancelJob(Guid organisationId, Guid id, Guid jobId,
         [FromServices] MwabuLearn.Infrastructure.Lessons.LessonGenerationJobs jobs, CancellationToken ct) => Ok(await jobs.CancelAsync(organisationId, id, jobId, ct));
     [HttpGet("{id:guid}/generations"), RequirePermission(PermissionCodes.LessonsRead)]
-    public async Task<IActionResult> Generations(Guid organisationId, Guid id, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await generations.HistoryAsync(organisationId, id, page, ct));
+    public async Task<IActionResult> Generations(Guid organisationId, Guid id, [FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await generations.HistoryAsync(organisationId, id, page, ct));
     [HttpGet("{id:guid}/generations/{generationId:guid}"), RequirePermission(PermissionCodes.LessonsRead)]
     public async Task<IActionResult> Generation(Guid organisationId, Guid id, Guid generationId, CancellationToken ct) => Ok(await generations.GetAsync(organisationId, id, generationId, ct));
     [HttpPost("{id:guid}/generations/{generationId:guid}/apply"), RequirePermission(PermissionCodes.LessonsManage)]

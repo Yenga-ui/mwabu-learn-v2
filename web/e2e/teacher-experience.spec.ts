@@ -31,6 +31,37 @@ async function mutate(page: Page, path: string, body: unknown) {
   return result.body;
 }
 
+test("teacher sign-in opens functionality instead of account settings and explicit logout discards the settings return", async ({
+  page,
+}) => {
+  const account = fixture().roles.Teacher;
+  await page.goto("/login?return=%2Fapp%2Faccount");
+  await page.getByLabel("Email address").fill(account.email);
+  await page.getByLabel(/^Password/).fill(account.password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(
+    page.getByRole("navigation", { name: "Teaching tasks" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Change password", exact: true }),
+  ).toHaveCount(0);
+  await page.goto("/app/account");
+  await expect(
+    page.getByRole("heading", { name: "Change password", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await page.getByRole("button", { name: "Confirm", exact: true }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await page.getByLabel("Email address").fill(account.email);
+  await page.getByLabel(/^Password/).fill(account.password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page).toHaveURL(/\/app$/);
+  await expect(
+    page.getByRole("navigation", { name: "Teaching tasks" }),
+  ).toBeVisible();
+});
+
 test("teacher starts with a published resource, completes the official plan, finds and adapts a published lesson and teaches its saved journey", async ({
   page,
   browser,
@@ -232,6 +263,15 @@ test("teacher starts with a published resource, completes the official plan, fin
   await expect(
     page.getByRole("status").filter({ hasText: /Saved · revision/ }),
   ).toBeVisible();
+  await page
+    .getByRole("link", { name: "All lesson plans", exact: true })
+    .click();
+  await page
+    .getByRole("link", { name: "My adapted fractions lesson", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Lesson plan title", { exact: true }),
+  ).toHaveValue("My adapted fractions lesson");
   const download = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Export saved PDF", exact: true })

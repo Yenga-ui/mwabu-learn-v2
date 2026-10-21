@@ -19,7 +19,7 @@ function Workspace() {
   return <h1>Workspace for {session.user.firstName}</h1>;
 }
 
-it.each(["/app", "/app/resources?text=fractions"])(
+it.each(["/app", "/app/resources?text=fractions", "/app/account"])(
   "signs back in to %s despite a fresh signed-out cache, without retaining previous private data",
   async (destination) => {
     const client = new QueryClient({
@@ -76,7 +76,7 @@ it.each(["/app", "/app/resources?text=fractions"])(
       ).toBeVisible();
       expect(
         router.state.location.pathname + router.state.location.search,
-      ).toBe(destination);
+      ).toBe(destination === "/app/account" ? "/app" : destination);
       expect(
         client.getQueryData(["previous-organisation-private-data"]),
       ).toBeUndefined();

@@ -12,19 +12,19 @@ namespace MwabuLearn.Api.Controllers;
 public sealed class DirectoryController(IDirectoryService service) : ControllerBase
 {
     [HttpGet("curriculum/grades/search"),RequirePermission(PermissionCodes.CurriculumRead,PermissionScope.Catalogue)]
-    public async Task<IActionResult> Grades([FromQuery]PageRequest page,CancellationToken ct)=>Ok(await service.GradesAsync(page,ct));
+    public async Task<IActionResult> Grades([FromQuery(Name = "")] PageRequest page,CancellationToken ct)=>Ok(await service.GradesAsync(page,ct));
     [HttpGet("curricula/search"), RequirePermission(PermissionCodes.CurriculumRead, PermissionScope.Catalogue)]
-    public async Task<IActionResult> Curricula([FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.CurriculaAsync(page, ct));
+    public async Task<IActionResult> Curricula([FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.CurriculaAsync(page, ct));
     [HttpGet("curricula/{id:guid}/nodes/{type}"), RequirePermission(PermissionCodes.CurriculumRead, PermissionScope.Catalogue)]
-    public async Task<IActionResult> Nodes(Guid id, CurriculumNodeType type, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.NodesAsync(id, type, page, ct));
+    public async Task<IActionResult> Nodes(Guid id, CurriculumNodeType type, [FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.NodesAsync(id, type, page, ct));
     [HttpGet("organisations/search"), RequirePermission(PermissionCodes.OrganisationsRead, PermissionScope.Platform)]
-    public async Task<IActionResult> Organisations([FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.OrganisationsAsync(page, ct));
+    public async Task<IActionResult> Organisations([FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.OrganisationsAsync(page, ct));
     [HttpGet("organisations/{organisationId:guid}/members/search"), RequirePermission(PermissionCodes.UsersRead)]
-    public async Task<IActionResult> Members(Guid organisationId, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.MembersAsync(organisationId, page, ct));
+    public async Task<IActionResult> Members(Guid organisationId, [FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.MembersAsync(organisationId, page, ct));
     [HttpGet("collections/search"), RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
-    public async Task<IActionResult> Collections([FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.CollectionsAsync(page, ct));
+    public async Task<IActionResult> Collections([FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.CollectionsAsync(page, ct));
     [HttpGet("tags/search"), RequirePermission(PermissionCodes.ContentRead, PermissionScope.Catalogue)]
-    public async Task<IActionResult> Tags([FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.TagsAsync(page, ct));
+    public async Task<IActionResult> Tags([FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.TagsAsync(page, ct));
     [HttpGet("auth/me/memberships/search")]
-    public async Task<IActionResult> Mine([FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.MyMembershipsAsync(page, ct));
+    public async Task<IActionResult> Mine([FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.MyMembershipsAsync(page, ct));
 }

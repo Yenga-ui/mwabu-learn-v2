@@ -120,6 +120,7 @@ export interface MinistryLessonForm {
   }[];
 }
 export interface Lesson {
+  importedFrom?: SourcePlanContext | null;
   grade?: string | null;
   subject?: string | null;
   topic?: string | null;

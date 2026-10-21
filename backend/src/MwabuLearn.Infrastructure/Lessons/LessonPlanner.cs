@@ -15,6 +15,17 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
     public async Task<Page<LessonSummary>> ListAsync(Guid org, PageRequest page, string? status, CancellationToken ct, LessonDiscoveryFilter? filter = null)
     {
         var query = (await access.Visible(org, ct)).AsNoTracking();
+        if (filter is not null && (filter.SourceYear.HasValue || filter.SourceGrade.HasValue ||
+            new[] { filter.SourceSubject, filter.SourceTopic, filter.SourceTerm }.Any(x => !string.IsNullOrEmpty(x))))
+        {
+            if (filter.SourceYear is not (null or 2013 or 2023) || filter.SourceGrade is < 1 or > 12 ||
+                new[] { filter.SourceSubject, filter.SourceTopic, filter.SourceTerm }.Any(x => x?.Length > 200))
+                throw LessonRules.Invalid("Choose supported source curriculum filters.");
+            var sourceIds = SourceContextIds(filter);
+            // Source attribution is server-authored and retained on immutable revisions.
+            // Visibility is always applied outside the parameterised source-context query.
+            query = query.Where(x => sourceIds.Contains(x.Id));
+        }
         if (filter?.Mine == true) query = query.Where(x => x.OwnerUserId == access.User);
         if (filter?.NodeId is Guid node)
         {
@@ -54,7 +65,8 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
                 SubTopic = document.MinistryForm?.SubTopic, DurationMinutes = document.Setup.DurationMinutes,
                 ResourceCount = (document.TeachingSteps ?? []).SelectMany(s => s.Resources).Select(r => r.ContentItemId)
                     .Concat(document.References.Where(r => r.Kind == LessonSourceKind.Mwabu && r.ContentItemId.HasValue).Select(r => r.ContentItemId!.Value)).Distinct().Count(),
-                CanEdit = manage && x.OwnerUserId == access.User && x.Status == LessonStatus.Draft, CanReuse = manage && x.Status != LessonStatus.Archived };
+                CanEdit = manage && x.OwnerUserId == access.User && x.Status == LessonStatus.Draft, CanReuse = manage && x.Status != LessonStatus.Archived,
+                ImportedFrom = document.ImportedFrom };
         }).ToList(), rows.PageNumber, rows.PageSize, rows.HasMore);
     }
     // Search only official, shareable fields, never private preparation notes or uploaded evidence.
@@ -68,6 +80,29 @@ public sealed class LessonPlanner(MwabuDbContext db, LessonAccess access, Curric
             SELECT r."LessonPlanId" AS "Value" FROM "LessonRevisions" r JOIN "LessonPlans" p ON p."Id" = r."LessonPlanId" AND p."Revision" = r."Number"
             WHERE instr(lower(coalesce(json_extract(r."DocumentJson",'$.ministryForm.subTopic'),'') || ' ' || coalesce(json_extract(r."DocumentJson",'$.ministryForm.topic'),'') || ' ' || coalesce(json_extract(r."DocumentJson",'$.ministryForm.subject'),'') || ' ' || coalesce(json_extract(r."DocumentJson",'$.ministryForm.lessonGoal'),'') || ' ' || coalesce(json_extract(r."DocumentJson",'$.setup.objectives'),'')),lower({text})) > 0
             """);
+    private IQueryable<Guid> SourceContextIds(LessonDiscoveryFilter filter)
+    {
+        var year = filter.SourceYear?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        var grade = filter.SourceGrade?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "";
+        var subject = filter.SourceSubject ?? ""; var topic = filter.SourceTopic ?? ""; var term = filter.SourceTerm ?? "";
+        return db.Database.IsNpgsql() ? db.Database.SqlQuery<Guid>($"""
+            SELECT r."LessonPlanId" AS "Value" FROM "LessonRevisions" r JOIN "LessonPlans" p ON p."Id" = r."LessonPlanId" AND p."Revision" = r."Number"
+            WHERE r."DocumentJson"::jsonb -> 'importedFrom' ->> 'contentItemId' IS NOT NULL
+            AND ({year} = '' OR r."DocumentJson"::jsonb -> 'importedFrom' ->> 'curriculumYear' = {year})
+            AND ({grade} = '' OR r."DocumentJson"::jsonb -> 'importedFrom' ->> 'grade' = {grade})
+            AND ({subject} = '' OR r."DocumentJson"::jsonb -> 'importedFrom' ->> 'subject' = {subject})
+            AND ({topic} = '' OR r."DocumentJson"::jsonb -> 'importedFrom' ->> 'topic' = {topic})
+            AND ({term} = '' OR r."DocumentJson"::jsonb -> 'importedFrom' ->> 'term' = {term})
+            """) : db.Database.SqlQuery<Guid>($"""
+            SELECT r."LessonPlanId" AS "Value" FROM "LessonRevisions" r JOIN "LessonPlans" p ON p."Id" = r."LessonPlanId" AND p."Revision" = r."Number"
+            WHERE json_extract(r."DocumentJson",'$.importedFrom.contentItemId') IS NOT NULL
+            AND ({year} = '' OR CAST(json_extract(r."DocumentJson",'$.importedFrom.curriculumYear') AS TEXT) = {year})
+            AND ({grade} = '' OR CAST(json_extract(r."DocumentJson",'$.importedFrom.grade') AS TEXT) = {grade})
+            AND ({subject} = '' OR json_extract(r."DocumentJson",'$.importedFrom.subject') = {subject})
+            AND ({topic} = '' OR json_extract(r."DocumentJson",'$.importedFrom.topic') = {topic})
+            AND ({term} = '' OR json_extract(r."DocumentJson",'$.importedFrom.term') = {term})
+            """);
+    }
     public async Task<LessonDetail> GetAsync(Guid org, Guid id, int? revision, CancellationToken ct)
     {
         var plan = await access.Read(org, id, false, ct);

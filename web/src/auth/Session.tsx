@@ -13,6 +13,7 @@ import {
 import { api, ensureSession, sessionEvents } from "../api/client";
 import type { Access, MyMembership, Page, User } from "../api/types";
 import { can, type Scope } from "./permissions";
+import { clearTeachingBookmarks } from "../features/lessons/teachingBookmark";
 
 interface SessionState {
   user?: User;
@@ -99,11 +100,13 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [userId]);
   useEffect(() => {
     const reset = () => {
+      clearTeachingBookmarks();
       client.clear();
       setOrganisationId(undefined);
       void refetchUser();
     };
     const expired = () => {
+      clearTeachingBookmarks();
       void client.cancelQueries({
         predicate: (query) => query.queryKey[0] !== "me",
       });

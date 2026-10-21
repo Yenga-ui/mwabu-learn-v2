@@ -1,6 +1,13 @@
 import { Brand } from "../components/Brand";
 import { useState } from "react";
-import { Link, Navigate, NavLink, Outlet, useLocation } from "react-router-dom";
+import {
+  Link,
+  Navigate,
+  NavLink,
+  Outlet,
+  useLocation,
+  useNavigate,
+} from "react-router-dom";
 import {
   BookOpen,
   Building2,
@@ -39,6 +46,7 @@ export function RouteFailure() {
   );
 }
 export function Shell() {
+  const navigate = useNavigate();
   const session = useSession();
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -319,6 +327,7 @@ export function Shell() {
                 retryAuth: false,
               });
               sessionChanged();
+              navigate("/login", { replace: true });
             }}
           >
             <LogOut size={19} />

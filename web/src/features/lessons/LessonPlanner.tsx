@@ -40,9 +40,24 @@ export default function LessonPlanner() {
   const { id } = useParams();
   const [params, setParams] = useSearchParams();
   const [page, setPage] = useState(1);
-  const [text, setText] = useState(params.get("q") ?? "");
-  const [status, setStatus] = useState("");
+  const [text, setText] = useState(params.get("q") ?? params.get("text") ?? "");
+  const [status, setStatus] = useState(() => {
+    const requested = params.get("status") ?? "";
+    return ["Draft", "InReview", "Published", "Archived"].includes(requested)
+      ? requested
+      : "";
+  });
   const [settings, setSettings] = useState(false);
+  useEffect(() => {
+    setText(params.get("q") ?? params.get("text") ?? "");
+    const requested = params.get("status") ?? "";
+    setStatus(
+      ["Draft", "InReview", "Published", "Archived"].includes(requested)
+        ? requested
+        : "",
+    );
+    setPage(1);
+  }, [params]);
   const [curriculumFilter, setCurriculumFilter] = useState<
     | {
         nodeType: string;
@@ -165,6 +180,10 @@ export default function LessonPlanner() {
             value={status}
             onChange={(e) => {
               setStatus(e.target.value);
+              const next = new URLSearchParams(params);
+              if (e.target.value) next.set("status", e.target.value);
+              else next.delete("status");
+              setParams(next, { replace: true });
               setPage(1);
             }}
           >
@@ -358,7 +377,54 @@ function NewLesson({
   resource: string | null;
 }) {
   const navigate = useNavigate();
-  const [setup, setSetup] = useState<Setup>(blankSetup);
+  const [draftParams] = useSearchParams();
+  const [libraryContext] = useState(() => {
+    const field = (key: string) => {
+      const value = draftParams.get("library" + key) ?? "";
+      return value.length <= 200 &&
+        !Array.from(value).some(
+          (character) =>
+            character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+        )
+        ? value
+        : "";
+    };
+    const year = field("year");
+    const grade = field("grade");
+    const values = {
+      year: year === "2013" || year === "2023" ? year : "",
+      grade: /^(?:[1-9]|1[0-2])$/.test(grade) ? grade : "",
+      subject: field("subject"),
+      topic: field("topic"),
+      term: field("term"),
+    };
+    return Object.values(values).some(Boolean) ? values : null;
+  });
+  const contextLabel = libraryContext
+    ? [
+        libraryContext.year && `${libraryContext.year} Zambian curriculum`,
+        libraryContext.grade && `Grade ${libraryContext.grade}`,
+        libraryContext.subject,
+        libraryContext.topic,
+        libraryContext.term,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "";
+  const [setup, setSetup] = useState<Setup>(() =>
+    libraryContext
+      ? {
+          ...blankSetup(),
+          mode: "FreeForm",
+          title: libraryContext.topic,
+          subject: libraryContext.subject,
+          targetLearners: libraryContext.grade
+            ? `Grade ${libraryContext.grade}`
+            : "",
+          teachingContext: `Selected library context: ${contextLabel}. Select a managed learning outcome to establish official curriculum alignment.`,
+        }
+      : blankSetup(),
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
   const resourcePreview = useQuery({
@@ -386,7 +452,11 @@ function NewLesson({
         body: {
           expectedRevision: 0,
           setup,
-          sections: blankSections(),
+          sections: blankSections().map((section) =>
+            section.code === "topic" && libraryContext?.topic
+              ? { ...section, body: libraryContext.topic }
+              : section,
+          ),
           reason: "Teacher created draft",
           teachingSteps: resourcePreview.data?.assets.some((a) =>
             supportedTeachingMedia.includes(a.mimeType),
@@ -473,6 +543,16 @@ function NewLesson({
         data-unsaved-work={dirty && !persisted.current}
       >
         {!!error && <ErrorNotice error={error} />}
+        {libraryContext && (
+          <section className="card" aria-label="Selected library context">
+            <h2>Your selected teaching context</h2>
+            <p>{contextLabel}</p>
+            <p>
+              Your choices are retained. Choose a managed learning outcome if
+              you need official curriculum alignment.
+            </p>
+          </section>
+        )}
         {resource && (
           <section className="card" aria-label="Selected learning resource">
             {resourcePreview.isPending ? (

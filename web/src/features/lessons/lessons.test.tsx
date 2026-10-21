@@ -222,7 +222,13 @@ describe("safe autosave", () => {
       },
     };
     vi.mocked(api).mockResolvedValue(response);
-    const hook = renderHook(() => useLessonDraft(value, "org-1"));
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const hook = renderHook(() => useLessonDraft(value, "org-1"), { wrapper });
     act(() =>
       hook.result.current.update((document) => ({
         ...document,
@@ -237,6 +243,10 @@ describe("safe autosave", () => {
     });
     expect(hook.result.current.dirty).toBe(false);
     expect(hook.result.current.server.lesson.revision).toBe(2);
+    expect(
+      client.getQueryData<Detail>(["lesson", "org-1", value.lesson.id])?.lesson
+        .revision,
+    ).toBe(2);
   });
   it("preserves edits made while a save is in flight", async () => {
     const value = initial();
@@ -247,7 +257,13 @@ describe("safe autosave", () => {
           complete = resolve;
         }),
     );
-    const hook = renderHook(() => useLessonDraft(value, "org-1"));
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const hook = renderHook(() => useLessonDraft(value, "org-1"), { wrapper });
     act(() =>
       hook.result.current.update((document) => ({
         ...document,
@@ -278,11 +294,21 @@ describe("safe autosave", () => {
     expect(hook.result.current.document.setup.title).toBe("Newer unsaved edit");
     expect(hook.result.current.dirty).toBe(true);
     expect(hook.result.current.server.lesson.revision).toBe(2);
+    expect(
+      client.getQueryData<Detail>(["lesson", "org-1", value.lesson.id])?.lesson
+        .revision,
+    ).toBe(2);
   });
   it("pauses autosave on conflict and keeps the teacher's local work", async () => {
     const value = initial();
     vi.mocked(api).mockRejectedValue(new ApiError(409, "Changed concurrently"));
-    const hook = renderHook(() => useLessonDraft(value, "org-1"));
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const hook = renderHook(() => useLessonDraft(value, "org-1"), { wrapper });
     act(() =>
       hook.result.current.update((document) => ({
         ...document,

@@ -173,6 +173,7 @@ export default function LessonEditor({
   }
   async function changedServer(value: Detail) {
     draft.adopt(value);
+    client.setQueryData(["lesson", organisation, value.lesson.id], value);
     await client.invalidateQueries({ queryKey: ["lessons", organisation] });
     await client.invalidateQueries({ queryKey: ["lesson-revisions", path] });
   }

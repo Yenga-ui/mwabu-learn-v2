@@ -31,4 +31,12 @@ describe("permission boundaries", () => {
     expect(safeReturn("/app/resources?gradeId=123")).toBe(
       "/app/resources?gradeId=123",
     ));
+  it.each([
+    "/app/account",
+    "/app/account/?tab=password",
+    "/app/lessons/../account",
+  ])(
+    "opens the workspace after signing in from account settings: %s",
+    (value) => expect(safeReturn(value)).toBe("/app"),
+  );
 });

@@ -1,9 +1,79 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { ClassroomCanvas } from "./ClassroomTeaching";
 import { blankSetup, type Detail, type TeachingStep } from "./types";
 describe("projection-safe classroom teaching", () => {
+  it("resumes only a matching revision and step with hidden answers, and clears on finish", () => {
+    const detail = {
+      lessonId: "lesson",
+      revision: 7,
+      title: "Fractions",
+      language: "en",
+      steps: [
+        {
+          id: "one",
+          title: "Introduction",
+          phase: "Introduction",
+          minutes: 5,
+          learnerExplanation: "Start here",
+          hint: "hint",
+          answer: "answer",
+          resources: [],
+        },
+        {
+          id: "two",
+          title: "Conclusion",
+          phase: "Recap",
+          minutes: 5,
+          learnerExplanation: "",
+          hint: "hint",
+          answer: "answer",
+          resources: [],
+        },
+      ],
+    };
+    const finish = vi.fn();
+    const position = vi.fn();
+    const view = render(
+      <MemoryRouter>
+        <ClassroomCanvas
+          detail={detail}
+          bookmark={{
+            lessonId: "lesson",
+            revision: 7,
+            stepId: "two",
+            assetId: "not-authorised",
+            updatedAt: Date.now(),
+          }}
+          onPosition={position}
+          onFinish={finish}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("heading", { name: "Conclusion" })).toBeVisible();
+    expect(screen.getByText(/What did you learn today/)).toBeVisible();
+    expect(screen.queryByText("Answer: answer")).toBeNull();
+    expect(position).toHaveBeenCalledWith("two", "");
+    fireEvent.click(screen.getByRole("link", { name: "Finish lesson" }));
+    expect(finish).toHaveBeenCalledOnce();
+    view.unmount();
+    render(
+      <MemoryRouter>
+        <ClassroomCanvas
+          detail={detail}
+          bookmark={{
+            lessonId: "lesson",
+            revision: 6,
+            stepId: "two",
+            assetId: "",
+            updatedAt: Date.now(),
+          }}
+        />
+      </MemoryRouter>,
+    );
+    expect(screen.getByRole("heading", { name: "Introduction" })).toBeVisible();
+  });
   it("pins revision, hides all private guidance, reveals only on demand and resets on navigation", () => {
     const step: TeachingStep = {
       id: "one",

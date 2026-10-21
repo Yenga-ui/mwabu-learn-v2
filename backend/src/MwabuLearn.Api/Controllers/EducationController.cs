@@ -11,7 +11,7 @@ namespace MwabuLearn.Api.Controllers;
 public sealed class ProjectsController(IProjectService service) : ControllerBase
 {
     [HttpGet, RequirePermission(PermissionCodes.ProjectsRead), EnableRateLimiting("search")]
-    public async Task<IActionResult> List(Guid organisationId, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.ListAsync(organisationId, page, ct));
+    public async Task<IActionResult> List(Guid organisationId, [FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.ListAsync(organisationId, page, ct));
     [HttpGet("{id:guid}"), RequirePermission(PermissionCodes.ProjectsRead)]
     public async Task<IActionResult> Get(Guid organisationId, Guid id, CancellationToken ct) => Ok(await service.GetAsync(organisationId, id, ct));
     [HttpPost, RequirePermission(PermissionCodes.ProjectsManage)]
@@ -31,7 +31,7 @@ public sealed class ProjectsController(IProjectService service) : ControllerBase
 public sealed class SchoolWorkspaceController(ISchoolService service) : ControllerBase
 {
     [HttpGet("members"), RequirePermission(PermissionCodes.UsersRead), EnableRateLimiting("search")]
-    public async Task<IActionResult> Members(Guid organisationId, [FromQuery] PageRequest page, [FromQuery] string? role, CancellationToken ct) => Ok(await service.MembersAsync(organisationId, page, role, ct));
+    public async Task<IActionResult> Members(Guid organisationId, [FromQuery(Name = "")] PageRequest page, [FromQuery] string? role, CancellationToken ct) => Ok(await service.MembersAsync(organisationId, page, role, ct));
     [HttpGet("curricula")]
     public async Task<IActionResult> Curricula(Guid organisationId, CancellationToken ct) => Ok(await service.CurriculaAsync(organisationId, ct));
     [HttpPost("curricula"), RequirePermission(PermissionCodes.OrganisationsManage)]
@@ -41,7 +41,7 @@ public sealed class SchoolWorkspaceController(ISchoolService service) : Controll
     public async Task<IActionResult> CurriculumActive(Guid organisationId, Guid id, ActiveRequest request, CancellationToken ct)
     { await service.SetCurriculumActiveAsync(organisationId, id, request.IsActive, ct); return NoContent(); }
     [HttpGet("guardian-links"), RequirePermission(PermissionCodes.MembershipsManage)]
-    public async Task<IActionResult> Links(Guid organisationId, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.LinksAsync(organisationId, page, ct));
+    public async Task<IActionResult> Links(Guid organisationId, [FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.LinksAsync(organisationId, page, ct));
     [HttpPost("guardian-links"), RequirePermission(PermissionCodes.MembershipsManage)]
     public async Task<IActionResult> Link(Guid organisationId, GuardianLinkRequest request, CancellationToken ct)
     { var result = await service.LinkAsync(organisationId, request, ct); return CreatedAtAction(nameof(Links), new { organisationId }, result); }
@@ -59,7 +59,7 @@ public sealed class SchoolWorkspaceController(ISchoolService service) : Controll
 public sealed class GuardianWorkspaceController(ISchoolService service) : ControllerBase
 {
     [HttpGet, EnableRateLimiting("search")]
-    public async Task<IActionResult> List([FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.MyLearnersAsync(page, ct));
+    public async Task<IActionResult> List([FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.MyLearnersAsync(page, ct));
     [HttpGet("{linkId:guid}/curricula")]
     public async Task<IActionResult> Curricula(Guid linkId, CancellationToken ct) => Ok(await service.LearnerCurriculaAsync(linkId, ct));
 }
@@ -72,5 +72,5 @@ public sealed class ReportsController(IReportingService service) : ControllerBas
     [HttpGet("organisations/{organisationId:guid}"), RequirePermission(PermissionCodes.ReportsRead)]
     public async Task<IActionResult> Organisation(Guid organisationId, CancellationToken ct) => Ok(await service.GetAsync(organisationId, ct));
     [HttpGet("organisations/{organisationId:guid}/checkpoints"), RequirePermission(PermissionCodes.ReportsRead)]
-    public async Task<IActionResult> Checkpoints(Guid organisationId, [FromQuery] PageRequest page, CancellationToken ct) => Ok(await service.CheckpointsAsync(organisationId, page, ct));
+    public async Task<IActionResult> Checkpoints(Guid organisationId, [FromQuery(Name = "")] PageRequest page, CancellationToken ct) => Ok(await service.CheckpointsAsync(organisationId, page, ct));
 }

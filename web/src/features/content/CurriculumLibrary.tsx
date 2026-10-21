@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { api } from "../../api/client";
 import type { Content, Page } from "../../api/types";
 import type { Lesson } from "../lessons/types";
@@ -69,6 +70,17 @@ export default function CurriculumLibrary() {
     (x) => !subject || x.subject === subject,
   );
   const returnPath = "/app/library" + (params.size ? "?" + params : "");
+  const draftContext = new URLSearchParams();
+  const schoolContext = new URLSearchParams();
+  for (const key of ["year", "grade", "subject", "topic", "term"]) {
+    const value = params.get(key);
+    if (value) {
+      draftContext.set("library" + key, value);
+      schoolContext.set("source" + key[0].toUpperCase() + key.slice(1), value);
+    }
+  }
+  const createPath =
+    "/app/lessons/new" + (draftContext.size ? "?" + draftContext : "");
   return (
     <>
       <PageTitle
@@ -213,7 +225,7 @@ export default function CurriculumLibrary() {
                   of this library.
                 </p>
                 {session.can("lessons.manage") && (
-                  <Link to="/app/lessons/new">
+                  <Link to={createPath}>
                     Create a lesson from the selected context
                   </Link>
                 )}
@@ -291,9 +303,14 @@ export default function CurriculumLibrary() {
       </QueryState>
       {session.can("lessons.read") && session.organisationId && (
         <SchoolPlans
+          key={JSON.stringify([
+            session.organisationId,
+            schoolContext.toString(),
+            params.get("text") ?? "",
+          ])}
           organisation={session.organisationId}
           text={params.get("text") ?? ""}
-          filtered={!!(year || grade || subject || topic || params.get("term"))}
+          contextQuery={schoolContext.toString()}
         />
       )}
     </>
@@ -303,20 +320,21 @@ export default function CurriculumLibrary() {
 function SchoolPlans({
   organisation,
   text,
-  filtered,
+  contextQuery,
 }: {
   organisation: string;
   text: string;
-  filtered: boolean;
+  contextQuery: string;
 }) {
+  const [page, setPage] = useState(1);
   const query = useQuery({
-    queryKey: ["school-library-plans", organisation, text],
+    queryKey: ["school-library-plans", organisation, text, contextQuery, page],
+    staleTime: 0,
     queryFn: ({ signal }) =>
       api<Page<Lesson>>(
-        `/api/organisations/${organisation}/lessons?status=Published&pageSize=12&text=${encodeURIComponent(text)}`,
+        `/api/organisations/${organisation}/lessons?status=Published&pageSize=12&page=${page}&text=${encodeURIComponent(text)}${contextQuery ? "&" + contextQuery : ""}`,
         { signal },
       ),
-    enabled: !filtered,
   });
   return (
     <section className="card" aria-label="Authorised school lesson plans">
@@ -325,59 +343,82 @@ function SchoolPlans({
         These plans belong to your organisation and keep their own curriculum
         attribution. Your private drafts stay in My lesson plans.
       </p>
-      {filtered ? (
+      {!!contextQuery && (
         <p>
           <Link
             to={`/app/lessons?status=Published&text=${encodeURIComponent(text)}`}
           >
-            Find authorised school plans using their managed curriculum filters
+            Find other school plans using their managed curriculum filters
           </Link>
         </p>
-      ) : (
-        <QueryState query={query}>
-          {(result) => (
-            <>
-              {result.items?.length === 0 && (
-                <p>No approved school plans match this search yet.</p>
-              )}
-              <div className="resource-grid">
-                {result.items?.map((lesson) => (
-                  <article className="resource-card" key={lesson.id}>
-                    <div>
-                      <h3>
-                        <Link to={`/app/lessons/${lesson.id}`}>
-                          {lesson.title}
-                        </Link>
-                      </h3>
-                      <p>
-                        {[lesson.grade, lesson.subject, lesson.topic]
-                          .filter(Boolean)
-                          .join(" · ")}
-                      </p>
-                      <p>
-                        {lesson.resourceCount ?? 0} learning resources attached
-                      </p>
-                      <Link
-                        className="button secondary"
-                        to={`/app/lessons/${lesson.id}`}
-                      >
-                        View lesson
-                      </Link>
-                    </div>
-                  </article>
-                ))}
-              </div>
-              {result.hasMore && (
-                <Link
-                  to={`/app/lessons?status=Published&text=${encodeURIComponent(text)}`}
-                >
-                  More authorised school plans
-                </Link>
-              )}
-            </>
-          )}
-        </QueryState>
       )}
+      <QueryState query={query}>
+        {(result) => (
+          <>
+            {result.items?.length === 0 && (
+              <p>No approved school plans match this search yet.</p>
+            )}
+            <div className="resource-grid">
+              {result.items?.map((lesson) => (
+                <article className="resource-card" key={lesson.id}>
+                  <div>
+                    <h3>
+                      <Link to={`/app/lessons/${lesson.id}`}>
+                        {lesson.title}
+                      </Link>
+                    </h3>
+                    {lesson.importedFrom && (
+                      <p>
+                        Mwabu {lesson.importedFrom.curriculumYear} source ·
+                        Grade {lesson.importedFrom.grade} ·{" "}
+                        {lesson.importedFrom.subject} ·{" "}
+                        {lesson.importedFrom.topic}
+                        {lesson.importedFrom.term
+                          ? " · " + lesson.importedFrom.term
+                          : ""}
+                      </p>
+                    )}
+                    <p>
+                      Teaching target:{" "}
+                      {[lesson.grade, lesson.subject, lesson.topic]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                    <p>
+                      {lesson.resourceCount ?? 0} learning resources attached
+                    </p>
+                    <Link
+                      className="button secondary"
+                      to={`/app/lessons/${lesson.id}`}
+                    >
+                      View lesson
+                    </Link>
+                  </div>
+                </article>
+              ))}
+            </div>
+            {(page > 1 || result.hasMore) && (
+              <nav className="pagination" aria-label="School lesson pages">
+                <button
+                  className="button secondary"
+                  disabled={page <= 1}
+                  onClick={() => setPage(page - 1)}
+                >
+                  Previous school plans
+                </button>
+                <span>Page {page}</span>
+                <button
+                  className="button secondary"
+                  disabled={!result.hasMore}
+                  onClick={() => setPage(page + 1)}
+                >
+                  More school plans
+                </button>
+              </nav>
+            )}
+          </>
+        )}
+      </QueryState>
     </section>
   );
 }

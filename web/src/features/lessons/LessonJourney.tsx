@@ -101,6 +101,9 @@ function Preparation({ initial, org }: { initial: Detail; org: string }) {
       );
       setDetail(saved);
       setSteps(saved.document.teachingSteps ?? []);
+      client.setQueryData(["lesson", org, saved.lesson.id], saved);
+      void client.invalidateQueries({ queryKey: ["lessons", org] });
+      void client.invalidateQueries({ queryKey: ["teacher-home-drafts", org] });
       navigate(
         `/app/lessons/${saved.lesson.id}/journey?revision=${saved.viewedRevision}`,
         { replace: true },

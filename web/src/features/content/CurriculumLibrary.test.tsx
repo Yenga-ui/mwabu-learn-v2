@@ -144,7 +144,56 @@ it("homepage search includes approved organisation plans through the scoped API 
       .mock.calls.some(
         ([path]) =>
           path ===
-          "/api/organisations/school/lessons?status=Published&pageSize=12&text=fractions",
+          "/api/organisations/school/lessons?status=Published&pageSize=12&page=1&text=fractions",
       ),
   ).toBe(true);
+});
+
+it("keeps source-context filters on approved adaptation search and pagination", async () => {
+  vi.mocked(api).mockImplementation(async (path) =>
+    path.startsWith("/api/organisations/")
+      ? {
+          items: [
+            {
+              id: "adapted",
+              title: "School adaptation",
+              grade: "Grade 7",
+              importedFrom: {
+                curriculumYear: 2023,
+                grade: 4,
+                subject: "Mathematics",
+                topic: "Fractions",
+                term: null,
+              },
+              subject: "Mathematics",
+            },
+          ],
+          hasMore: true,
+        }
+      : {
+          choices,
+          resources: { items: [], totalCount: 0, page: 1, pageSize: 24 },
+        },
+  );
+  show("/app/library?year=2023&grade=4&subject=Mathematics&topic=Fractions");
+  expect(
+    await screen.findByRole("link", { name: "School adaptation" }),
+  ).toBeVisible();
+  expect(screen.getByText(/Mwabu 2023 source/)).toHaveTextContent("Grade 4");
+  expect(screen.getByText(/^Teaching target:/)).toHaveTextContent("Grade 7");
+  fireEvent.click(screen.getByRole("button", { name: "More school plans" }));
+  await waitFor(() =>
+    expect(
+      vi
+        .mocked(api)
+        .mock.calls.some(
+          ([path]) =>
+            path.startsWith("/api/organisations/") &&
+            path.includes("page=2&") &&
+            path.includes(
+              "sourceYear=2023&sourceGrade=4&sourceSubject=Mathematics&sourceTopic=Fractions",
+            ),
+        ),
+    ).toBe(true),
+  );
 });

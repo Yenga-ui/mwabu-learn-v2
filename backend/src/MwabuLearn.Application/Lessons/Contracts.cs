@@ -42,8 +42,10 @@ public sealed record SaveLessonRequest(int ExpectedRevision, LessonSetup Setup, 
 public sealed record LessonSummary(Guid Id, Guid OrganisationId, Guid OwnerUserId, string Title, PlanningMode Mode,
     LessonStatus Status, int Revision, bool IsOrganisationTemplate, DateTime CreatedAt, DateTime? UpdatedAt,
     string? Grade = null, string? Subject = null, string? Topic = null, string? SubTopic = null, int? DurationMinutes = null,
-    int ResourceCount = 0, bool CanEdit = false, bool CanReuse = false);
-public sealed record LessonDiscoveryFilter(string? NodeType = null, Guid? NodeId = null, bool Mine = false);
+    int ResourceCount = 0, bool CanEdit = false, bool CanReuse = false,
+    MwabuLearn.Application.Content.SourcePlanContext? ImportedFrom = null);
+public sealed record LessonDiscoveryFilter(string? NodeType = null, Guid? NodeId = null, bool Mine = false,
+    int? SourceYear = null, int? SourceGrade = null, string? SourceSubject = null, string? SourceTopic = null, string? SourceTerm = null);
 public sealed record LessonDetail(LessonSummary Lesson, LessonDocument Document, bool CanEdit, bool CanReview, int ViewedRevision, string AuthorName = "");
 public sealed record CachedLesson(Guid Id, int Revision);
 public sealed record LessonReconcileRequest(CachedLesson[] Lessons);

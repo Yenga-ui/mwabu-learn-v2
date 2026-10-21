@@ -25,6 +25,8 @@ export function safeReturn(value: string | null): string {
   )
     return "/app";
   const url = new URL(value, "https://mwabu.invalid");
+  // Account is an explicit settings destination, never the post-login workspace.
+  if (url.pathname.replace(/\/+$/, "") === "/app/account") return "/app";
   return url.origin === "https://mwabu.invalid" &&
     (url.pathname === "/app" || url.pathname.startsWith("/app/"))
     ? url.pathname + url.search

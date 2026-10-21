@@ -71,6 +71,15 @@ public sealed class ContentImportTests
         Assert.Equal(HttpStatusCode.NotFound, (await other.Client.GetAsync($"/api/organisations/{other.Memberships[0].OrganisationId}/lessons/{copy.Lesson.Id}")).StatusCode);
         var saved = await teacher.Client.PutAsJsonAsync($"/api/organisations/{org}/lessons/{copy.Lesson.Id}", new SaveLessonRequest(copy.Lesson.Revision, copy.Document.Setup, copy.Document.Sections, MinistryForm: copy.Document.MinistryForm), CatalogueApiFactory.Json);
         saved.EnsureSuccessStatusCode(); Assert.Equal(source.Context, (await saved.Content.ReadFromJsonAsync<LessonDetail>(CatalogueApiFactory.Json))!.Document.ImportedFrom);
+        var listPath = $"/api/organisations/{org}/lessons";
+        var matching = (await teacher.Client.GetFromJsonAsync<MwabuLearn.Application.Directories.Page<LessonSummary>>(listPath + "?sourceYear=2023&sourceGrade=4&sourceSubject=Mathematics&sourceTopic=Fractions", CatalogueApiFactory.Json))!;
+        Assert.Equal(copy.Lesson.Id, Assert.Single(matching.Items).Id);
+        Assert.Equal(source.Context, Assert.Single(matching.Items).ImportedFrom);
+        foreach (var mismatch in new[] { "sourceYear=2013", "sourceGrade=3", "sourceTerm=Term%201", "sourceSubject=Mathematics%27%20OR%201%3D1--", "status=Published&sourceYear=2023" })
+            Assert.Empty((await teacher.Client.GetFromJsonAsync<MwabuLearn.Application.Directories.Page<LessonSummary>>(listPath + "?" + mismatch, CatalogueApiFactory.Json))!.Items);
+        Assert.Empty((await other.Client.GetFromJsonAsync<MwabuLearn.Application.Directories.Page<LessonSummary>>($"/api/organisations/{other.Memberships[0].OrganisationId}/lessons?sourceYear=2023", CatalogueApiFactory.Json))!.Items);
+        Assert.Equal(HttpStatusCode.BadRequest, (await teacher.Client.GetAsync(listPath + "?sourceYear=2024")).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await teacher.Client.GetAsync(listPath + "?sourceGrade=0")).StatusCode);
         var library = (await teacher.Client.GetFromJsonAsync<CurriculumLibraryResult>("/api/learning/library?year=2023&grade=4&topic=Fractions", CatalogueApiFactory.Json))!;
         Assert.Equal(resourceId, Assert.Single(library.Resources.Items).Content.Id);
         var old = (await teacher.Client.GetFromJsonAsync<CurriculumLibraryResult>("/api/learning/library?year=2013&grade=4", CatalogueApiFactory.Json))!; Assert.Empty(old.Resources.Items);

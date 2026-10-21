@@ -8,6 +8,7 @@ import { useSession } from "../../auth/Session";
 import { PageTitle, QueryState } from "../../components/ui";
 import { lessonBase, type Lesson } from "../lessons/types";
 import RecentLessons from "../lessons/RecentLessons";
+import ContinueTeaching from "../lessons/ContinueTeaching";
 
 export default function TeacherHome() {
   const session = useSession();
@@ -81,9 +82,10 @@ export default function TeacherHome() {
           <span>Open your saved Lesson Journey.</span>
         </Link>
       </nav>
+      <ContinueTeaching />
       <section className="card">
         <div className="section-heading">
-          <h2>Continue where you left off</h2>
+          <h2>Your recent drafts</h2>
           <Link to="/app/lessons?mine=true">My lesson plans</Link>
         </div>
         <QueryState query={drafts}>

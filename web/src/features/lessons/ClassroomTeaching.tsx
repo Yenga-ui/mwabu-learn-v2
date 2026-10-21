@@ -7,6 +7,12 @@ import { Empty, QueryState } from "../../components/ui";
 import { lessonBase, type Detail } from "./types";
 import { journeySteps, publicStep } from "./journey";
 import { PinnedResource } from "./LessonJourney";
+import {
+  readTeachingBookmark,
+  saveTeachingBookmark,
+  forgetTeachingBookmark,
+  type TeachingBookmark,
+} from "./teachingBookmark";
 export interface ClassroomLesson {
   lessonId: string;
   revision: number;
@@ -40,15 +46,42 @@ export default function ClassroomTeaching() {
   return (
     <QueryState query={query}>
       {(detail) => (
-        <ClassroomCanvas key={`${org}:${id}:${revision}`} detail={detail} />
+        <ClassroomCanvas
+          key={`${org}:${session.user?.id}:${id}:${revision}`}
+          detail={detail}
+          bookmark={
+            session.user && params.get("resume") === "true"
+              ? readTeachingBookmark(org!, session.user.id)
+              : undefined
+          }
+          onPosition={(stepId, assetId) => {
+            if (session.user)
+              saveTeachingBookmark(org!, session.user.id, {
+                lessonId: detail.lessonId,
+                revision: detail.revision,
+                stepId,
+                assetId,
+                updatedAt: Date.now(),
+              });
+          }}
+          onFinish={() => {
+            if (session.user) forgetTeachingBookmark(org!, session.user.id);
+          }}
+        />
       )}
     </QueryState>
   );
 }
 export function ClassroomCanvas({
   detail,
+  bookmark,
+  onPosition,
+  onFinish,
 }: {
   detail: Detail | ClassroomLesson;
+  bookmark?: TeachingBookmark;
+  onPosition?: (stepId: string, assetId: string) => void;
+  onFinish?: () => void;
 }) {
   const model: ClassroomLesson =
     "document" in detail
@@ -61,16 +94,35 @@ export function ClassroomCanvas({
         }
       : detail;
   const steps = model.steps;
-  const [index, setIndex] = useState(0);
+  const resume =
+    bookmark?.lessonId === model.lessonId &&
+    bookmark.revision === model.revision
+      ? bookmark
+      : undefined;
+  const [index, setIndex] = useState(() =>
+    Math.max(
+      0,
+      steps.findIndex((step) => step.id === resume?.stepId),
+    ),
+  );
   const [hint, setHint] = useState(false);
   const [answer, setAnswer] = useState(false);
   const [overview, setOverview] = useState(false);
-  const [asset, setAsset] = useState("");
+  const [asset, setAsset] = useState(() =>
+    steps
+      .find((step) => step.id === resume?.stepId)
+      ?.resources.some((resource) => resource.assetId === resume?.assetId)
+      ? resume!.assetId
+      : "",
+  );
   const [notice, setNotice] = useState("");
   const [full, setFull] = useState(false);
   const root = useRef<HTMLElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const step = steps[index];
+  useEffect(() => {
+    if (step) onPosition?.(step.id, asset);
+  }, [step, asset, onPosition]);
   useEffect(() => {
     heading.current?.focus();
   }, [index]);
@@ -127,7 +179,11 @@ export function ClassroomCanvas({
           <p className="preserve-lines">{step.learnerExplanation}</p>
         )}
         {!step.learnerExplanation && !reference && (
-          <p>Listen, discuss and explore together.</p>
+          <p>
+            {step.phase === "Recap" || step.title.toLowerCase() === "conclusion"
+              ? "What did you learn today? Explain one idea in your own words and share an example."
+              : "Listen, discuss and explore together."}
+          </p>
         )}
         {hint && (
           <p className="classroom-reveal" role="status">
@@ -224,11 +280,17 @@ export function ClassroomCanvas({
         >
           Exit to preparation
         </Link>
-        <Link className="button secondary" to="/app/lessons">
+        <Link className="button secondary" to="/app/lessons" onClick={onFinish}>
           Finish lesson
         </Link>
       </nav>
       {notice && <p role="status">{notice}</p>}
+      {resume && (
+        <p role="status">
+          Resumed your saved teaching step. Answers are hidden. Interactive
+          courses reopen from the beginning.
+        </p>
+      )}
       {overview && (
         <nav aria-label="Jump to teaching step" className="classroom-overview">
           {steps.map((s, i) => (
