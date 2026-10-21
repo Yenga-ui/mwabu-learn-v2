@@ -172,6 +172,7 @@ export default function LessonEditor({
     }
   }
   async function changedServer(value: Detail) {
+    if (!mounted.current) return;
     draft.adopt(value);
     client.setQueryData(["lesson", organisation, value.lesson.id], value);
     await client.invalidateQueries({ queryKey: ["lessons", organisation] });

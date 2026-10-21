@@ -83,12 +83,17 @@ export function useLessonDraft(initial: Detail, organisation: string) {
       try {
         const result = await pending;
         saved.current = result;
-        client.setQueryData(["lesson", organisation, result.lesson.id], result);
-        void client.invalidateQueries({ queryKey: ["lessons", organisation] });
-        void client.invalidateQueries({
-          queryKey: ["teacher-home-drafts", organisation],
-        });
         if (mounted.current) {
+          client.setQueryData(
+            ["lesson", organisation, result.lesson.id],
+            result,
+          );
+          void client.invalidateQueries({
+            queryKey: ["lessons", organisation],
+          });
+          void client.invalidateQueries({
+            queryKey: ["teacher-home-drafts", organisation],
+          });
           setServer(result);
           if (JSON.stringify(current.current) === fingerprint) {
             current.current = result.document;

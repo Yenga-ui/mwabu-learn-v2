@@ -27,7 +27,7 @@ Remaining limits: exact SCORM slide resume and offline SCORM are unsupported; no
 Verification for this fix stage:
 
 - Backend: 362 passed, 0 failed, 0 skipped, including PostgreSQL and migration regressions.
-- Frontend: 86 passed in 21 files; all new resume isolation/revocation, expiry, hidden-answer and account-return cases pass. Autosave tests now use the real query-client context and assert the cache receives authoritative saved revisions.
+- Frontend: 87 passed in 21 files; all new resume isolation/revocation, expiry, hidden-answer and account-return cases pass. Autosave tests now use the real query-client context and assert the cache receives authoritative saved revisions.
 - Full browser suite: 56 passed in 5.4 minutes, including real supplied source/SCORM fixtures, role access, mobile/offline activities, approval, logout/login, account landing and connected teacher adaptation/PDF/teaching/resume.
 - Final small search/status persistence change: separately rebuilt with strict lint and covered by the focused connected teacher regression run (result recorded below when complete).
 - API/BrowserHost Release build: zero warnings/errors. Production TypeScript/Vite build and strict ESLint passed.
@@ -36,3 +36,6 @@ Verification for this fix stage:
 - Remaining nonblocking runtime warning: Node reports NO_COLOR ignored because FORCE_COLOR is set. No warnings were suppressed.
 
 Final targeted result: **5 passed in 1.3 minutes**, including retained search/status filters and the same connected teacher journey. Implementation commit: `76601da2ddfaba00afe0954e5a205e8774de0b52`. The full 56-test run preceded this final small filter persistence adjustment; the final five-test run used the rebuilt final frontend. Hosted verification will test the pushed head independently. No local failures remain in the completed runs.
+
+
+Late-save hardening: autosave, editor adoption and preparation ignore UI/cache updates after unmount. A deferred-save regression closes the hook, clears the query cache to represent sign-out, resolves the save response, and verifies no private cache entry is recreated. Final build/lint pass, all 87 frontend tests pass, and the five connected teacher browser tests pass again (2.1 minutes). Hosted run https://github.com/Yenga-ui/mwabu-learn-v2/actions/runs/39637533174 passed for the preceding ab44a9c head, including Linux image/smoke validation; the hardening commit triggers independent hosted validation.

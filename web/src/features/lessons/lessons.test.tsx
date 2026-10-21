@@ -211,6 +211,43 @@ describe("lesson structure and setup", () => {
   });
 });
 describe("safe autosave", () => {
+  it("does not repopulate private cached data when a save completes after closing or signing out", async () => {
+    const value = initial();
+    let complete!: (result: Detail) => void;
+    vi.mocked(api).mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          complete = resolve;
+        }),
+    );
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const hook = renderHook(() => useLessonDraft(value, "org-1"), { wrapper });
+    act(() =>
+      hook.result.current.update((document) => ({
+        ...document,
+        setup: { ...document.setup, title: "Private teacher edit" },
+      })),
+    );
+    let pending!: Promise<Detail>;
+    act(() => {
+      pending = hook.result.current.save();
+    });
+    hook.unmount();
+    client.clear();
+    await act(async () => {
+      complete({ ...value, lesson: { ...value.lesson, revision: 2 } });
+      await pending;
+    });
+    expect(
+      client.getQueryData(["lesson", "org-1", value.lesson.id]),
+    ).toBeUndefined();
+    expect(client.getQueryCache().getAll()).toHaveLength(0);
+  });
   it("saves with the last server revision and adopts the authoritative saved document", async () => {
     const value = initial();
     const response = {

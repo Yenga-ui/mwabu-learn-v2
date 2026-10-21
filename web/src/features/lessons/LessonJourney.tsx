@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Link,
   useParams,
@@ -58,6 +58,13 @@ export default function LessonJourney() {
   );
 }
 function Preparation({ initial, org }: { initial: Detail; org: string }) {
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   const navigate = useNavigate();
   const [detail, setDetail] = useState(initial);
   const [steps, setSteps] = useState(() => journeySteps(initial));
@@ -99,6 +106,7 @@ function Preparation({ initial, org }: { initial: Detail; org: string }) {
           },
         },
       );
+      if (!mounted.current) return;
       setDetail(saved);
       setSteps(saved.document.teachingSteps ?? []);
       client.setQueryData(["lesson", org, saved.lesson.id], saved);
@@ -112,9 +120,9 @@ function Preparation({ initial, org }: { initial: Detail; org: string }) {
         queryKey: ["lesson", org, detail.lesson.id],
       });
     } catch (e) {
-      setError(e);
+      if (mounted.current) setError(e);
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
   const move = (from: number, to: number) => {
