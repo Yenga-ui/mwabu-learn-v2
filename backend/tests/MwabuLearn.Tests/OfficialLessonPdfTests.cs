@@ -38,6 +38,22 @@ public sealed class OfficialLessonPdfTests
         Assert.True(pdf.PageCount > 2); Assert.True(pdf.PageCount < 20);
         Export("official-lesson-overflow.pdf", bytes);
     }
+    [Fact]
+    public void Many_overflow_fields_share_readable_continuation_pages_instead_of_one_page_per_field()
+    {
+        var sample = Sample();
+        var form = sample.Document.MinistryForm! with {
+            References = "Original source 📱 🖼️ with its unchanged checksum.",
+            Progression = MinistryFormRules.Stages.Select((code, i) => new LessonProgressionStage(code,
+                string.Join(" ", Enumerable.Repeat("Explain equal parts.", 4)) + $" TEACHER-END-{i}",
+                string.Join(" ", Enumerable.Repeat("Compare paper halves.", 4)) + $" LEARNER-END-{i}",
+                string.Join(" ", Enumerable.Repeat("Equal areas explained.", 4)) + $" ASSESSMENT-END-{i}", 0)).ToArray()
+        };
+        var bytes = new LessonPdf(Options.Create(new LessonPdfOptions())).Create(sample with { Document = sample.Document with { MinistryForm = form } }, "Presentation School", "Chipo Teacher");
+        using var pdf = PdfReader.Open(new MemoryStream(bytes), PdfDocumentOpenMode.Import);
+        Assert.InRange(pdf.PageCount, 3, 5);
+        Export("official-lesson-compact-continuation.pdf", bytes);
+    }
     private static void Export(string name, byte[] bytes)
     {
         if (Environment.GetEnvironmentVariable("MWABU_OFFICIAL_PDF_REVIEW_DIRECTORY") is not { Length: > 0 } directory) return;

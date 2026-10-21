@@ -72,20 +72,37 @@ public sealed class LessonPdf : ILessonPdf
                 if(form.LearningEnvironments.Contains("technological"))Tick(g,273.5,658.5);
             }
         }
-        foreach(var field in overflow)
+        XGraphics? continuation=null;double cursor=86;
+        var heading=new XFont("Mwabu",10,XFontStyleEx.Bold);
+        void NextContinuation()
         {
-            var remaining=Array.Empty<string>();var start=0;
-            do
-            {
-                var page=document.AddPage();page.Width=XUnit.FromPoint(595.25);page.Height=XUnit.FromPoint(842);
-                using var g=XGraphics.FromPdfPage(page);
-                if(start==0)remaining=Wrap(g,font,field.Text,451);
-                g.DrawString("Lesson plan — continuation",new XFont("Mwabu",14,XFontStyleEx.Bold),XBrushes.Black,new XPoint(72,60));
-                g.DrawString(field.Label,new XFont("Mwabu",10,XFontStyleEx.Bold),XBrushes.Black,new XPoint(72,86));
-                Draw(g,font,remaining.Skip(start).Take(60).ToArray(),72,102);start+=60;
-                g.DrawString(document.PageCount.ToString(CultureInfo.InvariantCulture),font,XBrushes.Black,new XPoint(295,790));
-            }while(start<remaining.Length);
+            continuation?.Dispose();
+            var page=document.AddPage();page.Width=XUnit.FromPoint(595.25);page.Height=XUnit.FromPoint(842);
+            continuation=XGraphics.FromPdfPage(page);cursor=86;
+            continuation.DrawString("Lesson plan — continuation",new XFont("Mwabu",14,XFontStyleEx.Bold),XBrushes.Black,new XPoint(72,60));
+            continuation.DrawString(document.PageCount.ToString(CultureInfo.InvariantCulture),font,XBrushes.Black,new XPoint(295,790));
         }
+        try
+        {
+            foreach(var field in overflow)
+            {
+                if(continuation is null)NextContinuation();
+                var remaining=Wrap(continuation!,font,field.Text,451);var start=0;
+                do
+                {
+                    var headingLines=Wrap(continuation!,heading,field.Label+(start>0?" (continued)":""),451);
+                    // Keep each label with at least two body lines when possible, then
+                    // reuse the remaining page space for the next official field.
+                    if(cursor+headingLines.Length*12+6+Math.Min(2,remaining.Length-start)*11>760)NextContinuation();
+                    Draw(continuation!,heading,headingLines,72,cursor);cursor+=headingLines.Length*12+6;
+                    var count=Math.Min(remaining.Length-start,(int)((760-cursor)/11));
+                    Draw(continuation!,font,remaining.Skip(start).Take(count).ToArray(),72,cursor);
+                    start+=count;cursor+=count*11+16;
+                    if(start<remaining.Length)NextContinuation();
+                }while(start<remaining.Length);
+            }
+        }
+        finally{continuation?.Dispose();}
         using var output=new MemoryStream();document.Save(output,false);return output.ToArray();
     }
     private static void Tick(XGraphics g,double x,double y)
@@ -94,6 +111,10 @@ public sealed class LessonPdf : ILessonPdf
     {for(var i=0;i<lines.Length;i++)g.DrawString(lines[i],font,XBrushes.Black,new XPoint(x,y+8+i*11));}
     private static string[] Wrap(XGraphics g,XFont font,string value,double width)
     {
+        // These decorative source-file annotations have no glyphs in the approved
+        // document font. Retain their meaning as text; original filenames/bytes
+        // remain unchanged in source provenance and downloads.
+        value=value.Replace("📱","[interactive]").Replace("🖼️","[image]").Replace("🖼","[image]");
         if(value.Length==0)return [];var lines=new List<string>();
         foreach(var paragraph in value.Replace("\r\n","\n").Replace('\r','\n').Split('\n'))
         {
