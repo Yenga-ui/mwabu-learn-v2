@@ -104,20 +104,19 @@ test("teacher starts with a published resource, completes the official plan, fin
     })
     .click();
   await page
-    .getByRole("combobox", { name: "Grade and curriculum", exact: true })
-    .selectOption({
-      label: "Grade 4 · Demonstration Learning Framework · Demonstration 2026",
-    });
-  for (const [label, value] of [
-    ["Subjects", "Mathematics"],
-    ["Terms", "Term 1"],
-    ["Topics", "Fractions in everyday life"],
-    ["Competencies", "Recognise equal parts"],
-    ["Learning outcomes", "Represent one half using familiar objects"],
+    .getByRole("button", {
+      name: "Grade 4 Demonstration Learning Framework · Demonstration 2026",
+      exact: true,
+    })
+    .click();
+  for (const value of [
+    "Mathematics",
+    "Term 1",
+    "Fractions in everyday life",
+    "Recognise equal parts",
+    "Represent one half using familiar objects",
   ])
-    await page
-      .getByRole("combobox", { name: label, exact: true })
-      .selectOption({ label: value });
+    await page.getByRole("button", { name: value, exact: true }).click();
   const title = "Teacher acceptance: Grade 4 fractions";
   await page.getByLabel("Lesson title", { exact: true }).fill(title);
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
@@ -232,6 +231,7 @@ test("teacher starts with a published resource, completes the official plan, fin
   });
   await reviewerContext.close();
   await page.goto("/app");
+  await page.getByText("Search for a lesson", { exact: true }).click();
   await page.getByLabel("Search lessons", { exact: true }).fill("fractions");
   await page
     .getByRole("button", { name: "Find a lesson", exact: true })
@@ -250,9 +250,7 @@ test("teacher starts with a published resource, completes the official plan, fin
   await expect(
     page.getByLabel("Lesson plan title", { exact: true }),
   ).toHaveValue(title);
-  await page
-    .getByRole("button", { name: "Use this lesson", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Adapt plan", exact: true }).click();
   await expect(
     page.getByLabel("Lesson plan title", { exact: true }),
   ).toHaveValue(title + " (copy)");

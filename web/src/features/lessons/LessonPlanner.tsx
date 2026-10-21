@@ -330,7 +330,7 @@ export default function LessonPlanner() {
                         >
                           {copying === lesson.id
                             ? "Creating your draft…"
-                            : "Use this lesson"}
+                            : "Adapt plan"}
                         </button>
                       )}
                     </div>
@@ -534,8 +534,8 @@ function NewLesson({
   return (
     <>
       <PageTitle eyebrow="A NEW TEACHING IDEA" title="Create lesson plan">
-        Set your context first. You can edit the structure, discover sources and
-        use AI after saving this draft.
+        Choose your grade, subject and topic below. We will suggest a title.
+        Save your plan, then write your teaching steps or ask AI to help.
       </PageTitle>
       <form
         className="panel"

@@ -232,11 +232,12 @@ test("teacher searches curriculum by name and creates an aligned lesson with der
   await login(page);
   await page.getByRole("link", { name: "Find a lesson", exact: true }).click();
   await page
-    .getByRole("link", { name: "Blank lesson plan", exact: true })
+    .getByRole("link", { name: "Write a lesson plan", exact: true })
     .click();
   await page
     .getByRole("button", { name: "Choose curriculum first", exact: true })
     .click();
+  await page.getByText("Search or choose from a list", { exact: true }).click();
   await page
     .getByRole("searchbox", { name: "Search curriculum", exact: true })
     .fill("Demonstration");
@@ -1098,21 +1099,19 @@ test("Grade 4 fractions journey works on phone portrait and landscape, with revi
     await login(page);
     await page.goto("/app/lessons/new");
     await page
-      .getByRole("button", { name: "Choose curriculum first", exact: true })
+      .getByRole("button", {
+        name: "Grade 4 Demonstration Learning Framework · Demonstration 2026",
+        exact: true,
+      })
       .click();
-    for (const [label, value] of [
-      ["Curriculum", "Demonstration Learning Framework"],
-      ["Versions", "Demonstration 2026"],
-      ["Grades", "Grade 4"],
-      ["Subjects", "Mathematics"],
-      ["Terms", "Term 1"],
-      ["Topics", "Fractions in everyday life"],
-      ["Competencies", "Recognise equal parts"],
-      ["Learning outcomes", "Represent one half using familiar objects"],
+    for (const value of [
+      "Mathematics",
+      "Term 1",
+      "Fractions in everyday life",
+      "Recognise equal parts",
+      "Represent one half using familiar objects",
     ])
-      await page
-        .getByRole("combobox", { name: label, exact: true })
-        .selectOption({ label: value });
+      await page.getByRole("button", { name: value, exact: true }).click();
     await page
       .getByLabel("Lesson title", { exact: true })
       .fill("Grade 4 Mathematics — Fractions classroom journey");

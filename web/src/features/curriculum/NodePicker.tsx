@@ -67,6 +67,38 @@ export default function NodePicker({
           ),
     enabled: level < 7 && !gradeFirst,
   });
+  const chooseGrade = (id: string) => {
+    const row = grades.data?.items.find((x) => x.id === id);
+    if (!row) return;
+    const context = [row.curriculumName, row.versionName, row.name];
+    setTrail([
+      { id: row.curriculumId, name: row.curriculumName },
+      { id: row.versionId, name: row.versionName },
+      { id: row.id, name: row.name },
+    ]);
+    setGradeFirst(false);
+    setPage(1);
+    setSearch("");
+    setText("");
+    onReset?.();
+    onSelect("Grade", row.id, row.name, context);
+  };
+  const chooseNode = (id: string) => {
+    const node = query.data?.items.find((x) => x.id === id);
+    if (!node) return;
+    onReset?.();
+    setTrail((t) => [...t, node]);
+    setSearch("");
+    setText("");
+    setPage(1);
+    if (level >= 0)
+      onSelect(
+        nodeTypes[level],
+        node.id,
+        node.name,
+        [...trail, node].map((x) => x.name),
+      );
+  };
   return (
     <div className="node-picker">
       <button
@@ -85,53 +117,75 @@ export default function NodePicker({
       </button>
       {gradeFirst && (
         <>
-          <label>
-            Search grades
-            <input
-              type="search"
-              maxLength={200}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </label>
-          <label>
-            Grade and curriculum
-            <select
-              value=""
-              disabled={
-                grades.isFetching || search.trim() !== text || !!grades.error
-              }
-              onChange={(e) => {
-                const row = grades.data?.items.find(
-                  (x) => x.id === e.target.value,
-                );
-                if (row) {
-                  setTrail([
-                    { id: row.curriculumId, name: row.curriculumName },
-                    { id: row.versionId, name: row.versionName },
-                    { id: row.id, name: row.name },
-                  ]);
-                  setGradeFirst(false);
-                  setPage(1);
-                  setSearch("");
-                  setText("");
-                  onReset?.();
-                  onSelect("Grade", row.id, row.name, [
-                    row.curriculumName,
-                    row.versionName,
-                    row.name,
-                  ]);
+          <h3>Choose your grade</h3>
+          <div className="teaching-choice-grid" aria-label="Available grades">
+            {grades.data?.items.map((row) => (
+              <button
+                type="button"
+                className="teaching-choice"
+                key={row.id}
+                disabled={
+                  grades.isFetching || search.trim() !== text || !!grades.error
                 }
-              }}
-            >
-              <option value="">Choose a grade and curriculum…</option>
-              {grades.data?.items.map((x) => (
-                <option key={x.id} value={x.id}>
-                  {x.name} · {x.curriculumName} · {x.versionName}
-                </option>
-              ))}
-            </select>
-          </label>
+                onClick={() => chooseGrade(row.id)}
+              >
+                {row.name}
+                <small>
+                  {row.curriculumName} · {row.versionName}
+                </small>
+              </button>
+            ))}
+          </div>
+          <details open={!startWithGrade}>
+            <summary>Search or choose from a list</summary>
+            <label>
+              Search grades
+              <input
+                type="search"
+                maxLength={200}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </label>
+            <label>
+              Grade and curriculum
+              <select
+                value=""
+                disabled={
+                  grades.isFetching || search.trim() !== text || !!grades.error
+                }
+                onChange={(e) => {
+                  const row = grades.data?.items.find(
+                    (x) => x.id === e.target.value,
+                  );
+                  if (row) {
+                    setTrail([
+                      { id: row.curriculumId, name: row.curriculumName },
+                      { id: row.versionId, name: row.versionName },
+                      { id: row.id, name: row.name },
+                    ]);
+                    setGradeFirst(false);
+                    setPage(1);
+                    setSearch("");
+                    setText("");
+                    onReset?.();
+                    onSelect("Grade", row.id, row.name, [
+                      row.curriculumName,
+                      row.versionName,
+                      row.name,
+                    ]);
+                  }
+                }}
+              >
+                <option value="">Choose a grade and curriculum…</option>
+                {grades.data?.items.map((x) => (
+                  <option key={x.id} value={x.id}>
+                    {x.name} · {x.curriculumName} · {x.versionName}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </details>
           {grades.isFetching && <Loading />}
           {grades.error && (
             <ErrorNotice
@@ -182,53 +236,82 @@ export default function NodePicker({
           </div>
           {level < 7 && (
             <>
-              <label>
-                Search{" "}
-                {level < 0 ? "curriculum" : nodeNames[level].toLowerCase()}
-                <input
-                  type="search"
-                  maxLength={200}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Type part of a name…"
-                />
-              </label>
-              <label>
-                {level < 0 ? "Curriculum" : nodeNames[level]}
-                <select
-                  value=""
-                  disabled={
-                    query.isFetching || text !== search.trim() || !!query.error
-                  }
-                  aria-busy={query.isFetching}
-                  onChange={(e) => {
-                    const node = query.data?.items.find(
-                      (x) => x.id === e.target.value,
-                    );
-                    if (node) {
-                      onReset?.();
-                      setTrail((t) => [...t, node]);
-                      setSearch("");
-                      setText("");
-                      setPage(1);
-                      if (level >= 0)
-                        onSelect(
-                          nodeTypes[level],
-                          node.id,
-                          node.name,
-                          [...trail, node].map((x) => x.name),
-                        );
+              <h3>
+                Choose{" "}
+                {level < 0 ? "your curriculum" : nodeNames[level].toLowerCase()}
+              </h3>
+              <div
+                className="teaching-choice-grid"
+                aria-label="Available learning choices"
+              >
+                {query.data?.items.map((node) => (
+                  <button
+                    type="button"
+                    className="teaching-choice"
+                    key={node.id}
+                    disabled={
+                      query.isFetching ||
+                      text !== search.trim() ||
+                      !!query.error
                     }
-                  }}
-                >
-                  <option value="">Choose a learning context…</option>
-                  {query.data?.items.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                    onClick={() => chooseNode(node.id)}
+                  >
+                    {node.name}
+                  </button>
+                ))}
+              </div>
+              <details open={!startWithGrade}>
+                <summary>Search or choose from a list</summary>
+                <label>
+                  Search{" "}
+                  {level < 0 ? "curriculum" : nodeNames[level].toLowerCase()}
+                  <input
+                    type="search"
+                    maxLength={200}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Type part of a name…"
+                  />
+                </label>
+                <label>
+                  {level < 0 ? "Curriculum" : nodeNames[level]}
+                  <select
+                    value=""
+                    disabled={
+                      query.isFetching ||
+                      text !== search.trim() ||
+                      !!query.error
+                    }
+                    aria-busy={query.isFetching}
+                    onChange={(e) => {
+                      const node = query.data?.items.find(
+                        (x) => x.id === e.target.value,
+                      );
+                      if (node) {
+                        onReset?.();
+                        setTrail((t) => [...t, node]);
+                        setSearch("");
+                        setText("");
+                        setPage(1);
+                        if (level >= 0)
+                          onSelect(
+                            nodeTypes[level],
+                            node.id,
+                            node.name,
+                            [...trail, node].map((x) => x.name),
+                          );
+                      }
+                    }}
+                  >
+                    <option value="">Choose a learning context…</option>
+                    {query.data?.items.map((x) => (
+                      <option key={x.id} value={x.id}>
+                        {x.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </details>
               {query.isPending && <Loading label="Loading curriculum…" />}
               {query.error && (
                 <ErrorNotice

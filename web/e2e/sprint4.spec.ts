@@ -137,6 +137,7 @@ test("reviewed source import connects teacher discovery, native adaptation, PDF,
       .getByRole("navigation", { name: "Teaching tasks" })
       .getByRole("link", { name: /Find a lesson/ })
       .click();
+    await t.getByText("Search and filters", { exact: true }).click();
     await t
       .getByRole("combobox", { name: "Curriculum collection", exact: true })
       .selectOption("2023");
@@ -179,9 +180,7 @@ test("reviewed source import connects teacher discovery, native adaptation, PDF,
     await t
       .getByRole("button", { name: "Return to lesson plan", exact: true })
       .click();
-    await t
-      .getByRole("button", { name: "Use this lesson", exact: true })
-      .click();
+    await t.getByRole("button", { name: "Adapt plan", exact: true }).click();
     await expect(t).toHaveURL(/\/app\/lessons\/[a-f0-9-]+$/);
     const personal = t.url();
     await t
@@ -477,9 +476,7 @@ if (process.env.MWABU_SOURCE_PLAN_SAMPLE) {
           .locator("img")
           .count(),
       ).toBeGreaterThan(0);
-      await t
-        .getByRole("button", { name: "Use this lesson", exact: true })
-        .click();
+      await t.getByRole("button", { name: "Adapt plan", exact: true }).click();
       await expect(
         t.getByLabel("Lesson plan title", { exact: true }),
       ).toHaveValue("Equivalent fractions");

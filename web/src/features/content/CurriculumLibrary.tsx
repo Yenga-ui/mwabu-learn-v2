@@ -41,6 +41,7 @@ export default function CurriculumLibrary() {
     queryFn: ({ signal }) =>
       api<Result>("/api/learning/library?" + params, { signal }),
     enabled: session.can("content.read", "catalogue"),
+    placeholderData: (previous) => previous,
   });
   const year = params.get("year") ?? "";
   const grade = params.get("grade") ?? "";
@@ -49,7 +50,7 @@ export default function CurriculumLibrary() {
   const update = (key: string, value: string) => {
     const next = new URLSearchParams(params);
     next.delete("page");
-    const order = ["year", "grade", "subject", "topic", "term"];
+    const order = ["year", "grade", "subject", "term", "topic"];
     const index = order.indexOf(key);
     if (index >= 0) order.slice(index + 1).forEach((k) => next.delete(k));
     if (value) next.set(key, value);
@@ -98,119 +99,199 @@ export default function CurriculumLibrary() {
         {session.can("lessons.manage") && (
           <>
             <Link className="button secondary" to="/app/lessons/new">
-              Blank lesson plan
-            </Link>
-            <Link className="button secondary" to="/app/lessons">
-              Copy a saved lesson
-            </Link>
-            <Link className="button secondary" to="/app/resources">
-              Start with a resource
+              Write a lesson plan
             </Link>
           </>
         )}
       </nav>
       <section
-        className="card catalogue-tools"
-        aria-label="Choose learning context"
+        className="card teaching-choices"
+        aria-label="Browse by grade, subject and topic"
       >
-        <SearchBar
-          value={params.get("text") ?? ""}
-          onSearch={(text) => update("text", text)}
-          placeholder="Search lesson titles, topics and keywords…"
-        />
-        <div className="filter-row">
-          <label>
-            Curriculum collection
-            <select
-              value={year}
-              onChange={(e) => update("year", e.target.value)}
+        <h2>1. Choose your grade</h2>
+        <div className="teaching-choice-grid">
+          {distinct(
+            choices
+              .filter((x) => !year || String(x.year) === year)
+              .map((x) => String(x.grade)),
+          ).map((value) => (
+            <button
+              key={value}
+              className="teaching-choice"
+              aria-pressed={grade === value}
+              onClick={() => update("grade", value)}
             >
-              <option value="">All collections — labelled separately</option>
-              {distinct(choices.map((x) => String(x.year))).map((x) => (
-                <option key={x} value={x}>
-                  {x} Zambian curriculum
-                </option>
+              Grade {value}
+            </button>
+          ))}
+        </div>
+        {grade && (
+          <>
+            <h2>2. Choose your subject</h2>
+            <div className="teaching-choice-grid">
+              {distinct(subjectChoices.map((x) => x.subject)).map((value) => (
+                <button
+                  key={value}
+                  className="teaching-choice"
+                  aria-pressed={subject === value}
+                  onClick={() => update("subject", value)}
+                >
+                  {value}
+                </button>
               ))}
-            </select>
-          </label>
-          <label>
-            Grade
-            <select
-              value={grade}
-              onChange={(e) => update("grade", e.target.value)}
-            >
-              <option value="">Choose a grade…</option>
-              {distinct(
-                choices
-                  .filter((x) => !year || String(x.year) === year)
-                  .map((x) => String(x.grade)),
-              ).map((x) => (
-                <option key={x} value={x}>
-                  Grade {x}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Subject
-            <select
-              value={subject}
-              onChange={(e) => update("subject", e.target.value)}
-            >
-              <option value="">All subjects</option>
-              {distinct(subjectChoices.map((x) => x.subject)).map((x) => (
-                <option key={x}>{x}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Topic
-            <select
-              value={topic}
-              onChange={(e) => update("topic", e.target.value)}
-            >
-              <option value="">All topics</option>
-              {distinct(scoped.map((x) => x.topic)).map((x) => (
-                <option key={x}>{x}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Term
-            <select
-              value={params.get("term") ?? ""}
-              onChange={(e) => update("term", e.target.value)}
-            >
-              <option value="">All / unspecified in source</option>
+            </div>
+          </>
+        )}
+        {grade && subject && (
+          <>
+            <h2>3. Choose your topic</h2>
+            <div className="teaching-choice-grid">
               {distinct(
                 scoped
-                  .filter((x) => !topic || x.topic === topic)
-                  .flatMap((x) => (x.term ? [x.term] : [])),
-              ).map((x) => (
-                <option key={x}>{x}</option>
+                  .filter(
+                    (x) => !params.get("term") || x.term === params.get("term"),
+                  )
+                  .map((x) => x.topic),
+              ).map((value) => (
+                <button
+                  key={value}
+                  className="teaching-choice"
+                  aria-pressed={topic === value}
+                  onClick={() => update("topic", value)}
+                >
+                  {value}
+                </button>
               ))}
-            </select>
-          </label>
-          <label>
-            Show
-            <select
-              value={params.get("type") ?? ""}
-              onChange={(e) => update("type", e.target.value)}
-            >
-              <option value="">Plans and learning resources</option>
-              <option value="lesson-plan">Mwabu lesson plans</option>
-              <option value="interactive-activity">Interactive lessons</option>
-              <option value="video">Videos</option>
-              <option value="audio">Audio</option>
-            </select>
-          </label>
-        </div>
+            </div>
+          </>
+        )}
+        {topic && session.can("lessons.manage") && (
+          <p>
+            <Link className="button" to={createPath}>
+              Write a plan for {topic}
+            </Link>
+          </p>
+        )}
         <p className="muted">
-          2013 and 2023 source collections stay distinct. Linked older learner
-          resources are shown as teaching associations; their original
-          curriculum attribution is retained. Missing terms are not guessed.
+          Choose a plan below to adapt it, or write your own. No typing needed
+          to browse.
         </p>
       </section>
+      <details
+        open={params.has("text") || undefined}
+        className="card catalogue-tools"
+      >
+        <summary>Search and filters</summary>
+        <section
+          className="card catalogue-tools"
+          aria-label="Choose learning context"
+        >
+          <SearchBar
+            value={params.get("text") ?? ""}
+            onSearch={(text) => update("text", text)}
+            placeholder="Search lesson titles, topics and keywords…"
+          />
+          <div className="filter-row">
+            <label>
+              Curriculum collection
+              <select
+                value={year}
+                onChange={(e) => update("year", e.target.value)}
+              >
+                <option value="">All collections — labelled separately</option>
+                {distinct(choices.map((x) => String(x.year))).map((x) => (
+                  <option key={x} value={x}>
+                    {x} Zambian curriculum
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Grade
+              <select
+                value={grade}
+                onChange={(e) => update("grade", e.target.value)}
+              >
+                <option value="">Choose a grade…</option>
+                {distinct(
+                  choices
+                    .filter((x) => !year || String(x.year) === year)
+                    .map((x) => String(x.grade)),
+                ).map((x) => (
+                  <option key={x} value={x}>
+                    Grade {x}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Subject
+              <select
+                value={subject}
+                onChange={(e) => update("subject", e.target.value)}
+              >
+                <option value="">All subjects</option>
+                {distinct(subjectChoices.map((x) => x.subject)).map((x) => (
+                  <option key={x}>{x}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Topic
+              <select
+                value={topic}
+                onChange={(e) => update("topic", e.target.value)}
+              >
+                <option value="">All topics</option>
+                {distinct(
+                  scoped
+                    .filter(
+                      (x) =>
+                        !params.get("term") || x.term === params.get("term"),
+                    )
+                    .map((x) => x.topic),
+                ).map((x) => (
+                  <option key={x}>{x}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Term
+              <select
+                value={params.get("term") ?? ""}
+                onChange={(e) => update("term", e.target.value)}
+              >
+                <option value="">All / unspecified in source</option>
+                {distinct(scoped.flatMap((x) => (x.term ? [x.term] : []))).map(
+                  (x) => (
+                    <option key={x}>{x}</option>
+                  ),
+                )}
+              </select>
+            </label>
+            <label>
+              Show
+              <select
+                value={params.get("type") ?? ""}
+                onChange={(e) => update("type", e.target.value)}
+              >
+                <option value="">Plans and learning resources</option>
+                <option value="lesson-plan">Mwabu lesson plans</option>
+                <option value="interactive-activity">
+                  Interactive lessons
+                </option>
+                <option value="video">Videos</option>
+                <option value="audio">Audio</option>
+              </select>
+            </label>
+          </div>
+          <p className="muted">
+            2013 and 2023 source collections stay distinct. Linked older learner
+            resources are shown as teaching associations; their original
+            curriculum attribution is retained. Missing terms are not guessed.
+          </p>
+        </section>
+      </details>
       <QueryState query={query}>
         {(result) => (
           <>

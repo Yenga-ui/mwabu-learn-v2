@@ -67,6 +67,29 @@ async function select(level: number) {
   await screen.findByRole("option", { name: names[level] });
   fireEvent.change(select, { target: { value: `node-${level}` } });
 }
+
+it("supports a complete curriculum journey using buttons without typing", async () => {
+  const choose = vi.fn();
+  render(<NodePicker onSelect={choose} />, { wrapper });
+  for (const name of names) {
+    const button = await screen.findByRole("button", { name });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+  }
+  expect(choose).toHaveBeenLastCalledWith(
+    "LearningOutcome",
+    "node-7",
+    names[7],
+    names,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Grade 4 ›" }));
+  expect(
+    await screen.findByRole("button", { name: "Mathematics" }),
+  ).toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: "Represent one half ›" }),
+  ).not.toBeInTheDocument();
+});
 describe("teacher curriculum selection", () => {
   it("starts from a grade with explicit curriculum/version context and continues to its subjects", async () => {
     vi.mocked(api).mockImplementation(async (path) =>

@@ -223,6 +223,9 @@ test("mapping a published resource creates a draft with the source file and expl
     name: "Grade and curriculum",
     exact: true,
   });
+  await panel
+    .getByText("Search or choose from a list", { exact: true })
+    .click();
   const option = grade
     .getByRole("option")
     .filter({ hasText: "Grade 4" })

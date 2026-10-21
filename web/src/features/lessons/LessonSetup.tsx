@@ -41,15 +41,6 @@ export default function LessonSetup({
           ? "Choose your curriculum, then follow the grade, subject and topic to a learning outcome. Search by name at any step."
           : "Create a flexible lesson. No official curriculum alignment is claimed. Your other setup fields are retained when switching modes."}
       </p>
-      <label>
-        Lesson title
-        <input
-          required
-          maxLength={200}
-          value={value.title}
-          onChange={(e) => set("title", e.target.value)}
-        />
-      </label>
       {value.mode === "CurriculumAligned" ? (
         <>
           <NodePicker
@@ -99,6 +90,21 @@ export default function LessonSetup({
             />
           </label>
         </div>
+      )}
+      <label>
+        Lesson title
+        <input
+          required
+          maxLength={200}
+          value={value.title}
+          onChange={(e) => set("title", e.target.value)}
+        />
+      </label>
+      {simple && (
+        <small>
+          A title is suggested when you choose a learning outcome. You can
+          change it.
+        </small>
       )}
       <div className="lesson-grid">
         <label>

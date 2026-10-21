@@ -14,6 +14,15 @@ export default function TeacherHome() {
   const session = useSession();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
+  const grades = useQuery({
+    queryKey: ["teacher-home-library-grades"],
+    queryFn: ({ signal }) =>
+      api<{ choices: { grade: number }[] }>(
+        "/api/learning/library?pageSize=1",
+        { signal },
+      ),
+    enabled: session.can("content.read", "catalogue"),
+  });
   const drafts = useQuery({
     queryKey: ["teacher-home-drafts", session.organisationId],
     queryFn: ({ signal }) =>
@@ -32,32 +41,67 @@ export default function TeacherHome() {
       >
         Find a lesson, make it your own and bring it to your classroom.
       </PageTitle>
-      <form
-        className="card teacher-home-search"
-        onSubmit={(e) => {
-          e.preventDefault();
-          navigate("/app/library?text=" + encodeURIComponent(search.trim()));
-        }}
+      <section
+        className="card teaching-choices"
+        aria-label="Start with your grade"
       >
-        <label>
-          Search lessons
-          <input
-            type="search"
-            value={search}
-            maxLength={200}
-            placeholder="Try Grade 4 mathematics or fractions"
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </label>
-        <button className="button">
-          <Search aria-hidden="true" size={20} /> Find a lesson
-        </button>
-      </form>
+        <h2>Choose your grade</h2>
+        <p>
+          Next, choose a subject and topic to see lesson plans and activities.
+        </p>
+        <QueryState query={grades}>
+          {(data) => (
+            <div className="teaching-choice-grid">
+              {[...new Set(data.choices.map((choice) => choice.grade))]
+                .sort((a, b) => a - b)
+                .map((grade) => (
+                  <Link
+                    className="teaching-choice"
+                    key={grade}
+                    to={`/app/library?grade=${grade}`}
+                  >
+                    Grade {grade}
+                  </Link>
+                ))}
+              {!data.choices.length && (
+                <p>
+                  No published curriculum resources are available yet. You can
+                  still create your own plan below.
+                </p>
+              )}
+            </div>
+          )}
+        </QueryState>
+      </section>
+      <details>
+        <summary>Search for a lesson</summary>
+        <form
+          className="card teacher-home-search"
+          onSubmit={(e) => {
+            e.preventDefault();
+            navigate("/app/library?text=" + encodeURIComponent(search.trim()));
+          }}
+        >
+          <label>
+            Search lessons
+            <input
+              type="search"
+              value={search}
+              maxLength={200}
+              placeholder="Try Grade 4 mathematics or fractions"
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </label>
+          <button className="button">
+            <Search aria-hidden="true" size={20} /> Find a lesson
+          </button>
+        </form>
+      </details>
       <nav className="teacher-tasks" aria-label="Teaching tasks">
         <Link className="card" to="/app/library">
           <BookOpen aria-hidden="true" />
           <strong>Find a lesson</strong>
-          <span>Search by grade, subject or topic.</span>
+          <span>Choose a grade, subject and topic.</span>
         </Link>
         <Link className="card" to="/app/lessons?mine=true">
           <BookOpen aria-hidden="true" />

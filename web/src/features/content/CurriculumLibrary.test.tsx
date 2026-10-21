@@ -32,7 +32,7 @@ function Location() {
   return <output aria-label="Current filters">{useLocation().search}</output>;
 }
 function show(path: string) {
-  return render(
+  const view = render(
     <QueryClientProvider
       client={
         new QueryClient({ defaultOptions: { queries: { retry: false } } })
@@ -44,6 +44,8 @@ function show(path: string) {
       </MemoryRouter>
     </QueryClientProvider>,
   );
+  fireEvent.click(screen.getByText("Search and filters"));
+  return view;
 }
 beforeEach(() => {
   vi.mocked(api).mockReset();
@@ -51,6 +53,28 @@ beforeEach(() => {
     resources: { items: [], totalCount: 0, page: 1, pageSize: 24 },
     choices,
   });
+});
+it("browses by tapping grade, subject and topic and clears descendants when the grade changes", async () => {
+  show("/app/library");
+  fireEvent.click(await screen.findByRole("button", { name: "Grade 4" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Mathematics" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Fractions" }));
+  expect(screen.getByLabelText("Current filters")).toHaveTextContent(
+    "grade=4&subject=Mathematics&topic=Fractions",
+  );
+  expect(
+    screen.getByRole("link", { name: "Write a plan for Fractions" }),
+  ).toHaveAttribute(
+    "href",
+    "/app/lessons/new?librarygrade=4&librarysubject=Mathematics&librarytopic=Fractions",
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Grade 3" }));
+  expect(screen.getByLabelText("Current filters")).toHaveTextContent(
+    "?grade=3",
+  );
+  expect(
+    screen.queryByRole("button", { name: "Fractions" }),
+  ).not.toBeInTheDocument();
 });
 it("changing curriculum year clears dependent choices while retaining the keyword search", async () => {
   show(

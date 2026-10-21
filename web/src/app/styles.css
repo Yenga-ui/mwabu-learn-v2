@@ -2014,3 +2014,62 @@
 .table-scroll small {
   display: block;
 }
+
+/* Shared, tap-first curriculum navigation for discovery and lesson setup. */
+.teaching-choices {
+  margin-block: 1rem;
+}
+.teaching-choices h2 {
+  margin-block: 1.2rem 0.6rem;
+  font-size: 1.1rem;
+}
+.teaching-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 0.65rem;
+  margin-block: 0.75rem 1rem;
+}
+.teaching-choice {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.35rem;
+  min-height: 60px;
+  padding: 0.85rem 1rem;
+  border: 1px solid #d8d0eb;
+  border-radius: 12px;
+  background: #fff;
+  color: #291264;
+  text-align: left;
+  text-decoration: none;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.teaching-choice small {
+  font-weight: 400;
+}
+.teaching-choice:hover {
+  background: #f4f0fb;
+  border-color: #66459d;
+}
+.teaching-choice[aria-pressed="true"] {
+  background: #291264;
+  color: #fff;
+  border-color: #291264;
+}
+.teaching-choice:focus-visible {
+  outline: 3px solid #e06b16;
+  outline-offset: 3px;
+}
+.teaching-choice:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.catalogue-tools > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding-block: 0.5rem;
+}

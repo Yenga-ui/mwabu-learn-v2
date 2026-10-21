@@ -355,22 +355,20 @@ test("Content Studio generates a curriculum-grounded proposal through the durabl
   ).toBeVisible();
   const resource = page.url().split("/").at(-1)!;
   await page.goto("/app/lessons/new");
-
   await page
-    .getByRole("combobox", { name: "Grade and curriculum", exact: true })
-    .selectOption({
-      label: "Grade 4 · Demonstration Learning Framework · Demonstration 2026",
-    });
-  for (const [label, name] of [
-    ["Subjects", "Mathematics"],
-    ["Terms", "Term 1"],
-    ["Topics", "Fractions in everyday life"],
-    ["Competencies", "Recognise equal parts"],
-    ["Learning outcomes", "Represent one half using familiar objects"],
+    .getByRole("button", {
+      name: "Grade 4 Demonstration Learning Framework · Demonstration 2026",
+      exact: true,
+    })
+    .click();
+  for (const name of [
+    "Mathematics",
+    "Term 1",
+    "Fractions in everyday life",
+    "Recognise equal parts",
+    "Represent one half using familiar objects",
   ])
-    await page
-      .getByRole("combobox", { name: label, exact: true })
-      .selectOption({ label: name });
+    await page.getByRole("button", { name, exact: true }).click();
   await page.getByRole("button", { name: "Create draft", exact: true }).click();
   await page
     .getByText("Generate interactive content from this lesson", { exact: true })

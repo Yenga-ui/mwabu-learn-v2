@@ -417,7 +417,7 @@ export default function LessonEditor({
               })
             }
           >
-            Use this lesson
+            Adapt plan
           </button>
         )}
         <Link className="button secondary" to="/app/lessons">

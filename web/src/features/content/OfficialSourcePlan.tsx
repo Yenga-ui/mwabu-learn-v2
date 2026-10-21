@@ -74,7 +74,7 @@ export default function OfficialSourcePlan({ id }: { id: string }) {
           disabled={busy}
           onClick={() => void copyPlan()}
         >
-          {busy ? "Creating your copy…" : "Use this lesson"}
+          {busy ? "Creating your copy…" : "Adapt plan"}
         </button>
       )}
       {error != null && <ErrorNotice error={error} />}
