@@ -119,16 +119,13 @@ export function Shell() {
     {
       to: "/app/curriculum",
       label: "Curriculum explorer",
-      show:
-        !session.access?.roleCodes.includes("Teacher") ||
-        session.can("curriculum.manage", "global"),
       icon: GraduationCap,
       permission: "curriculum.read",
       scope: "catalogue",
     },
     {
       to: "/app/collections",
-      label: "Collections",
+      label: "Resource collections",
       icon: Layers,
       permission: "content.read",
       scope: "catalogue",

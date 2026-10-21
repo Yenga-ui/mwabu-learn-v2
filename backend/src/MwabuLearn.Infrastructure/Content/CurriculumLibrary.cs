@@ -16,12 +16,12 @@ public sealed class CurriculumLibrary(MwabuDbContext db, IContentService content
     public async Task<CurriculumLibraryResult> SearchAsync(CurriculumLibraryFilter filter, CancellationToken ct)
     {
         if (filter.Year is not (null or 2013 or 2023) || filter.Grade is < 1 or > 12 || filter.Page is < 1 or > 10000 ||
-            new[] { filter.Subject, filter.Topic, filter.Term, filter.Type, filter.Text }.Any(s => s?.Length > 200))
+            new[] { filter.Subject, filter.Topic, filter.Term, filter.Type, filter.Text }.Any(s => s?.Length > 200) || filter.SubTopic is { Length: > 500 })
             throw new ContentException(ContentError.Validation, "Choose supported curriculum filters.");
         var published = db.ImportedLessonTemplates.AsNoTracking().Where(x => x.ContentItem.Status == ContentStatus.Published);
-        var choiceRows = await published.Select(x => new { x.CurriculumYear, x.Grade, x.Subject, x.Topic, x.Term }).Distinct()
-            .OrderBy(x => x.CurriculumYear).ThenBy(x => x.Grade).ThenBy(x => x.Subject).ThenBy(x => x.Topic).Take(2001).ToArrayAsync(ct);
-        var choices = choiceRows.Select(x => new CurriculumLibraryOption(x.CurriculumYear, x.Grade, x.Subject, x.Topic, x.Term)).ToArray();
+        var choiceRows = await published.Select(x => new { x.CurriculumYear, x.Grade, x.Subject, x.Topic, x.Term, x.SubTopic }).Distinct()
+            .OrderBy(x => x.CurriculumYear).ThenBy(x => x.Grade).ThenBy(x => x.Subject).ThenBy(x => x.Topic).ThenBy(x => x.SubTopic).Take(2001).ToArrayAsync(ct);
+        var choices = choiceRows.Select(x => new CurriculumLibraryOption(x.CurriculumYear, x.Grade, x.Subject, x.Topic, x.Term, x.SubTopic)).ToArray();
         if (choices.Length > 2000) throw new ContentException(ContentError.Validation, "Refine catalogue configuration before adding more than 2,000 curriculum contexts.");
         var templates = published;
         if (filter.Year.HasValue) templates = templates.Where(x => x.CurriculumYear == filter.Year);
@@ -29,11 +29,12 @@ public sealed class CurriculumLibrary(MwabuDbContext db, IContentService content
         if (!string.IsNullOrEmpty(filter.Subject)) templates = templates.Where(x => x.Subject == filter.Subject);
         if (!string.IsNullOrEmpty(filter.Topic)) templates = templates.Where(x => x.Topic == filter.Topic);
         if (!string.IsNullOrEmpty(filter.Term)) templates = templates.Where(x => x.Term == filter.Term);
+        if (!string.IsNullOrEmpty(filter.SubTopic)) templates = templates.Where(x => x.SubTopic == filter.SubTopic);
         var linked = db.ImportedLessonResources.AsNoTracking().Where(x => x.IsActive && templates.Any(t => t.Id == x.TemplateId) &&
             !x.Asset.IsPendingDeletion && x.Asset.Checksum == x.Checksum && x.Asset.ContentItem.Status == ContentStatus.Published);
         var query = db.ContentItems.AsNoTracking().Where(x => x.Status == ContentStatus.Published &&
             (templates.Any(t => t.ContentItemId == x.Id) || linked.Any(l => l.Asset.ContentItemId == x.Id) ||
-                !filter.Year.HasValue && !filter.Grade.HasValue && filter.Subject == null && filter.Topic == null && filter.Term == null));
+                !filter.Year.HasValue && !filter.Grade.HasValue && filter.Subject == null && filter.Topic == null && filter.Term == null && string.IsNullOrEmpty(filter.SubTopic)));
         // Prefer the published native edition over exact-byte legacy plan attachments in
         // this discovery index. Historical records and their URLs are never changed.
         query = query.Where(x => x.ContentType != "lesson-plan" || published.Any(t => t.ContentItemId == x.Id) ||
@@ -47,7 +48,7 @@ public sealed class CurriculumLibrary(MwabuDbContext db, IContentService content
         var rows = await query.OrderBy(x => x.Title).ThenBy(x => x.Id).Skip((filter.Page - 1) * 24).Take(24).Select(ContentService.ContentProjection).ToArrayAsync(ct);
         var ids = rows.Select(x => x.Id).ToArray(); var details = await published.Where(x => ids.Contains(x.ContentItemId)).ToDictionaryAsync(x => x.ContentItemId, ct);
         var linkedIds = await linked.Where(x => ids.Contains(x.Asset.ContentItemId)).Select(x => x.Asset.ContentItemId).Distinct().ToArrayAsync(ct);
-        var entries = rows.Select(row => { details.TryGetValue(row.Id, out var t); return new CurriculumLibraryEntry(row, t?.CurriculumYear, t?.Grade, t?.Subject, t?.Topic, t?.Term, t is not null, linkedIds.Contains(row.Id)); }).ToArray();
+        var entries = rows.Select(row => { details.TryGetValue(row.Id, out var t); return new CurriculumLibraryEntry(row, t?.CurriculumYear, t?.Grade, t?.Subject, t?.Topic, t?.Term, t is not null, linkedIds.Contains(row.Id), t?.SubTopic); }).ToArray();
         return new(new(entries, filter.Page, 24, count), choices);
     }
 

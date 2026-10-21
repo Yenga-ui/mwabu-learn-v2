@@ -76,6 +76,22 @@ it("browses by tapping grade, subject and topic and clears descendants when the 
     screen.queryByRole("button", { name: "Fractions" }),
   ).not.toBeInTheDocument();
 });
+it("filters source subtopics and keeps them in the new-plan context", async () => {
+  vi.mocked(api).mockResolvedValue({
+    choices: [{ ...choices[0], subTopic: "Equal parts" }],
+    resources: { items: [], totalCount: 0, page: 1, pageSize: 24 },
+  });
+  show("/app/library?grade=4&subject=Mathematics&topic=Fractions");
+  fireEvent.click(await screen.findByRole("button", { name: "Equal parts" }));
+  expect(screen.getByLabelText("Current filters")).toHaveTextContent(
+    "subTopic=Equal+parts",
+  );
+  expect(
+    screen
+      .getByRole("link", { name: "Write a plan for Fractions" })
+      .getAttribute("href"),
+  ).toContain("librarysubTopic=Equal+parts");
+});
 it("changing curriculum year clears dependent choices while retaining the keyword search", async () => {
   show(
     "/app/library?year=2023&grade=4&subject=Mathematics&topic=Fractions&term=Term+1&text=equal",

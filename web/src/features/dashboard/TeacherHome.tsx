@@ -109,10 +109,20 @@ export default function TeacherHome() {
           <span>Reopen and adapt your saved plans.</span>
         </Link>
         {session.can("lessons.manage") && (
-          <Link className="card" to="/app/lessons/new">
+          <Link className="card" to="/app/lessons/new?planning=topics">
             <FilePlus aria-hidden="true" />
             <strong>Create a lesson</strong>
             <span>Start with the official lesson plan.</span>
+          </Link>
+        )}
+        {session.can("lessons.manage") && (
+          <Link
+            className="card"
+            to="/app/lessons/new?planning=topics&assist=ai"
+          >
+            <FilePlus aria-hidden="true" />
+            <strong>Create with AI</strong>
+            <span>Choose a topic, then review an AI proposal.</span>
           </Link>
         )}
         <Link className="card" to="/app/resources">

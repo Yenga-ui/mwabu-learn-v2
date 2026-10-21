@@ -89,7 +89,7 @@ export default function AuthPages({
           <p className="eyebrow">WELCOME TO MWABU LEARN</p>
           <h2>
             {mode === "login"
-              ? "Good to see you."
+              ? "Sign in to Mwabu Learn"
               : mode === "recovery"
                 ? "Recover your account"
                 : "Set a new password"}
@@ -155,7 +155,8 @@ export default function AuthPages({
           <div className="auth-help">
             <strong>Need an account?</strong>
             <p>
-              Ask your school or organisation administrator to arrange access.
+              For school access, ask your organisation administrator. Individual
+              teachers and parents can contact Mwabu to arrange access.
             </p>
           </div>
         </div>

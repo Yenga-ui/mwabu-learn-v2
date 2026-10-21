@@ -61,7 +61,11 @@ export default function LessonEditor({
   const path = lessonBase(organisation) + "/" + initial.lesson.id;
   const [viewParams] = useSearchParams();
   const [tab, setTab] = useState(
-    viewParams.get("view") === "resources" ? "resources" : "plan",
+    viewParams.get("view") === "resources"
+      ? "resources"
+      : viewParams.get("view") === "ai"
+        ? "ai"
+        : "plan",
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();

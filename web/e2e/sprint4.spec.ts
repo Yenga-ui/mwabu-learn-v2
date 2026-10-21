@@ -47,6 +47,105 @@ async function apply(page: Page) {
     panel.getByRole("link", { name: "Inspect resource", exact: true }).first(),
   ).toBeVisible();
 }
+test("topic-first AI creation retains teacher choices and requires an explicit generation request", async ({
+  page,
+}) => {
+  const suffix = randomUUID().slice(0, 8);
+  await login(page, "PlatformAdmin");
+  await preview(
+    page,
+    zip({
+      "wizard.html": source("Wizard source " + suffix).replace(
+        "<p>Topic: Fractions</p>",
+        "<p>Topic: Fractions</p><p>Sub-topic: Equal shares</p>",
+      ),
+    }),
+    "wizard-" + suffix + ".zip",
+  );
+  await page
+    .getByRole("button", { name: "Select validated records", exact: true })
+    .click();
+  await apply(page);
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await login(page, "Teacher");
+  await page.goto("/app/lessons/new?planning=topics&assist=ai");
+  await expect(
+    page.getByLabel("Subject / learning area", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Save and continue to AI", exact: true }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Use my own subject and grade", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Subject / learning area", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByLabel("Subject / learning area", { exact: true })
+    .fill("Custom subject");
+  await page
+    .getByRole("button", { name: "Choose Mwabu topics", exact: true })
+    .click();
+  await expect(
+    page.getByLabel("Subject / learning area", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Save and continue to AI", exact: true }),
+  ).toBeDisabled();
+  for (const name of ["Grade 4", "Mathematics", "Fractions", "Equal shares"])
+    await page.getByRole("button", { name, exact: true }).click();
+  await expect(
+    page.getByLabel("Subject / learning area", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByLabel("Target age / grade", { exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByLabel("Lesson title", { exact: true })).toHaveValue(
+    "Equal shares",
+  );
+  const title = "Topic wizard AI " + suffix;
+  await page.getByLabel("Lesson title", { exact: true }).fill(title);
+  const generationRequests: string[] = [];
+  page.on("request", (request) => {
+    if (
+      request.method() === "POST" &&
+      /\/(generation-jobs|generations)$/.test(new URL(request.url()).pathname)
+    )
+      generationRequests.push(request.url());
+  });
+  const saved = page.waitForResponse(
+    (response) =>
+      response.request().method() === "POST" &&
+      /\/api\/organisations\/[^/]+\/lessons$/.test(
+        new URL(response.url()).pathname,
+      ),
+  );
+  await page
+    .getByRole("button", { name: "Save and continue to AI", exact: true })
+    .click();
+  const detail = await (await saved).json();
+  await expect(page).toHaveURL(/\/app\/lessons\/[0-9a-f-]+\?view=ai$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "AI proposals - you remain the editor",
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(detail.document.setup.subject).toBe("Mathematics");
+  expect(detail.document.setup.targetLearners).toBe("Grade 4");
+  expect(detail.document.setup.learningOutcomeId).toBeNull();
+  expect(detail.document.ministryForm.subTopic).toBe("Equal shares");
+  expect(generationRequests).toHaveLength(0);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", {
+      name: "AI proposals - you remain the editor",
+      exact: true,
+    }),
+  ).toBeVisible();
+});
+
 test("reviewed source import connects teacher discovery, native adaptation, PDF, SCORM teaching and learner playback", async ({
   page,
   browser,
@@ -366,10 +465,12 @@ test("a new plan retains selected library context without inventing managed alig
   await expect(
     page.getByRole("button", { name: "Free-form", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByLabel("Subject / learning area")).toHaveValue(
-    "Mathematics",
-  );
-  await expect(page.getByLabel("Target age / grade")).toHaveValue("Grade 4");
+  await expect(
+    page.getByRole("button", { name: "Mathematics", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(
+    page.getByRole("button", { name: "Grade 4", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByLabel("Lesson title", { exact: true })).toHaveValue(
     "Fractions",
   );

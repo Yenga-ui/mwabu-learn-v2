@@ -30,6 +30,7 @@ import PlannerSettings from "./PlannerSettings";
 import NodePicker from "../curriculum/NodePicker";
 import { rememberLesson } from "./RecentLessons";
 import { supportedTeachingMedia } from "./journey";
+import TeachingContextPicker from "./TeachingContextPicker";
 
 export default function LessonPlanner() {
   const session = useSession();
@@ -378,10 +379,10 @@ function NewLesson({
 }) {
   const navigate = useNavigate();
   const [draftParams] = useSearchParams();
-  const [libraryContext] = useState(() => {
+  const [libraryContext, setLibraryContext] = useState(() => {
     const field = (key: string) => {
       const value = draftParams.get("library" + key) ?? "";
-      return value.length <= 200 &&
+      return value.length <= (key === "subTopic" ? 500 : 200) &&
         !Array.from(value).some(
           (character) =>
             character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
@@ -397,9 +398,15 @@ function NewLesson({
       subject: field("subject"),
       topic: field("topic"),
       term: field("term"),
+      subTopic: field("subTopic"),
     };
     return Object.values(values).some(Boolean) ? values : null;
   });
+  const [topicPlanning] = useState(
+    () => draftParams.get("planning") === "topics" || !!libraryContext,
+  );
+  const aiPlanning = draftParams.get("assist") === "ai";
+  const [customContext, setCustomContext] = useState(false);
   const contextLabel = libraryContext
     ? [
         libraryContext.year && `${libraryContext.year} Zambian curriculum`,
@@ -407,6 +414,7 @@ function NewLesson({
         libraryContext.subject,
         libraryContext.topic,
         libraryContext.term,
+        libraryContext.subTopic,
       ]
         .filter(Boolean)
         .join(" · ")
@@ -423,7 +431,10 @@ function NewLesson({
             : "",
           teachingContext: `Selected library context: ${contextLabel}. Select a managed learning outcome to establish official curriculum alignment.`,
         }
-      : blankSetup(),
+      : {
+          ...blankSetup(),
+          ...(topicPlanning ? { mode: "FreeForm" as const } : {}),
+        },
   );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<unknown>();
@@ -434,7 +445,8 @@ function NewLesson({
     enabled: !!resource,
   });
   const persisted = useRef(false);
-  const dirty = JSON.stringify(setup) !== JSON.stringify(blankSetup());
+  const initialSetup = useRef(setup);
+  const dirty = JSON.stringify(setup) !== JSON.stringify(initialSetup.current);
   const blocker = useBlocker(() => dirty && !persisted.current);
   useBeforeUnload((event) => {
     if (dirty && !persisted.current) {
@@ -458,6 +470,39 @@ function NewLesson({
               : section,
           ),
           reason: "Teacher created draft",
+          ...(setup.mode === "FreeForm" && libraryContext?.subTopic
+            ? {
+                ministryForm: {
+                  topic: libraryContext.topic,
+                  subTopic: libraryContext.subTopic,
+                  progression: [
+                    "introduction",
+                    "lesson-development",
+                    "exercise",
+                    "homework",
+                    "conclusion",
+                    "reinforcement",
+                    "extension",
+                  ].map((code) => ({
+                    code,
+                    teacherActivities: "",
+                    learnerActivities: "",
+                    assessmentCriteria: "",
+                    minutes: 0,
+                  })),
+                  needsReview: [
+                    "introduction",
+                    "lesson-development",
+                    "exercise",
+                    "homework",
+                    "conclusion",
+                    "reinforcement",
+                    "extension",
+                    "expected-standard",
+                  ],
+                },
+              }
+            : {}),
           teachingSteps: resourcePreview.data?.assets.some((a) =>
             supportedTeachingMedia.includes(a.mimeType),
           )
@@ -523,7 +568,9 @@ function NewLesson({
           );
         }
       }
-      navigate(`/app/lessons/${detail.lesson.id}`);
+      navigate(
+        `/app/lessons/${detail.lesson.id}${aiPlanning ? "?view=ai" : ""}`,
+      );
       notify("Lesson draft created.");
     } catch (failure) {
       setError(failure);
@@ -533,7 +580,10 @@ function NewLesson({
   }
   return (
     <>
-      <PageTitle eyebrow="A NEW TEACHING IDEA" title="Create lesson plan">
+      <PageTitle
+        eyebrow="A NEW TEACHING IDEA"
+        title={aiPlanning ? "Create a lesson with AI" : "Create lesson plan"}
+      >
         Choose your grade, subject and topic below. We will suggest a title.
         Save your plan, then write your teaching steps or ask AI to help.
       </PageTitle>
@@ -543,6 +593,48 @@ function NewLesson({
         data-unsaved-work={dirty && !persisted.current}
       >
         {!!error && <ErrorNotice error={error} />}
+        {topicPlanning && setup.mode === "FreeForm" && !customContext && (
+          <TeachingContextPicker
+            disabled={busy}
+            value={
+              libraryContext ?? {
+                year: "",
+                grade: "",
+                subject: "",
+                topic: "",
+                term: "",
+              }
+            }
+            change={(context) => {
+              const label = [
+                context.year && `${context.year} Zambian curriculum`,
+                context.grade && `Grade ${context.grade}`,
+                context.subject,
+                context.term,
+                context.topic,
+                context.subTopic,
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              setSetup((previous) => ({
+                ...previous,
+                title:
+                  !previous.title.trim() ||
+                  previous.title ===
+                    (libraryContext?.subTopic || libraryContext?.topic)
+                    ? context.subTopic || context.topic
+                    : previous.title,
+                subject: context.subject,
+                targetLearners: context.grade ? `Grade ${context.grade}` : "",
+                teachingContext: `Selected library context: ${label}. Select a managed learning outcome to establish official curriculum alignment.`,
+              }));
+              setLibraryContext({
+                ...context,
+                subTopic: context.subTopic ?? "",
+              });
+            }}
+          />
+        )}
         {libraryContext && (
           <section className="card" aria-label="Selected library context">
             <h2>Your selected teaching context</h2>
@@ -578,7 +670,61 @@ function NewLesson({
             )}
           </section>
         )}
-        <SetupForm value={setup} change={setSetup} disabled={busy} simple />
+        {topicPlanning && setup.mode === "FreeForm" && (
+          <p>
+            <button
+              type="button"
+              className="button secondary"
+              disabled={busy}
+              onClick={() => {
+                setCustomContext(!customContext);
+                if (!customContext) {
+                  setLibraryContext(null);
+                  setSetup((previous) => ({
+                    ...previous,
+                    teachingContext: previous.teachingContext.startsWith(
+                      "Selected library context:",
+                    )
+                      ? ""
+                      : previous.teachingContext,
+                  }));
+                }
+              }}
+            >
+              {customContext
+                ? "Choose Mwabu topics"
+                : "Use my own subject and grade"}
+            </button>
+          </p>
+        )}
+        <SetupForm
+          value={setup}
+          change={(next) =>
+            setSetup(
+              next.mode === "FreeForm" &&
+                setup.mode !== "FreeForm" &&
+                topicPlanning &&
+                libraryContext
+                ? {
+                    ...next,
+                    subject: libraryContext.subject,
+                    targetLearners: libraryContext.grade
+                      ? `Grade ${libraryContext.grade}`
+                      : "",
+                  }
+                : next,
+            )
+          }
+          disabled={busy}
+          simple
+          hideFreeFormContext={topicPlanning && !customContext}
+        />
+        {aiPlanning && (
+          <p>
+            Next, review your AI settings and request a proposal. Nothing is
+            generated or published automatically.
+          </p>
+        )}
         {resource && (
           <p>
             The selected published Mwabu resource will be attached to your new
@@ -590,10 +736,20 @@ function NewLesson({
           disabled={
             busy ||
             (!!resource && !resourcePreview.data) ||
+            (topicPlanning &&
+              setup.mode === "FreeForm" &&
+              !customContext &&
+              (!libraryContext?.grade ||
+                !libraryContext.subject ||
+                !libraryContext.topic)) ||
             (setup.mode === "CurriculumAligned" && !setup.learningOutcomeId)
           }
         >
-          {busy ? "Creating draft…" : "Create draft"}
+          {busy
+            ? "Creating draft…"
+            : aiPlanning
+              ? "Save and continue to AI"
+              : "Create draft"}
         </button>{" "}
         <Link className="button secondary" to="/app/lessons">
           Cancel

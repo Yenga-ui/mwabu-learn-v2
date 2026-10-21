@@ -215,6 +215,20 @@ export default function Curriculum() {
                             Find resources
                           </Link>
                         )}
+                        {level >= 0 && session.can("lessons.read") && (
+                          <Link
+                            to={
+                              "/app/lessons?" +
+                              queryString({
+                                nodeType: nodeTypes[level],
+                                nodeId: node.id,
+                                context: node.name,
+                              })
+                            }
+                          >
+                            Find lesson plans
+                          </Link>
+                        )}
                       </div>
                     </article>
                   ))}
@@ -252,6 +266,21 @@ export default function Curriculum() {
           >
             Explore connected resources
           </Link>
+          {session.can("lessons.read") && (
+            <Link
+              className="button secondary"
+              to={
+                "/app/lessons?" +
+                queryString({
+                  nodeType: "LearningOutcome",
+                  nodeId: parent,
+                  context: trail.at(-1)?.name,
+                })
+              }
+            >
+              Find lesson plans
+            </Link>
+          )}
         </section>
       )}
       {editing && (

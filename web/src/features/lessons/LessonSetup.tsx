@@ -5,11 +5,13 @@ export default function LessonSetup({
   change,
   disabled = false,
   simple = false,
+  hideFreeFormContext = false,
 }: {
   value: Setup;
   change: (value: Setup) => void;
   disabled?: boolean;
   simple?: boolean;
+  hideFreeFormContext?: boolean;
 }) {
   const set = <K extends keyof Setup>(key: K, item: Setup[K]) =>
     change({ ...value, [key]: item });
@@ -69,6 +71,12 @@ export default function LessonSetup({
               : "Choose a learning outcome to finish alignment. Your curriculum choices stay linked automatically."}
           </p>
         </>
+      ) : hideFreeFormContext ? (
+        <p role="status">
+          {value.targetLearners && value.subject
+            ? `${value.targetLearners} · ${value.subject}. Change your choices above.`
+            : "Choose your grade, subject and topic above to continue."}
+        </p>
       ) : (
         <div className="lesson-grid">
           <label>

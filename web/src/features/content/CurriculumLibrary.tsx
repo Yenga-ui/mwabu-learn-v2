@@ -13,6 +13,7 @@ interface Choice {
   subject: string;
   topic: string;
   term: string | null;
+  subTopic?: string | null;
 }
 interface Entry {
   content: Content;
@@ -23,6 +24,7 @@ interface Entry {
   term: string | null;
   isTemplate: boolean;
   associatedResource: boolean;
+  subTopic?: string | null;
 }
 interface Result {
   resources: {
@@ -50,7 +52,7 @@ export default function CurriculumLibrary() {
   const update = (key: string, value: string) => {
     const next = new URLSearchParams(params);
     next.delete("page");
-    const order = ["year", "grade", "subject", "term", "topic"];
+    const order = ["year", "grade", "subject", "term", "topic", "subTopic"];
     const index = order.indexOf(key);
     if (index >= 0) order.slice(index + 1).forEach((k) => next.delete(k));
     if (value) next.set(key, value);
@@ -73,11 +75,15 @@ export default function CurriculumLibrary() {
   const returnPath = "/app/library" + (params.size ? "?" + params : "");
   const draftContext = new URLSearchParams();
   const schoolContext = new URLSearchParams();
-  for (const key of ["year", "grade", "subject", "topic", "term"]) {
+  for (const key of ["year", "grade", "subject", "topic", "term", "subTopic"]) {
     const value = params.get(key);
     if (value) {
       draftContext.set("library" + key, value);
-      schoolContext.set("source" + key[0].toUpperCase() + key.slice(1), value);
+      if (key !== "subTopic")
+        schoolContext.set(
+          "source" + key[0].toUpperCase() + key.slice(1),
+          value,
+        );
     }
   }
   const createPath =
@@ -98,8 +104,21 @@ export default function CurriculumLibrary() {
         )}
         {session.can("lessons.manage") && (
           <>
-            <Link className="button secondary" to="/app/lessons/new">
+            <Link
+              className="button secondary"
+              to="/app/lessons/new?planning=topics"
+            >
               Write a lesson plan
+            </Link>
+            <Link
+              className="button secondary"
+              to={
+                createPath +
+                (draftContext.size ? "&" : "?") +
+                "planning=topics&assist=ai"
+              }
+            >
+              Create with AI
             </Link>
           </>
         )}
@@ -172,6 +191,47 @@ export default function CurriculumLibrary() {
             </Link>
           </p>
         )}
+        {topic &&
+          distinct(
+            scoped
+              .filter(
+                (x) =>
+                  x.topic === topic &&
+                  (!params.get("term") || x.term === params.get("term")),
+              )
+              .flatMap((x) => (x.subTopic ? [x.subTopic] : [])),
+          ).length > 0 && (
+            <>
+              <h2>4. Choose a subtopic (optional)</h2>
+              <div className="teaching-choice-grid">
+                <button
+                  className="teaching-choice"
+                  aria-pressed={!params.get("subTopic")}
+                  onClick={() => update("subTopic", "")}
+                >
+                  All subtopics
+                </button>
+                {distinct(
+                  scoped
+                    .filter(
+                      (x) =>
+                        x.topic === topic &&
+                        (!params.get("term") || x.term === params.get("term")),
+                    )
+                    .flatMap((x) => (x.subTopic ? [x.subTopic] : [])),
+                ).map((value) => (
+                  <button
+                    className="teaching-choice"
+                    key={value}
+                    aria-pressed={params.get("subTopic") === value}
+                    onClick={() => update("subTopic", value)}
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         <p className="muted">
           Choose a plan below to adapt it, or write your own. No typing needed
           to browse.
@@ -339,7 +399,8 @@ export default function CurriculumLibrary() {
                         Reviewed resource associated with this teaching context.
                       </p>
                     )}
-                    <p>{entry.content.summary}</p>
+                    {entry.subTopic && <p>Subtopic: {entry.subTopic}</p>}
+                    {!entry.isTemplate && <p>{entry.content.summary}</p>}
                     <Link
                       className="button"
                       to={`/app/resources/${entry.content.id}?return=${encodeURIComponent(returnPath)}`}

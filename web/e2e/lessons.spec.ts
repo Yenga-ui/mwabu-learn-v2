@@ -235,6 +235,9 @@ test("teacher searches curriculum by name and creates an aligned lesson with der
     .getByRole("link", { name: "Write a lesson plan", exact: true })
     .click();
   await page
+    .getByRole("button", { name: "Curriculum-aligned", exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "Choose curriculum first", exact: true })
     .click();
   await page.getByText("Search or choose from a list", { exact: true }).click();

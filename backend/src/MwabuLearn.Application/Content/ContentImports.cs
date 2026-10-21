@@ -14,8 +14,8 @@ public sealed record SourcePlanContext(Guid ContentItemId, int CurriculumYear, i
 public sealed record OfficialTemplateDetail(ContentResponse Resource, SourcePlanContext Context, MinistryLessonForm Form,
     TeachingResource[] Resources, string[] MissingDependencies);
 public sealed record CurriculumLibraryFilter(int? Year = null, int? Grade = null, string? Subject = null,
-    string? Topic = null, string? Term = null, string? Type = null, string? Text = null, int Page = 1);
-public sealed record CurriculumLibraryOption(int Year, int Grade, string Subject, string Topic, string? Term);
-public sealed record CurriculumLibraryEntry(ContentResponse Content, int? Year, int? Grade, string? Subject, string? Topic, string? Term, bool IsTemplate, bool AssociatedResource);
+    string? Topic = null, string? Term = null, string? Type = null, string? Text = null, int Page = 1, string? SubTopic = null);
+public sealed record CurriculumLibraryOption(int Year, int Grade, string Subject, string Topic, string? Term, string? SubTopic = null);
+public sealed record CurriculumLibraryEntry(ContentResponse Content, int? Year, int? Grade, string? Subject, string? Topic, string? Term, bool IsTemplate, bool AssociatedResource, string? SubTopic = null);
 public sealed record CurriculumLibraryResult(PagedResponse<CurriculumLibraryEntry> Resources, CurriculumLibraryOption[] Choices);
 public sealed record LinkImportedResource(Guid AssetId, string Evidence, string SourceDependency);

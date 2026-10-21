@@ -46,6 +46,21 @@ public sealed class ContentImportTests
         response.EnsureSuccessStatusCode(); return (await response.Content.ReadFromJsonAsync<ContentImportReport>(CatalogueApiFactory.Json))!;
     }
     [Fact]
+    public async Task Library_subtopics_use_published_source_metadata_and_filter_exactly_without_inference()
+    {
+        using var f = Factory(); await f.Initialize(); using var teacher = await f.User("Teacher");
+        var first = Source().Replace("<p>Grade: 4</p>", "<p>Grade: 4</p><p>Sub-topic: Equal parts</p>");
+        var second = Source().Replace("<p>Grade: 4</p>", "<p>Grade: 4</p><p>Sub-topic: Comparing shares</p>");
+        var report = await Preview(f.Admin, Zip(("equal.html", first), ("compare.html", second)));
+        await Apply(f.Admin, report, report.Records.Where(x => x.State == "Ready").Select(x => x.Id).ToArray());
+        var library = (await teacher.Client.GetFromJsonAsync<CurriculumLibraryResult>("/api/learning/library?grade=4&topic=Fractions&subTopic=Equal%20parts", CatalogueApiFactory.Json))!;
+        Assert.Equal("Equal parts", Assert.Single(library.Resources.Items).SubTopic);
+        Assert.Contains(library.Choices, x => x.SubTopic == "Comparing shares");
+        var missing = (await teacher.Client.GetFromJsonAsync<CurriculumLibraryResult>("/api/learning/library?subTopic=Unknown", CatalogueApiFactory.Json))!;
+        Assert.Empty(missing.Resources.Items);
+        Assert.Equal(HttpStatusCode.BadRequest, (await teacher.Client.GetAsync("/api/learning/library?subTopic=" + new string('x', 501))).StatusCode);
+    }
+    [Fact]
     public async Task Import_is_restartable_deduplicated_scoped_and_preserves_original_source_and_missing_metadata()
     {
         using var f = Factory(); await f.Initialize(); using var teacher = await f.User("Teacher"); using var other = await f.User("Teacher");
