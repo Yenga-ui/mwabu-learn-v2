@@ -78,6 +78,45 @@ test("login restores the real current user without storing credentials", async (
     "MwabuAccess",
   );
 });
+test("login typography fits laptop screens and reflows without horizontal scrolling", async ({
+  page,
+}, testInfo) => {
+  for (const [width, height] of [
+    [1366, 768],
+    [1280, 640],
+    [1024, 768],
+    [390, 844],
+    [320, 568],
+  ]) {
+    await page.setViewportSize({ width, height });
+    await page.goto("/login");
+    await expect(
+      page.getByRole("heading", {
+        name: "Sign in to Mwabu Learn",
+        exact: true,
+      }),
+    ).toBeVisible();
+    const dimensions = await page.evaluate(() => ({
+      width: document.documentElement.scrollWidth,
+      viewport: innerWidth,
+      height: document.documentElement.scrollHeight,
+      viewportHeight: innerHeight,
+    }));
+    expect(dimensions.width).toBeLessThanOrEqual(dimensions.viewport + 1);
+    if (width >= 1024)
+      expect(dimensions.height).toBeLessThanOrEqual(
+        dimensions.viewportHeight + 1,
+      );
+    await expect(
+      page.getByRole("button", { name: "Sign in", exact: true }),
+    ).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath(`login-${width}x${height}.png`),
+      fullPage: true,
+    });
+  }
+});
+
 test("invalid login displays a generic error", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email address").fill("missing@mwabu.invalid");
