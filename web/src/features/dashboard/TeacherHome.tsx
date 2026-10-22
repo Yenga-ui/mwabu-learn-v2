@@ -1,7 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, FilePlus, Play, Search } from "lucide-react";
+import {
+  BookOpen,
+  FilePlus,
+  Play,
+  Search,
+  Sparkles,
+  GraduationCap,
+} from "lucide-react";
 import { api } from "../../api/client";
 import type { Page } from "../../api/types";
 import { useSession } from "../../auth/Session";
@@ -60,7 +67,7 @@ export default function TeacherHome() {
                     key={grade}
                     to={`/app/library?grade=${grade}`}
                   >
-                    Grade {grade}
+                    <GraduationCap size={24} aria-hidden="true" /> Grade {grade}
                   </Link>
                 ))}
               {!data.choices.length && (
@@ -120,7 +127,7 @@ export default function TeacherHome() {
             className="card"
             to="/app/lessons/new?planning=topics&assist=ai"
           >
-            <FilePlus aria-hidden="true" />
+            <Sparkles aria-hidden="true" />
             <strong>Create with AI</strong>
             <span>Choose a topic and answer a few classroom questions.</span>
           </Link>

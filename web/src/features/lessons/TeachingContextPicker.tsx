@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../api/client";
 import { QueryState } from "../../components/ui";
+import TeachingIcon from "../../components/TeachingIcon";
 
 export interface TeachingContext {
   year: string;
@@ -91,7 +92,7 @@ export default function TeachingContextPicker({
                     key={grade}
                     onClick={() => select("grade", grade)}
                   >
-                    Grade {grade}
+                    <TeachingIcon /> Grade {grade}
                   </button>
                 ))}
               </div>
@@ -107,7 +108,7 @@ export default function TeachingContextPicker({
                         key={subject}
                         onClick={() => select("subject", subject)}
                       >
-                        {subject}
+                        <TeachingIcon subject={subject} /> {subject}
                       </button>
                     ))}
                   </div>
@@ -129,7 +130,7 @@ export default function TeachingContextPicker({
                         key={topic}
                         onClick={() => select("topic", topic)}
                       >
-                        {topic}
+                        <TeachingIcon subject={value.subject} /> {topic}
                       </button>
                     ))}
                   </div>

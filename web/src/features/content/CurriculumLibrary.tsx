@@ -6,6 +6,8 @@ import type { Content, Page } from "../../api/types";
 import type { Lesson } from "../lessons/types";
 import { PageTitle, QueryState, SearchBar, Badge } from "../../components/ui";
 import { useSession } from "../../auth/Session";
+import TeachingIcon from "../../components/TeachingIcon";
+import { GraduationCap } from "lucide-react";
 
 interface Choice {
   year: number;
@@ -140,7 +142,7 @@ export default function CurriculumLibrary() {
               aria-pressed={grade === value}
               onClick={() => update("grade", value)}
             >
-              Grade {value}
+              <GraduationCap size={24} aria-hidden="true" /> Grade {value}
             </button>
           ))}
         </div>
@@ -155,7 +157,7 @@ export default function CurriculumLibrary() {
                   aria-pressed={subject === value}
                   onClick={() => update("subject", value)}
                 >
-                  {value}
+                  <TeachingIcon subject={value} /> {value}
                 </button>
               ))}
             </div>
@@ -178,7 +180,7 @@ export default function CurriculumLibrary() {
                   aria-pressed={topic === value}
                   onClick={() => update("topic", value)}
                 >
-                  {value}
+                  <TeachingIcon subject={subject} /> {value}
                 </button>
               ))}
             </div>

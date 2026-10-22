@@ -2083,3 +2083,8 @@
   display: grid;
   gap: 1rem;
 }
+.teaching-choice > svg {
+  flex-shrink: 0;
+  margin-inline-end: 0.6rem;
+  vertical-align: middle;
+}

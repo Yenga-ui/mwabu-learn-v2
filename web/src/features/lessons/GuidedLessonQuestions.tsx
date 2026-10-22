@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { Setup } from "./types";
+import { Users, Lightbulb, ClipboardCheck } from "lucide-react";
 
 /** Answers are saved in the lesson, so the durable AI job uses the same revision. */
 export default function GuidedLessonQuestions({
@@ -15,6 +16,7 @@ export default function GuidedLessonQuestions({
     "Learning and support",
     "Review your answers",
   ];
+  const questionIcons = [Users, Lightbulb, ClipboardCheck];
   const set = <K extends keyof Setup>(key: K, answer: Setup[K]) =>
     change({ ...value, [key]: answer });
   return (
@@ -24,17 +26,21 @@ export default function GuidedLessonQuestions({
         check.
       </p>
       <nav aria-label="Planning questions" className="teaching-choice-grid">
-        {headings.map((heading, index) => (
-          <button
-            type="button"
-            key={heading}
-            className="teaching-choice"
-            aria-current={step === index ? "step" : undefined}
-            onClick={() => setStep(index)}
-          >
-            {index + 1}. {heading}
-          </button>
-        ))}
+        {headings.map((heading, index) => {
+          const Icon = questionIcons[index];
+          return (
+            <button
+              type="button"
+              key={heading}
+              className="teaching-choice"
+              aria-current={step === index ? "step" : undefined}
+              onClick={() => setStep(index)}
+            >
+              <Icon size={24} aria-hidden="true" />
+              {index + 1}. {heading}
+            </button>
+          );
+        })}
       </nav>
       <h3 tabIndex={-1}>{headings[step]}</h3>
       {step === 0 && (

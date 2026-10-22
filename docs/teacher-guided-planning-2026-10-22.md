@@ -41,3 +41,7 @@ Evidence: `artifacts/teacher-guided-planning-2026-10-22/` (local, untracked). Th
 - This iteration improves the existing teacher journey; it is not a claim that every platform screen has been redesigned.
 
 Local review: `https://localhost:7042/app`. Launch through `scripts/start-local-review.cmd`; existing data and sessions are preserved. No deployment or merge into main was performed.
+
+## Visual navigation follow-up
+
+Grade tiles now include a graduation-cap icon in discovery and the workspace. Subject/topic choices in discovery and creation use consistent subject icons (mathematics, science, languages, creative subjects and social studies), with a book fallback. AI planning has a sparkle action and classroom, learning and review icons. All icons are decorative and retain visible text labels; selection and keyboard focus are unchanged. Eight relevant frontend tests, TypeScript, strict lint and the production build passed. This adopts the live site's progressive navigation pattern; it is not a pixel-for-pixel reproduction or a claim that every screen has received a complete visual redesign.
