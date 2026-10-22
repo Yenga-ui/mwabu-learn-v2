@@ -68,10 +68,87 @@
   }
   .lesson-card {
     min-width: 0;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
-  .lesson-card > span {
-    display: block;
+  .lesson-card-heading,
+  .lesson-card-facts,
+  .lesson-card-facts > span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .lesson-card-heading {
+    justify-content: space-between;
+  }
+  .lesson-card-icon {
+    background: var(--surface-muted);
+    color: var(--primary);
+    padding: 10px;
+    border-radius: 12px;
+  }
+  .lesson-card-owner {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+  }
+  .lesson-card h2 {
+    font-size: 1.12rem;
+    line-height: 1.4;
+    margin: 0;
+    overflow-wrap: anywhere;
+  }
+  .lesson-card h2 a {
+    text-decoration: none;
+  }
+  .lesson-card h2 a:hover {
+    text-decoration: underline;
+  }
+  .lesson-card-context {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+  .lesson-card-facts {
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    gap: 14px;
+    color: var(--text-muted);
+  }
+  .lesson-card-primary {
+    margin-top: auto;
+    padding-top: 8px;
+  }
+  .lesson-card .button {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    min-height: 44px;
+  }
+  .lesson-card-more {
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+  .lesson-card-more summary {
+    cursor: pointer;
+    color: var(--primary);
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+  .lesson-card-more .actions {
+    margin-block: 12px;
+  }
+  .lesson-card-more > .button {
     margin-top: 10px;
+  }
+  @media (max-width: 620px) {
+    .lesson-cards {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 14px;
+    }
+    .lesson-card {
+      padding: 18px;
+    }
   }
   .lesson-section {
     border-top: 1px solid var(--border);

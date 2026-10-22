@@ -8,7 +8,15 @@ import {
   useBlocker,
 } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Plus, NotebookPen } from "lucide-react";
+import {
+  Plus,
+  NotebookPen,
+  Clock,
+  Paperclip,
+  Play,
+  BookOpen,
+} from "lucide-react";
+import TeachingIcon from "../../components/TeachingIcon";
 import { api, queryString } from "../../api/client";
 import { useSession } from "../../auth/Session";
 import {
@@ -267,8 +275,13 @@ export default function LessonPlanner() {
               <div className="lesson-cards">
                 {data.items.map((lesson) => (
                   <article className="panel lesson-card" key={lesson.id}>
-                    <Badge>{lesson.status}</Badge>
-                    <span>
+                    <header className="lesson-card-heading">
+                      <span className="lesson-card-icon">
+                        <TeachingIcon subject={lesson.subject ?? undefined} />
+                      </span>
+                      <Badge>{lesson.status}</Badge>
+                    </header>
+                    <span className="lesson-card-owner">
                       {lesson.isOrganisationTemplate
                         ? "Approved organisation template"
                         : lesson.ownerUserId === session.user?.id
@@ -280,12 +293,7 @@ export default function LessonPlanner() {
                         {lesson.title}
                       </Link>
                     </h2>
-                    <p>
-                      {lesson.mode === "CurriculumAligned"
-                        ? "Managed curriculum alignment"
-                        : "Free-form planning"}
-                    </p>
-                    <p>
+                    <p className="lesson-card-context">
                       {[
                         lesson.grade,
                         lesson.subject,
@@ -295,74 +303,87 @@ export default function LessonPlanner() {
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
-                    <p>
-                      {lesson.durationMinutes
-                        ? `${lesson.durationMinutes} minutes · `
-                        : ""}
-                      {lesson.resourceCount ?? 0} learning resources attached
-                    </p>
-                    <p>
-                      {lesson.canEdit
-                        ? "Your editable draft"
-                        : "View this lesson and use an authorised copy."}
-                    </p>
-                    <div className="actions">
-                      <Link
-                        className="button secondary"
-                        to={`/app/lessons/${lesson.id}`}
-                      >
-                        View lesson
+                    <div className="lesson-card-facts">
+                      {lesson.durationMinutes ? (
+                        <span>
+                          <Clock size={15} aria-hidden="true" />
+                          {lesson.durationMinutes} minutes
+                        </span>
+                      ) : (
+                        ""
+                      )}
+                      <span>
+                        <Paperclip size={15} aria-hidden="true" />
+                        {lesson.resourceCount ?? 0}{" "}
+                        {(lesson.resourceCount ?? 0) === 1
+                          ? "resource"
+                          : "resources"}
+                      </span>
+                    </div>
+                    <div className="actions lesson-card-primary">
+                      <Link className="button" to={`/app/lessons/${lesson.id}`}>
+                        <BookOpen size={16} aria-hidden="true" /> View lesson
                       </Link>
-                      <Link
-                        className="button secondary"
-                        to={`/app/lessons/${lesson.id}?view=resources`}
-                      >
-                        View resources
-                      </Link>
-                      {lesson.canReuse && (
-                        <button
-                          className="button"
-                          disabled={!!copying}
-                          onClick={() => {
-                            setCopying(lesson.id);
-                            setReuseError(undefined);
-                            void api<Detail>(
-                              lessonBase(org!) + `/${lesson.id}/duplicate`,
-                              { method: "POST" },
-                            )
-                              .then((copy) =>
-                                navigate(`/app/lessons/${copy.lesson.id}`),
-                              )
-                              .catch(setReuseError)
-                              .finally(() => setCopying(undefined));
-                          }}
+                      {lesson.status !== "Archived" && (
+                        <Link
+                          className="button secondary"
+                          to={`/app/lessons/${lesson.id}/teach?revision=${lesson.revision}`}
                         >
-                          {copying === lesson.id
-                            ? "Creating your draft…"
-                            : "Adapt plan"}
-                        </button>
+                          <Play size={16} aria-hidden="true" /> Teach lesson
+                        </Link>
                       )}
                     </div>
-                    <small>
-                      Revision {lesson.revision} ·{" "}
-                      {new Date(
-                        lesson.updatedAt ?? lesson.createdAt,
-                      ).toLocaleDateString()}
-                    </small>
-                    <Link
-                      className="button"
-                      to={`/app/lessons/${lesson.id}/journey?revision=${lesson.revision}`}
-                    >
-                      Open Lesson Journey
-                    </Link>
-                    {lesson.status !== "Archived" && (
+                    <details className="lesson-card-more">
+                      <summary>Resources and more options</summary>
+                      <div className="actions">
+                        <Link
+                          className="button secondary"
+                          to={`/app/lessons/${lesson.id}?view=resources`}
+                        >
+                          View resources
+                        </Link>
+                        {lesson.canReuse && (
+                          <button
+                            className="button"
+                            disabled={!!copying}
+                            onClick={() => {
+                              setCopying(lesson.id);
+                              setReuseError(undefined);
+                              void api<Detail>(
+                                lessonBase(org!) + `/${lesson.id}/duplicate`,
+                                { method: "POST" },
+                              )
+                                .then((copy) =>
+                                  navigate(`/app/lessons/${copy.lesson.id}`),
+                                )
+                                .catch(setReuseError)
+                                .finally(() => setCopying(undefined));
+                            }}
+                          >
+                            {copying === lesson.id
+                              ? "Creating your draft…"
+                              : "Adapt plan"}
+                          </button>
+                        )}
+                      </div>
+                      <p className="muted">
+                        {lesson.mode === "CurriculumAligned"
+                          ? "Managed curriculum alignment"
+                          : "Teacher-created plan: no official alignment claimed"}
+                      </p>
+                      <small>
+                        Revision {lesson.revision} ·{" "}
+                        {new Date(
+                          lesson.updatedAt ?? lesson.createdAt,
+                        ).toLocaleDateString()}
+                      </small>
                       <Link
-                        className="button secondary"
-                        to={`/app/lessons/${lesson.id}/teach?revision=${lesson.revision}`}
+                        className="button"
+                        to={`/app/lessons/${lesson.id}/journey?revision=${lesson.revision}`}
                       >
-                        Teach lesson
+                        Open Lesson Journey
                       </Link>
-                    )}
+                    </details>
                   </article>
                 ))}
               </div>

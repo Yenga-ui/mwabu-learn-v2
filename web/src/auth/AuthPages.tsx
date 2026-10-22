@@ -2,7 +2,7 @@ import { Brand } from "../components/Brand";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { BookOpen, ArrowRight } from "lucide-react";
+import { BookOpen, ArrowRight, Play, Download } from "lucide-react";
 import { api, sessionChanged } from "../api/client";
 import { Form, type Field } from "../components/ui";
 import { safeReturn } from "./permissions";
@@ -59,24 +59,34 @@ export default function AuthPages({
           <Brand />
         </Link>
         <div>
-          <p className="eyebrow">FOR EVERY LEARNING DAY</p>
-          <h1>
-            Bring a little
-            <br />
-            <em>discovery</em>
-            <br />
-            to your classroom.
-          </h1>
+          <p className="eyebrow">MWABU LEARN</p>
+          <h1>Ready for your next lesson.</h1>
           <p>
-            Thoughtful resources. Connected curricula.
-            <br />
-            More time for the moments that matter.
+            Find curriculum resources, prepare your lessons and bring learning
+            to life.
           </p>
-          <div className="auth-illustration" aria-hidden="true">
-            <BookOpen size={120} strokeWidth={1} />
-            <span className="orbit one" />
-            <span className="orbit two" />
-            <span className="orbit three" />
+          <div className="auth-features">
+            <p>
+              <BookOpen aria-hidden="true" />
+              <span>
+                <strong>Plan with confidence</strong>Find a lesson or create
+                your own.
+              </span>
+            </p>
+            <p>
+              <Play aria-hidden="true" />
+              <span>
+                <strong>Bring lessons to life</strong>Open interactive teaching
+                content.
+              </span>
+            </p>
+            <p>
+              <Download aria-hidden="true" />
+              <span>
+                <strong>Prepare for offline learning</strong>Download available
+                lesson packages.
+              </span>
+            </p>
           </div>
         </div>
         <small>Made for teachers. Built around learners.</small>
@@ -97,7 +107,7 @@ export default function AuthPages({
           <p>
             {mode === "login"
               ? "Sign in to your learning workspace."
-              : "Your organisation manages access to Mwabu Learn."}
+              : "Get help accessing your Mwabu Learn account."}
           </p>
           {message ? (
             <div role="status" className="alert success">
@@ -155,8 +165,9 @@ export default function AuthPages({
           <div className="auth-help">
             <strong>Need an account?</strong>
             <p>
-              For school access, ask your organisation administrator. Individual
-              teachers and parents can contact Mwabu to arrange access.
+              Teachers, parents and schools can contact Mwabu to arrange access.
+              If your school already uses Mwabu Learn, your school administrator
+              can help you sign in.
             </p>
           </div>
         </div>
