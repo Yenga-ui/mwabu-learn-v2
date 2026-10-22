@@ -13,6 +13,13 @@ export interface User {
   lastName: string;
   phoneNumber?: string;
   isActive: boolean;
+  isLicensed?: boolean;
+  registrationRole?: string;
+  licenceUpdatedAt?: string;
+  registeredByUserId?: string;
+  registrationOrganisationId?: string;
+  acceptedPolicyId?: string;
+  policyAcceptedAt?: string;
   lastLoginAt?: string;
   createdAt: string;
 }

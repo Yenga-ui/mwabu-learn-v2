@@ -19,6 +19,9 @@ public sealed class ContentItem : BaseEntity
     public string LanguageCode { get; set; } = string.Empty;
     public int SortOrder { get; set; }
     public bool IsDownloadable { get; set; } = true;
+    public bool GuestTeacherVisible { get; set; }
+    public bool GuestLearnerVisible { get; set; }
+    public bool GuestCanUse { get; set; }
     public int? EstimatedDurationMinutes { get; set; }
     public DateTime? PublishedAt { get; set; }
     public ICollection<ContentAsset> Assets { get; set; } = new List<ContentAsset>();

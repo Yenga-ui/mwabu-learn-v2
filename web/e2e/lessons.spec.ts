@@ -271,6 +271,11 @@ test.beforeAll(async ({ playwright }) => {
   expect(created.status()).toBe(201);
   const account = await created.json();
   peerId = account.user.id;
+  const licensed = await context.patch(`/api/users/${peerId}/licence`, {
+    headers,
+    data: { isLicensed: true },
+  });
+  expect(licensed.status()).toBe(204);
   const roles = await (await context.get("/api/roles", { headers })).json();
   const teacher = roles.find(
     (role: { code: string }) => role.code === "Teacher",

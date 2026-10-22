@@ -61,6 +61,7 @@ internal sealed class CatalogueApiFactory(bool development = false, Action<IWebH
         var password = TestSecurityConfiguration.StrongPassword();
         var user = await Created<UserResponse>("/api/users", new CreateUserRequest
         { Email = $"member-{Guid.NewGuid():N}@identity.test", FirstName = "Catalogue", LastName = "Consumer", InitialPassword = password });
+        Assert.Equal(HttpStatusCode.NoContent, (await Admin.PatchAsJsonAsync($"/api/users/{user.Id}/licence", new LicenceRequest(true))).StatusCode);
         var client = Client();
         await TestAuthentication.LoginAsync(client, user.Email, password);
         var memberships = new List<MembershipResponse>();

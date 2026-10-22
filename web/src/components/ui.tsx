@@ -320,6 +320,7 @@ export function Form({
                   <input
                     type="checkbox"
                     name={field.name}
+                    required={field.required}
                     defaultChecked={Boolean(value)}
                   />
                 ) : (

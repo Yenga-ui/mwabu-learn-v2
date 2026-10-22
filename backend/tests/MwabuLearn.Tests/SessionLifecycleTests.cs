@@ -46,15 +46,16 @@ public sealed class SessionLifecycleTests
     {
         using var env = new IdentityTestEnvironment(); var password = TestSecurityConfiguration.StrongPassword(); var user = await env.CreateUser(password: password);
         var one = await Login(env, user, password); var two = await Login(env, user, password);
+        var initialVersion = (await env.Db.Users.AsNoTracking().SingleAsync()).AccessTokenVersion;
         await env.Run(sp => sp.GetRequiredService<ISessionService>().LogoutAllAsync(user.Id, Ct));
         foreach (var token in new[] { one.RefreshToken!, two.RefreshToken! })
             await Assert.ThrowsAsync<IdentityException>(() => env.Run(sp => sp.GetRequiredService<ISessionService>().RefreshAsync(token, Ct)));
-        Assert.Equal(1, (await env.Db.Users.AsNoTracking().SingleAsync()).AccessTokenVersion);
+        Assert.Equal(initialVersion + 1, (await env.Db.Users.AsNoTracking().SingleAsync()).AccessTokenVersion);
         var again = await Login(env, user, password); var changed = TestSecurityConfiguration.StrongPassword();
         await env.Run(sp => sp.GetRequiredService<ISessionService>().ChangePasswordAsync(user.Id, new ChangePasswordRequest(password, changed), Ct));
         await Assert.ThrowsAsync<IdentityException>(() => Login(env, user, password));
         await Assert.ThrowsAsync<IdentityException>(() => env.Run(sp => sp.GetRequiredService<ISessionService>().RefreshAsync(again.RefreshToken!, Ct)));
-        Assert.Equal(2, (await env.Db.Users.AsNoTracking().SingleAsync()).AccessTokenVersion);
+        Assert.Equal(initialVersion + 2, (await env.Db.Users.AsNoTracking().SingleAsync()).AccessTokenVersion);
         Assert.NotNull((await Login(env, user, changed)).RefreshToken);
     }
     [Fact]

@@ -12,7 +12,10 @@ public interface IUserService
     Task<UserPage> ListAsync(UserSearchRequest request, CancellationToken ct);
     Task<UserResponse> GetAsync(Guid id, CancellationToken ct);
     Task<UserResponse> CreateAsync(CreateUserRequest request, CancellationToken ct);
+    Task RegisterAsync(CreateUserRequest request, Guid policyId, string role, CancellationToken ct);
+    Task RegisterLearnerAsync(CreateUserRequest request, Guid policyId, Guid organisationId, CancellationToken ct);
     Task SetActiveAsync(Guid id, bool isActive, CancellationToken ct);
+    Task SetLicenceAsync(Guid id, bool isLicensed, CancellationToken ct);
 }
 public interface IOrganisationService
 {

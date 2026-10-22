@@ -7,12 +7,24 @@ using static MwabuLearn.Infrastructure.Identity.IdentityValidation;
 
 namespace MwabuLearn.Infrastructure.Identity;
 
-public sealed class UserService(MwabuDbContext db, UserManager<ApplicationUser> users, PlatformAdministratorGuard guard) : IUserService
+public sealed class UserService(MwabuDbContext db, UserManager<ApplicationUser> users, PlatformAdministratorGuard guard, ICurrentUser? actor = null) : IUserService
 {
     internal static readonly Expression<Func<ApplicationUser, UserResponse>> Projection = x => new(x.Id, x.Email!, x.UserName!,
-        x.FirstName, x.LastName, x.PhoneNumber, x.IsActive, x.LastLoginAt, x.CreatedAt, x.UpdatedAt);
+        x.FirstName, x.LastName, x.PhoneNumber, x.IsActive, x.LastLoginAt, x.CreatedAt, x.UpdatedAt, x.IsLicensed, x.RegistrationRole, x.LicenceUpdatedAt, x.RegisteredByUserId, x.RegistrationOrganisationId, x.AcceptedPolicyId, x.PolicyAcceptedAt);
     internal static UserResponse Map(ApplicationUser x) => new(x.Id, x.Email!, x.UserName!, x.FirstName, x.LastName,
-        x.PhoneNumber, x.IsActive, x.LastLoginAt, x.CreatedAt, x.UpdatedAt);
+        x.PhoneNumber, x.IsActive, x.LastLoginAt, x.CreatedAt, x.UpdatedAt, x.IsLicensed, x.RegistrationRole, x.LicenceUpdatedAt, x.RegisteredByUserId, x.RegistrationOrganisationId, x.AcceptedPolicyId, x.PolicyAcceptedAt);
+    public async Task SetLicenceAsync(Guid id, bool isLicensed, CancellationToken ct)
+    {
+        var entity = await db.Users.SingleOrDefaultAsync(x => x.Id == id, ct) ?? throw Missing("User");
+        if (entity.IsLicensed == isLicensed) return;
+        entity.IsLicensed = isLicensed;
+        entity.LicenceUpdatedAt = DateTime.UtcNow;
+        entity.LicenceUpdatedBy = actor?.UserId;
+        entity.AccessTokenVersion = checked(entity.AccessTokenVersion + 1);
+        entity.UpdatedAt = DateTime.UtcNow;
+        db.AuditEvents.Add(new MwabuLearn.Domain.Entities.Auditing.AuditEvent { ActorUserId = actor?.UserId, EntityType = "UserLicence", EntityId = id, EventType = isLicensed ? "user.licence.activated" : "user.licence.revoked" });
+        Result(await users.UpdateSecurityStampAsync(entity));
+    }
     public async Task<UserPage> ListAsync(UserSearchRequest request, CancellationToken ct)
     {
         if (request.Page < 1 || request.PageSize is < 1 or > 100 || (long)(request.Page - 1) * request.PageSize > int.MaxValue)
@@ -22,6 +34,7 @@ public sealed class UserService(MwabuDbContext db, UserManager<ApplicationUser> 
         if (text is { Length: > 200 }) throw Invalid("Search text is too long.");
         if (!string.IsNullOrEmpty(text)) query = query.Where(x => x.NormalizedEmail!.Contains(text) || x.FirstName.ToUpper().Contains(text) || x.LastName.ToUpper().Contains(text));
         if (request.IsActive.HasValue) query = query.Where(x => x.IsActive == request.IsActive);
+        if (request.IsLicensed.HasValue) query = query.Where(x => x.IsLicensed == request.IsLicensed);
         var count = await query.CountAsync(ct);
         var items = await query.OrderBy(x => x.Id).Skip((request.Page - 1) * request.PageSize).Take(request.PageSize).Select(Projection).ToListAsync(ct);
         return new UserPage(items, request.Page, request.PageSize, count);
@@ -29,6 +42,35 @@ public sealed class UserService(MwabuDbContext db, UserManager<ApplicationUser> 
     public async Task<UserResponse> GetAsync(Guid id, CancellationToken ct) =>
         await db.Users.AsNoTracking().Where(x => x.Id == id).Select(Projection).SingleOrDefaultAsync(ct) ?? throw Missing("User");
     public Task<UserResponse> CreateAsync(CreateUserRequest request, CancellationToken ct) => Transaction(db, () => CreateCoreAsync(request, ct), ct);
+    public async Task RegisterLearnerAsync(CreateUserRequest request, Guid policyId, Guid organisationId, CancellationToken ct) => await Transaction(db, async () =>
+    {
+        var sponsor = actor?.UserId ?? throw Forbidden();
+        var administrator = await new PermissionEvaluator(db).HasPlatformAuthorityAsync(sponsor, ct);
+        if (!administrator && !await db.OrganisationMembershipRoles.AsNoTracking().AnyAsync(x => x.Membership.UserId == sponsor && x.Membership.OrganisationId == organisationId &&
+            x.Membership.IsActive && x.Membership.Organisation.IsActive && (x.Role.Code == "Teacher" || x.Role.Code == "ParentGuardian") && db.Users.Any(u => u.Id == sponsor && u.IsActive && u.IsLicensed), ct)) throw Forbidden();
+        if (!await db.Organisations.AnyAsync(x => x.Id == organisationId && x.IsActive, ct)) throw Invalid("Choose an active organisation for the registration request.");
+        var policy = await db.RegistrationPolicies.AsNoTracking().OrderByDescending(x => x.PublishedAt).ThenByDescending(x => x.Id).FirstOrDefaultAsync(ct);
+        if (policy is null || policy.Id != policyId) throw Conflict("Read and accept the current agreement.");
+        if (!policy.AllowLearnerRegistration) throw Invalid("Adult-managed learner registration is not enabled under the current agreement.");
+        if (await db.Users.CountAsync(x => x.RegisteredByUserId == sponsor && x.CreatedAt >= DateTime.UtcNow.Date, ct) >= 100) throw Invalid("The daily learner registration request limit has been reached. Contact Mwabu.");
+        var created = await CreateCoreAsync(request, ct);
+        var learner = await db.Users.SingleAsync(x => x.Id == created.Id, ct);
+        learner.RegistrationRole = "Learner"; learner.AcceptedPolicyId = policyId; learner.PolicyAcceptedAt = DateTime.UtcNow;
+        learner.RegisteredByUserId = sponsor; learner.RegistrationOrganisationId = organisationId;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }, ct);
+    public async Task RegisterAsync(CreateUserRequest request, Guid policyId, string role, CancellationToken ct) => await Transaction(db, async () =>
+    {
+        var policy = await db.RegistrationPolicies.AsNoTracking().OrderByDescending(x => x.PublishedAt).ThenByDescending(x => x.Id).FirstOrDefaultAsync(ct);
+        if (policy is null || policy.Id != policyId) throw Conflict("Read and accept the current registration agreement.");
+        if (role is not ("Teacher" or "Parent")) throw Invalid("Learners cannot self-register. An authorised adult or Mwabu must register them.");
+        var created = await CreateCoreAsync(request, ct);
+        var account = await db.Users.SingleAsync(x => x.Id == created.Id, ct);
+        account.IsLicensed = false; account.RegistrationRole = role; account.AcceptedPolicyId = policy.Id; account.PolicyAcceptedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync(ct);
+        return true;
+    }, ct);
     internal async Task<UserResponse> CreateCoreAsync(CreateUserRequest request, CancellationToken ct)
     {
         var email = Email(request.Email);

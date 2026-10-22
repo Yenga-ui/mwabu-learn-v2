@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { useSession } from "./Session";
 import { api, sessionChanged } from "../api/client";
 import { Action, Badge, Form, PageTitle } from "../components/ui";
 export default function Account() {
-  const { user, memberships } = useSession();
+  const { user, memberships, access } = useSession();
   const [changed, setChanged] = useState(false);
   return (
     <>
@@ -16,6 +17,21 @@ export default function Account() {
       <div className="two-column">
         <section className="card">
           <h2>Profile</h2>
+          {(access?.platformAuthority ||
+            memberships.some(
+              (x) =>
+                x.membership.isActive &&
+                x.organisationIsActive &&
+                x.roleCodes.some(
+                  (role) => role === "Teacher" || role === "ParentGuardian",
+                ),
+            )) && (
+            <p>
+              <Link className="button secondary" to="/app/register-learner">
+                Register a learner
+              </Link>
+            </p>
+          )}
           <dl>
             <dt>Email</dt>
             <dd>{user?.email}</dd>

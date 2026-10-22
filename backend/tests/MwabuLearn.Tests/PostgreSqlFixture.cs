@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using MwabuLearn.Infrastructure.Persistence;
 using Npgsql;
 namespace MwabuLearn.Tests;
@@ -27,7 +28,7 @@ internal sealed class PostgreSqlFixture : IAsyncDisposable
         parsed.Database = database; parsed.Pooling = false; parsed.IncludeErrorDetail = false;
         ConnectionString = parsed.ConnectionString;
     }
-    public static async Task<PostgreSqlFixture> CreateAsync()
+    public static async Task<PostgreSqlFixture> CreateAsync(bool beforeAccessMigration = false)
     {
         if (Environment.GetEnvironmentVariable("MWABU_RUN_POSTGRES_TESTS") != "true") throw new InvalidOperationException("Isolated PostgreSQL testing is not enabled.");
         var fixture = new PostgreSqlFixture(Environment.GetEnvironmentVariable("MWABU_POSTGRES_TEST_SERVER") ?? throw new InvalidOperationException("MWABU_POSTGRES_TEST_SERVER is required."));
@@ -35,7 +36,13 @@ internal sealed class PostgreSqlFixture : IAsyncDisposable
         {
             await using var server = new NpgsqlConnection(fixture.serverConnection); await server.OpenAsync();
             await using var create = new NpgsqlCommand($"CREATE DATABASE \"{fixture.database}\"", server); await create.ExecuteNonQueryAsync(); fixture.created = true;
-            await using var db = fixture.Context(); await db.Database.MigrateAsync();
+            await using var db = fixture.Context();
+            if (beforeAccessMigration)
+            {
+                var previous = db.Database.GetMigrations().TakeWhile(x => !x.EndsWith("_GuestRegistrationAndLicensing", StringComparison.Ordinal)).Last();
+                await db.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>().MigrateAsync(previous);
+            }
+            else await db.Database.MigrateAsync();
             return fixture;
         }
         catch { await fixture.DisposeAsync(); throw; }

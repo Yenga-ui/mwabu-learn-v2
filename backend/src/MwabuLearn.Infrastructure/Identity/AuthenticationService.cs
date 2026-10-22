@@ -36,6 +36,8 @@ public sealed class AuthenticationService(MwabuDbContext db, UserManager<Applica
             await MwabuLearn.Infrastructure.Auditing.SecurityAudit.WriteAsync(db, "authentication.login_failed", null, ct);
             throw Failure();
         }
+        if (!user.IsLicensed && !await new PermissionEvaluator(db).HasPlatformAuthorityAsync(user.Id, ct))
+            throw new IdentityException(IdentityError.Forbidden, "Your licence has not been activated. Contact Mwabu or your platform administrator.");
         user.LastLoginAt = DateTime.UtcNow;
         user.UpdatedAt = DateTime.UtcNow;
         if (!(await users.UpdateAsync(user)).Succeeded) throw Failure();

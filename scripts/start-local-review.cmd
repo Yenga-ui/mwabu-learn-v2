@@ -6,11 +6,11 @@ if not errorlevel 1 (
   echo Mwabu Learn is already running at https://localhost:7042
   exit /b 0
 )
-set "MWABU_REVIEW_BUILD=%MWABU_REVIEW_ROOT%\.local\teacher-ux-complete-api"
-set "MWABU_REVIEW_WEB=%MWABU_REVIEW_ROOT%\.local\teacher-ux-complete-web"
+set "MWABU_REVIEW_BUILD=%MWABU_REVIEW_ROOT%\.local\access-api"
+set "MWABU_REVIEW_WEB=%MWABU_REVIEW_ROOT%\.local\access-web"
 if /I "%~1"=="next" (
-  set "MWABU_REVIEW_BUILD=%MWABU_REVIEW_ROOT%\.local\sprint4-next"
-  set "MWABU_REVIEW_WEB=%MWABU_REVIEW_ROOT%\.local\sprint4-web-next"
+  echo The obsolete next build is retired. Run this script without next.
+  exit /b 1
 )
 if not exist "%MWABU_REVIEW_BUILD%\MwabuLearn.Api.dll" (
   echo The local review build is missing. Follow docs\sprint4-review-handoff.md.

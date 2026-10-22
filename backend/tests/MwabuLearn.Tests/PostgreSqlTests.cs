@@ -138,8 +138,11 @@ public sealed class PostgreSqlTests
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri("https://localhost") });
         var password = TestSecurityConfiguration.StrongPassword(); UserResponse user;
         using (var scope = factory.Services.CreateScope())
+        {
             user = await scope.ServiceProvider.GetRequiredService<IUserService>().CreateAsync(new CreateUserRequest
             { Email = "sessions@integration.test", FirstName = "Session", LastName = "Test", InitialPassword = password }, default);
+            await scope.ServiceProvider.GetRequiredService<IUserService>().SetLicenceAsync(user.Id, true, default);
+        }
         async Task<LoginResponse> Login(string secret)
         {
             client.DefaultRequestHeaders.Authorization = null;

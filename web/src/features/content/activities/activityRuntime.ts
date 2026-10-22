@@ -343,6 +343,7 @@ export function mountActivity(
     check.className = "button";
     const summary = element("p", "", form);
     summary.setAttribute("role", "status");
+    summary.setAttribute("aria-label", "Practice result");
     form.onsubmit = (event) => {
       event.preventDefault();
       let score = 0;

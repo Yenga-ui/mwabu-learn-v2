@@ -97,6 +97,7 @@ public sealed class IdentityApiTests
         var password = TestSecurityConfiguration.StrongPassword();
         var createdUser = await admin.PostAsJsonAsync("/api/users", new CreateUserRequest { Email = "manager@identity.test", FirstName = "Local", LastName = "Manager", InitialPassword = password });
         var user = (await createdUser.Content.ReadFromJsonAsync<UserResponse>())!;
+        Assert.Equal(HttpStatusCode.NoContent, (await admin.PatchAsJsonAsync($"/api/users/{user.Id}/licence", new LicenceRequest(true))).StatusCode);
         var school = await CreateOrganisation(admin, "A");
         var other = await CreateOrganisation(admin, "B");
         var memberResponse = await admin.PostAsJsonAsync($"/api/organisations/{school.Id}/members", new MembershipRequest(user.Id));

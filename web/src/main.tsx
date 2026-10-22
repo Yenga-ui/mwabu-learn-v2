@@ -9,6 +9,9 @@ import { ApiError } from "./api/client";
 import "./app/styles.css";
 import "./features/lessons/lessons.css";
 const Auth = lazy(() => import("./auth/AuthPages"));
+const GuestCatalogue = lazy(() => import("./features/content/GuestCatalogue"));
+const Register = lazy(() => import("./auth/Register"));
+const RegisterLearner = lazy(() => import("./auth/RegisterLearner"));
 const Dashboard = lazy(() => import("./features/dashboard/Dashboard"));
 const Catalogue = lazy(() => import("./features/content/Catalogue"));
 const CurriculumLibrary = lazy(
@@ -55,6 +58,16 @@ const route = (element: React.ReactNode) => (
   <Suspense fallback={<Loading />}>{element}</Suspense>
 );
 const router = createBrowserRouter([
+  {
+    path: "/register",
+    element: route(<Register />),
+    errorElement: <RouteFailure />,
+  },
+  {
+    path: "/guest",
+    element: route(<GuestCatalogue />),
+    errorElement: <RouteFailure />,
+  },
   { path: "/", element: route(<Auth />), errorElement: <RouteFailure /> },
   { path: "/login", element: route(<Auth />), errorElement: <RouteFailure /> },
   {
@@ -94,6 +107,7 @@ const router = createBrowserRouter([
       { path: "organisations", element: route(<Organisations />) },
       { path: "organisations/:id", element: route(<Organisations />) },
       { path: "users", element: route(<Users />) },
+      { path: "register-learner", element: route(<RegisterLearner />) },
       { path: "users/:id", element: route(<Users />) },
       { path: "projects", element: route(<Projects />) },
       { path: "projects/:id", element: route(<Projects />) },

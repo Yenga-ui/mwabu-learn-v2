@@ -12,6 +12,10 @@ public sealed class ApplicationUserConfiguration : IEntityTypeConfiguration<Appl
         b.Property(x => x.FirstName).IsRequired().HasMaxLength(100);
         b.Property(x => x.LastName).IsRequired().HasMaxLength(100);
         b.Property(x => x.PhoneNumber).HasMaxLength(30);
+        b.Property(x => x.RegistrationRole).HasMaxLength(16);
+        b.HasOne<MwabuLearn.Domain.Entities.Identity.RegistrationPolicy>().WithMany().HasForeignKey(x => x.AcceptedPolicyId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<ApplicationUser>().WithMany().HasForeignKey(x => x.RegisteredByUserId).OnDelete(DeleteBehavior.Restrict);
+        b.HasOne<Organisation>().WithMany().HasForeignKey(x => x.RegistrationOrganisationId).OnDelete(DeleteBehavior.Restrict);
         b.Property(x => x.Email).IsRequired().HasMaxLength(256);
         b.Property(x => x.NormalizedEmail).IsRequired().HasMaxLength(256);
         b.HasIndex(x => x.NormalizedEmail).HasDatabaseName("EmailIndex").IsUnique();

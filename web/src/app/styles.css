@@ -2123,6 +2123,16 @@
 .auth-form {
   width: 100%;
 }
+.guest-catalogue {
+  max-width: 1100px;
+  margin: auto;
+  padding: 24px;
+}
+.guest-media {
+  display: block;
+  max-width: 100%;
+  max-height: 70dvh;
+}
 .auth-layout .brand-lockup {
   width: 145px;
 }

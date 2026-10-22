@@ -39,6 +39,7 @@ public partial class MwabuDbContext(DbContextOptions<MwabuDbContext> options, Mw
     public DbSet<OrganisationMembershipRole> OrganisationMembershipRoles => Set<OrganisationMembershipRole>();
     public DbSet<Permission> Permissions => Set<Permission>();
     public DbSet<RefreshSession> RefreshSessions => Set<RefreshSession>();
+    public DbSet<RegistrationPolicy> RegistrationPolicies => Set<RegistrationPolicy>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

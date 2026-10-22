@@ -68,8 +68,13 @@ internal sealed class IdentityTestEnvironment : IDisposable
             Options.Create(options ?? Bootstrap)).InitializeAsync(CancellationToken.None));
         Actor.UserId = await Db.Users.AsNoTracking().Where(x => x.NormalizedEmail == AdminEmail.ToUpperInvariant()).Select(x => (Guid?)x.Id).SingleOrDefaultAsync();
     }
-    public Task<UserResponse> CreateUser(string email = "teacher@identity.test", string? password = null) => Run(sp => sp.GetRequiredService<IUserService>().CreateAsync(
-        new CreateUserRequest { Email = email, FirstName = "First", LastName = "Last", InitialPassword = password ?? TestSecurityConfiguration.StrongPassword() }, CancellationToken.None));
+    public async Task<UserResponse> CreateUser(string email = "teacher@identity.test", string? password = null)
+    {
+        var created = await Run(sp => sp.GetRequiredService<IUserService>().CreateAsync(
+            new CreateUserRequest { Email = email, FirstName = "First", LastName = "Last", InitialPassword = password ?? TestSecurityConfiguration.StrongPassword() }, CancellationToken.None));
+        await Run(sp => sp.GetRequiredService<IUserService>().SetLicenceAsync(created.Id, true, default));
+        return await Run(sp => sp.GetRequiredService<IUserService>().GetAsync(created.Id, default));
+    }
     public Task<OrganisationResponse> CreateOrganisation(string code = "SCHOOL", Guid? parent = null, OrganisationType type = OrganisationType.School) =>
         Run(sp => sp.GetRequiredService<IOrganisationService>().CreateAsync(new OrganisationRequest { Name = code, Code = code, OrganisationType = type, ParentOrganisationId = parent }, CancellationToken.None));
     public Task<bool> Can(Guid user, string code, Guid? organisation = null, bool platformOnly = false) =>

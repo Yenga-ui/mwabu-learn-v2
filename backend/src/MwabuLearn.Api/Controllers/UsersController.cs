@@ -15,6 +15,9 @@ namespace MwabuLearn.Api.Controllers;
 [ProducesResponseType<ProblemDetails>(409)]
 public sealed class UsersController(IUserService service, IAuthenticationService authentication) : ControllerBase
 {
+    [HttpPatch("{id:guid}/licence"), RequirePermission(PermissionCodes.UsersManage, PermissionScope.Platform)]
+    public async Task<IActionResult> Licence(Guid id, LicenceRequest request, CancellationToken ct)
+    { await service.SetLicenceAsync(id, request.IsLicensed, ct); return NoContent(); }
     [HttpGet("{id:guid}/memberships"), RequirePermission(PermissionCodes.UsersRead, PermissionScope.Platform)]
     public async Task<IActionResult> Memberships(Guid id, CancellationToken ct)
     { await service.GetAsync(id, ct); return Ok(await authentication.MyMembershipsAsync(id, ct)); }

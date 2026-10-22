@@ -18,7 +18,10 @@ public sealed class LoginRequest
     [Required, StringLength(128)] public string Password { get; init; } = string.Empty;
 }
 public sealed record UserResponse(Guid Id, string Email, string UserName, string FirstName, string LastName,
-    string? PhoneNumber, bool IsActive, DateTime? LastLoginAt, DateTime CreatedAt, DateTime? UpdatedAt);
+    string? PhoneNumber, bool IsActive, DateTime? LastLoginAt, DateTime CreatedAt, DateTime? UpdatedAt,
+    bool IsLicensed = false, string? RegistrationRole = null, DateTime? LicenceUpdatedAt = null,
+    Guid? RegisteredByUserId = null, Guid? RegistrationOrganisationId = null, Guid? AcceptedPolicyId = null, DateTime? PolicyAcceptedAt = null);
+public sealed record LicenceRequest([property: JsonRequired] bool IsLicensed);
 public sealed record LoginResponse(string AccessToken, string TokenType, DateTime ExpiresAt,
     string? RefreshToken = null, DateTime? RefreshExpiresAt = null, DateTime? ServerTime = null);
 public sealed record ActiveRequest([property: JsonRequired] bool IsActive);
@@ -26,6 +29,7 @@ public sealed class UserSearchRequest
 {
     [StringLength(200)] public string? Text { get; init; }
     public bool? IsActive { get; init; }
+    public bool? IsLicensed { get; init; }
     [Range(1, int.MaxValue)] public int Page { get; init; } = 1;
     [Range(1, 100)] public int PageSize { get; init; } = 20;
 }

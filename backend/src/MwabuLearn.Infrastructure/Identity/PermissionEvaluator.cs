@@ -14,6 +14,7 @@ public sealed class PermissionEvaluator(MwabuDbContext db) : IPermissionEvaluato
     public async Task<bool> HasPlatformAuthorityAsync(Guid userId, CancellationToken ct) => (await Load(userId, null, ct)).PlatformAuthority;
     public async Task<bool> CanManageCatalogueAsync(Guid userId, string permission, CancellationToken ct)
     {
+        if (!await LicensedOrAdministrator(userId, ct)) return false;
         if (permission is not (PermissionCodes.CurriculumManage or PermissionCodes.ContentManage or PermissionCodes.ContentPublish)) return false;
         var key = (userId, "manage:" + permission);
         if (catalogueCache.TryGetValue(key, out var allowed)) return allowed;
@@ -27,6 +28,7 @@ public sealed class PermissionEvaluator(MwabuDbContext db) : IPermissionEvaluato
     }
     public async Task<bool> CanReadCatalogueAsync(Guid userId, string permission, CancellationToken ct)
     {
+        if (!await LicensedOrAdministrator(userId, ct)) return false;
         if (permission is not (PermissionCodes.CurriculumRead or PermissionCodes.ContentRead)) return false;
         var key = (userId, permission);
         if (catalogueCache.TryGetValue(key, out var allowed)) return allowed;
@@ -61,7 +63,7 @@ public sealed class PermissionEvaluator(MwabuDbContext db) : IPermissionEvaluato
         var rows = await (from assignment in db.OrganisationMembershipRoles.AsNoTracking()
             join mapping in db.RolePermissions.AsNoTracking() on assignment.RoleId equals mapping.RoleId
             where assignment.Membership.UserId == userId && assignment.Membership.IsActive && assignment.Membership.Organisation.IsActive &&
-                db.Users.Any(u => u.Id == userId && u.IsActive) &&
+                db.Users.Any(u => u.Id == userId && u.IsActive && (u.IsLicensed || assignment.Role.GrantsPlatformAuthority && assignment.Membership.Organisation.OrganisationType == OrganisationType.Platform)) &&
                 (assignment.Membership.OrganisationId == organisationId ||
                     (assignment.Role.GrantsPlatformAuthority && assignment.Membership.Organisation.OrganisationType == OrganisationType.Platform))
             select new
@@ -76,4 +78,6 @@ public sealed class PermissionEvaluator(MwabuDbContext db) : IPermissionEvaluato
         cache.Add(key, snapshot);
         return snapshot;
     }
+    private async Task<bool> LicensedOrAdministrator(Guid userId, CancellationToken ct) =>
+        await HasPlatformAuthorityAsync(userId, ct) || await db.Users.AsNoTracking().AnyAsync(x => x.Id == userId && x.IsActive && x.IsLicensed, ct);
 }

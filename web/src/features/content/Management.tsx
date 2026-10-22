@@ -29,6 +29,7 @@ import {
 import NodePicker from "../curriculum/NodePicker";
 import ActivityComposer from "./activities/ActivityComposer";
 import ScormReview from "./ScormReview";
+import GuestVisibility from "./GuestVisibility";
 import MappingRevision from "./MappingRevision";
 import SourcePlanResourceLinks from "./SourcePlanResourceLinks";
 import { activityMime } from "./activities/activityRuntime";
@@ -423,6 +424,7 @@ export default function Management() {
               {resource.status === "Published" && (
                 <ScormReview id={resource.id} />
               )}
+              <GuestVisibility id={resource.id} />
               {resource.status === "Published" &&
                 resource.contentType === "lesson-plan" && (
                   <SourcePlanResourceLinks id={resource.id} />

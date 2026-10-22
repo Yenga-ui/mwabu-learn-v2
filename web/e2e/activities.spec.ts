@@ -169,6 +169,51 @@ for (const kind of formats) {
       await expect(
         reviewerPage.getByText("Published", { exact: true }).first(),
       ).toBeVisible();
+      if (kind === "quiz") {
+        expect(
+          await mutation(
+            reviewerPage,
+            `/api/guest/content/${contentId}/visibility`,
+            { teacherVisible: false, learnerVisible: true, canUse: true },
+            "PUT",
+          ),
+        ).toBe(200);
+        const guest = await browser.newContext({ ignoreHTTPSErrors: true });
+        try {
+          const guestPage = await guest.newPage();
+          const progressRequests: string[] = [];
+          guestPage.on("request", (request) => {
+            if (
+              request.method() === "POST" &&
+              /assessments|sync/.test(request.url())
+            )
+              progressRequests.push(request.url());
+          });
+          await guestPage.goto("/guest?audience=learner");
+          await guestPage
+            .locator("article")
+            .filter({
+              has: guestPage.getByRole("heading", { name: title, exact: true }),
+            })
+            .getByRole("button", { name: "Open sample", exact: true })
+            .click();
+          await guestPage
+            .getByRole("radio", { name: "One of two equal parts", exact: true })
+            .check();
+          await completeExercise(guestPage, "quiz");
+          expect(progressRequests).toHaveLength(0);
+        } finally {
+          await guest.close();
+        }
+        expect(
+          await mutation(
+            reviewerPage,
+            `/api/guest/content/${contentId}/visibility`,
+            { teacherVisible: false, learnerVisible: false, canUse: false },
+            "PUT",
+          ),
+        ).toBe(200);
+      }
       await login(learnerPage, "Learner");
       await learnerPage.goto(`/app/resources/${contentId}`);
       await expect(

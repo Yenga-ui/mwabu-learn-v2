@@ -215,8 +215,29 @@ public sealed class CatalogueAuthorizationTests
         using var factory = new CatalogueApiFactory(development: true); await factory.Initialize();
         using var schema = JsonDocument.Parse(await factory.Admin.GetStringAsync("/swagger/v1/swagger.json"));
         var count = 0;
+        var publicAccess = 0; var protectedAccess = 0;
         foreach (var path in schema.RootElement.GetProperty("paths").EnumerateObject())
         {
+            if (path.Name.StartsWith("/api/guest/", StringComparison.Ordinal) || path.Name.StartsWith("/api/registration", StringComparison.Ordinal))
+            {
+                foreach (var operation in path.Value.EnumerateObject())
+                {
+                    var anonymous = operation.Name == "get" && (path.Name is "/api/guest/content" or "/api/guest/content/{id}" or "/api/guest/content/{id}/assets/{assetId}" or "/api/registration/policy") || operation.Name == "post" && path.Name == "/api/registration";
+                    if (anonymous)
+                    {
+                        Assert.False(operation.Value.TryGetProperty("security", out var security) && security.EnumerateArray().Any(x => x.TryGetProperty("Bearer", out _)));
+                        publicAccess++;
+                    }
+                    else
+                    {
+                        Assert.Contains(operation.Value.GetProperty("security").EnumerateArray(), x => x.TryGetProperty("Bearer", out _));
+                        Assert.True(operation.Value.GetProperty("responses").TryGetProperty("401", out _));
+                        Assert.True(operation.Value.GetProperty("responses").TryGetProperty("403", out _));
+                        protectedAccess++;
+                    }
+                }
+                continue;
+            }
             if (path.Name.EndsWith("/search", StringComparison.Ordinal) || path.Name.Contains("/nodes/", StringComparison.Ordinal)) continue;
             if (path.Name.StartsWith("/api/development/", StringComparison.Ordinal) || path.Name.StartsWith("/api/browser/", StringComparison.Ordinal) || path.Name.StartsWith("/api/workspace/", StringComparison.Ordinal) || path.Name.StartsWith("/api/learning/", StringComparison.Ordinal) || path.Name.StartsWith("/api/guardians/", StringComparison.Ordinal) || path.Name.StartsWith("/api/reports", StringComparison.Ordinal)) continue;
             if (path.Name.StartsWith("/api/sync", StringComparison.Ordinal) || path.Name.StartsWith("/api/devices", StringComparison.Ordinal) || path.Name.StartsWith("/api/auth", StringComparison.Ordinal) || path.Name.StartsWith("/api/users", StringComparison.Ordinal) ||
@@ -230,5 +251,6 @@ public sealed class CatalogueAuthorizationTests
             }
         }
         Assert.Equal(70, count); // Eight import/cleanup operations; learning and organisation routes are checked separately.
+        Assert.Equal(5, publicAccess); Assert.Equal(5, protectedAccess);
     }
 }

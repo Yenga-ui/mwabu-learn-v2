@@ -21,11 +21,11 @@ public static class WebHosting
             context.Context.Response.Headers.CacheControl = context.Context.Request.Path.StartsWithSegments("/assets")
                 ? "public, max-age=31536000, immutable" : "no-cache";
         } });
-        foreach (var route in new[] { "/", "/login", "/recovery", "/reset-password", "/app/{*path:nonfile}" })
+        foreach (var route in new[] { "/", "/login", "/recovery", "/reset-password", "/guest", "/register", "/app/{*path:nonfile}" })
         app.MapFallback(route, async context =>
         {
             var path = context.Request.Path;
-            var webRoute = path == "/" || path == "/login" || path == "/recovery" || path == "/reset-password" || path.StartsWithSegments("/app");
+            var webRoute = path == "/" || path == "/login" || path == "/recovery" || path == "/reset-password" || path == "/guest" || path == "/register" || path.StartsWithSegments("/app");
             var index = Path.Combine(app.Environment.WebRootPath ?? Path.Combine(app.Environment.ContentRootPath, "wwwroot"), "index.html");
             if (!webRoute || !File.Exists(index))
             {

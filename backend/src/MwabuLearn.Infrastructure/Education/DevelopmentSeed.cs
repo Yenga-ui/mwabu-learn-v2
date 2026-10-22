@@ -47,6 +47,8 @@ public sealed class DevelopmentSeed(MwabuDbContext db, IConfiguration configurat
                 var user = userId.HasValue ? await users.GetAsync(userId.Value, ct) : await users.CreateAsync(new()
                     { Email = email, FirstName = role == "Teacher" ? "Chipo" : role == "Learner" ? "Maya" : role == "ParentGuardian" ? "Leya" : "Demo", LastName = role, InitialPassword = passwords[index] }, ct);
                 var organisation = role == "ContentManager" ? platform : role == "ProjectManager" ? programme.Id : school.Id;
+                // Explicit development-only sample entitlements; never run by registration or production startup.
+                await users.SetLicenceAsync(user.Id, true, ct);
                 var existing = await db.OrganisationMemberships.AsNoTracking().Where(x => x.UserId == user.Id && x.OrganisationId == organisation).Select(x => new MembershipResponse(x.Id, x.UserId, x.OrganisationId, x.IsActive, x.JoinedAt, x.CreatedAt, x.UpdatedAt)).SingleOrDefaultAsync(ct);
                 var membership = existing ?? await organisations.AddMemberAsync(organisation, new(user.Id), ct); members[role] = membership;
                 var roleId = roleDefinitions.Single(x => x.Code == role).Id;

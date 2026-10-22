@@ -658,6 +658,15 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.Property<int?>("EstimatedDurationMinutes")
                         .HasColumnType("integer");
 
+                    b.Property<bool>("GuestCanUse")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("GuestLearnerVisible")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("GuestTeacherVisible")
+                        .HasColumnType("boolean");
+
                     b.Property<bool>("IsDownloadable")
                         .HasColumnType("boolean");
 
@@ -1542,6 +1551,56 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId", "RevokedAt");
 
                     b.ToTable("RefreshSessions");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Identity.RegistrationPolicy", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AllowLearnerRegistration")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Checksum")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("PublishedBy")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("SourceUrl")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(30000)
+                        .HasColumnType("character varying(30000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PublishedBy");
+
+                    b.HasIndex("Version")
+                        .IsUnique();
+
+                    b.ToTable("RegistrationPolicies");
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.LearningOutcome", b =>
@@ -3575,6 +3634,9 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("AcceptedPolicyId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("AccessFailedCount")
                         .HasColumnType("integer");
 
@@ -3604,6 +3666,9 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("IsLicensed")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("LastLoginAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -3611,6 +3676,12 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<DateTime?>("LicenceUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("LicenceUpdatedBy")
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean");
@@ -3637,6 +3708,19 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("PolicyAcceptedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid?>("RegisteredByUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("RegistrationOrganisationId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("RegistrationRole")
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
@@ -3652,6 +3736,8 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AcceptedPolicyId");
+
                     b.HasIndex("NormalizedEmail")
                         .IsUnique()
                         .HasDatabaseName("EmailIndex");
@@ -3659,6 +3745,10 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
                         .HasDatabaseName("UserNameIndex");
+
+                    b.HasIndex("RegisteredByUserId");
+
+                    b.HasIndex("RegistrationOrganisationId");
 
                     b.HasIndex("IsActive", "Id");
 
@@ -4151,6 +4241,15 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("MwabuLearn.Domain.Entities.Identity.RegistrationPolicy", b =>
+                {
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("PublishedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("MwabuLearn.Domain.Entities.LearningOutcome", b =>
                 {
                     b.HasOne("MwabuLearn.Domain.Entities.Competency", "Competency")
@@ -4416,6 +4515,24 @@ namespace MwabuLearn.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("Term");
+                });
+
+            modelBuilder.Entity("MwabuLearn.Infrastructure.Identity.ApplicationUser", b =>
+                {
+                    b.HasOne("MwabuLearn.Domain.Entities.Identity.RegistrationPolicy", null)
+                        .WithMany()
+                        .HasForeignKey("AcceptedPolicyId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MwabuLearn.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("RegisteredByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("MwabuLearn.Domain.Entities.Organisations.Organisation", null)
+                        .WithMany()
+                        .HasForeignKey("RegistrationOrganisationId")
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("MwabuLearn.Domain.Entities.Competency", b =>

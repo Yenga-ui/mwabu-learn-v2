@@ -93,9 +93,6 @@ export default function AuthPages({
       </section>
       <section className="auth-panel">
         <div className="auth-form">
-          <Link to="/" className="brand auth-form-brand">
-            <Brand />
-          </Link>
           <p className="eyebrow">WELCOME TO MWABU LEARN</p>
           <h2>
             {mode === "login"
@@ -163,11 +160,27 @@ export default function AuthPages({
             )}
           </div>
           <div className="auth-help">
+            {mode === "login" && (
+              <p>
+                <Link to="/guest?audience=teacher">
+                  Explore as a guest teacher
+                </Link>{" "}
+                ·{" "}
+                <Link to="/guest?audience=learner">
+                  Explore as a guest learner
+                </Link>
+              </p>
+            )}
             <strong>Need an account?</strong>
+            {mode === "login" && (
+              <p>
+                <Link to="/register">Create an account</Link>
+              </p>
+            )}
             <p>
-              Teachers, parents and schools can contact Mwabu to arrange access.
-              If your school already uses Mwabu Learn, your school administrator
-              can help you sign in.
+              Teachers and parents can request an account. An authorised adult
+              or Mwabu registers learners. Your school administrator or Mwabu
+              can help arrange access.
             </p>
           </div>
         </div>

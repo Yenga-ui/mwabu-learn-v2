@@ -11,11 +11,11 @@ public sealed class LessonPostgreSqlTests
     {
         await using var fixture = await PostgreSqlFixture.CreateAsync(); await using var db = fixture.Context();
         var org = new Organisation { Name = "Lesson school", Code = "LESSON-SCHOOL" }; var foreign = new Organisation { Name = "Other school", Code = "OTHER-LESSON-SCHOOL" };
-        var user = new ApplicationUser { UserName = "teacher@test.invalid", NormalizedUserName = "TEACHER@TEST.INVALID", Email = "teacher@test.invalid", NormalizedEmail = "TEACHER@TEST.INVALID", FirstName = "Teacher", LastName = "Test" };
+        var user = new ApplicationUser { IsLicensed = true, UserName = "teacher@test.invalid", NormalizedUserName = "TEACHER@TEST.INVALID", Email = "teacher@test.invalid", NormalizedEmail = "TEACHER@TEST.INVALID", FirstName = "Teacher", LastName = "Test" };
         db.Organisations.AddRange(org, foreign); db.Users.Add(user);
         var plan = new LessonPlan { OrganisationId = org.Id, OwnerUserId = user.Id, Title = "Relational lesson", Mode = PlanningMode.FreeForm, Revision = 1 };
         db.LessonPlans.Add(plan); await db.SaveChangesAsync();
-        var otherUser = new ApplicationUser { UserName = "second@test.invalid", NormalizedUserName = "SECOND@TEST.INVALID", Email = "second@test.invalid", NormalizedEmail = "SECOND@TEST.INVALID", FirstName = "Second", LastName = "Teacher" };
+        var otherUser = new ApplicationUser { IsLicensed = true, UserName = "second@test.invalid", NormalizedUserName = "SECOND@TEST.INVALID", Email = "second@test.invalid", NormalizedEmail = "SECOND@TEST.INVALID", FirstName = "Second", LastName = "Teacher" };
         db.Users.Add(otherUser); await db.SaveChangesAsync();
         db.LessonGenerationJobs.Add(new() { OrganisationId = org.Id, LessonPlanId = plan.Id, ActorUserId = user.Id, State = "processing", RequestJson = "{}" });
         await db.SaveChangesAsync();
@@ -36,7 +36,7 @@ public sealed class LessonPostgreSqlTests
     public async Task Concurrent_revision_update_and_unique_org_usage_period_prevent_lost_writes()
     {
         await using var fixture = await PostgreSqlFixture.CreateAsync(); await using var db = fixture.Context();
-        var org = new Organisation { Name = "Concurrent school", Code = "CONCURRENT-LESSON" }; var user = new ApplicationUser { UserName = "teacher@test.invalid", NormalizedUserName = "TEACHER@TEST.INVALID", Email = "teacher@test.invalid", NormalizedEmail = "TEACHER@TEST.INVALID", FirstName = "Teacher", LastName = "Test" };
+        var org = new Organisation { Name = "Concurrent school", Code = "CONCURRENT-LESSON" }; var user = new ApplicationUser { IsLicensed = true, UserName = "teacher@test.invalid", NormalizedUserName = "TEACHER@TEST.INVALID", Email = "teacher@test.invalid", NormalizedEmail = "TEACHER@TEST.INVALID", FirstName = "Teacher", LastName = "Test" };
         db.Organisations.Add(org); db.Users.Add(user); var plan = new LessonPlan { OrganisationId = org.Id, OwnerUserId = user.Id, Title = "Original", Revision = 1 }; db.LessonPlans.Add(plan); await db.SaveChangesAsync();
         await using var second = fixture.Context(); var stale = await second.LessonPlans.SingleAsync(x => x.Id == plan.Id);
         plan.Title = "First winner"; plan.Revision++; await db.SaveChangesAsync(); stale.Title = "Lost update"; stale.Revision++;

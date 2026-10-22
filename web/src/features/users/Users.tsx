@@ -5,6 +5,7 @@ import { Plus } from "lucide-react";
 import { api, queryString } from "../../api/client";
 import type { User, Page, MyMembership } from "../../api/types";
 import { useSession } from "../../auth/Session";
+import { RegistrationSettings } from "../../auth/Register";
 import {
   Action,
   Badge,
@@ -46,15 +47,22 @@ export default function Users() {
   const [text, setText] = useState("");
   const [page, setPage] = useState(1);
   const [active, setActive] = useState("");
+  const [licensed, setLicensed] = useState("");
   const [creating, setCreating] = useState(false);
   const allowed = session.can("users.read", "platform");
   const manage = session.can("users.manage", "platform");
   const list = useQuery({
-    queryKey: ["users", text, page, active],
+    queryKey: ["users", text, page, active, licensed],
     queryFn: ({ signal }) =>
       api<Page<User>>(
         "/api/users?" +
-          queryString({ text, page, isActive: active, pageSize: 20 }),
+          queryString({
+            text,
+            page,
+            isActive: active,
+            isLicensed: licensed,
+            pageSize: 20,
+          }),
         { signal },
       ),
     enabled: allowed && !id,
@@ -96,6 +104,7 @@ export default function Users() {
       >
         Provision accounts and manage their active state safely.
       </PageTitle>
+      {manage && !id && <RegistrationSettings />}
       {id ? (
         <>
           <QueryState query={detail}>
@@ -117,7 +126,77 @@ export default function Users() {
                   <dd>
                     <Badge>{user.isActive ? "Active" : "Inactive"}</Badge>
                   </dd>
+                  <dt>Paid licence</dt>
+                  <dd>
+                    <Badge>
+                      {user.isLicensed ? "Licensed" : "Not licensed"}
+                    </Badge>
+                  </dd>
+                  {user.registeredByUserId && (
+                    <>
+                      <dt>Registered by</dt>
+                      <dd>
+                        <Link to={`/app/users/${user.registeredByUserId}`}>
+                          View registering adult
+                        </Link>
+                      </dd>
+                    </>
+                  )}
+                  {user.registrationOrganisationId && (
+                    <>
+                      <dt>Requested organisation</dt>
+                      <dd>
+                        <Link
+                          to={`/app/organisations/${user.registrationOrganisationId}`}
+                        >
+                          Review organisation and membership
+                        </Link>
+                      </dd>
+                    </>
+                  )}
+                  {user.acceptedPolicyId && (
+                    <>
+                      <dt>Registration agreement</dt>
+                      <dd>
+                        <a
+                          href={`/api/registration/policies/${user.acceptedPolicyId}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          View accepted version
+                        </a>
+                        {user.policyAcceptedAt &&
+                          ` · ${new Date(user.policyAcceptedAt).toLocaleString()}`}
+                      </dd>
+                    </>
+                  )}
+                  {user.registrationRole && (
+                    <>
+                      <dt>Requested account type</dt>
+                      <dd>{user.registrationRole}</dd>
+                    </>
+                  )}
                 </dl>
+                {manage && (
+                  <Action
+                    confirm={
+                      user.isLicensed
+                        ? "Remove this paid licence? Existing sessions will be invalidated and learning access blocked."
+                        : "Confirm payment or entitlement has been verified and activate this licence? Organisation roles still control what this user can do."
+                    }
+                    run={async () => {
+                      await api(`/api/users/${id}/licence`, {
+                        method: "PATCH",
+                        body: { isLicensed: !user.isLicensed },
+                      });
+                      await client.invalidateQueries({
+                        queryKey: ["user", id],
+                      });
+                    }}
+                  >
+                    {user.isLicensed ? "Remove licence" : "Activate licence"}
+                  </Action>
+                )}
                 {manage && (
                   <Action
                     confirm={
@@ -200,6 +279,20 @@ export default function Users() {
                 <option value="false">Inactive</option>
               </select>
             </label>
+            <label>
+              Licence status
+              <select
+                value={licensed}
+                onChange={(e) => {
+                  setLicensed(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">All licences</option>
+                <option value="true">Licensed</option>
+                <option value="false">Pending licence</option>
+              </select>
+            </label>
           </section>
           <QueryState query={list}>
             {(data) => (
@@ -212,6 +305,8 @@ export default function Users() {
                           <th>Name</th>
                           <th>Email</th>
                           <th>Status</th>
+                          <th>Licence</th>
+                          <th>Registration type</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -227,6 +322,15 @@ export default function Users() {
                               <Badge>
                                 {x.isActive ? "Active" : "Inactive"}
                               </Badge>
+                            </td>
+                            <td>
+                              <Badge>
+                                {x.isLicensed ? "Licensed" : "Pending licence"}
+                              </Badge>
+                            </td>
+                            <td>
+                              {x.registrationRole ??
+                                "Administrator provisioned"}
                             </td>
                           </tr>
                         ))}

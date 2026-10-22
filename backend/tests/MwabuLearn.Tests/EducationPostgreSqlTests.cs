@@ -13,8 +13,8 @@ public sealed class EducationPostgreSqlTests
         await using var fixture = await PostgreSqlFixture.CreateAsync(); await using var db = fixture.Context();
         var first = new Organisation { Name = "First school", Code = "FIRST", OrganisationType = OrganisationType.School };
         var second = new Organisation { Name = "Second school", Code = "SECOND", OrganisationType = OrganisationType.School };
-        var guardian = new ApplicationUser { Email = "guardian@test.invalid", NormalizedEmail = "GUARDIAN@TEST.INVALID", UserName = "guardian@test.invalid", NormalizedUserName = "GUARDIAN@TEST.INVALID", FirstName = "Guardian", LastName = "Test" };
-        var learner = new ApplicationUser { Email = "learner@test.invalid", NormalizedEmail = "LEARNER@TEST.INVALID", UserName = "learner@test.invalid", NormalizedUserName = "LEARNER@TEST.INVALID", FirstName = "Learner", LastName = "Test" };
+        var guardian = new ApplicationUser { IsLicensed = true, Email = "guardian@test.invalid", NormalizedEmail = "GUARDIAN@TEST.INVALID", UserName = "guardian@test.invalid", NormalizedUserName = "GUARDIAN@TEST.INVALID", FirstName = "Guardian", LastName = "Test" };
+        var learner = new ApplicationUser { IsLicensed = true, Email = "learner@test.invalid", NormalizedEmail = "LEARNER@TEST.INVALID", UserName = "learner@test.invalid", NormalizedUserName = "LEARNER@TEST.INVALID", FirstName = "Learner", LastName = "Test" };
         var gm = new OrganisationMembership { Organisation = first, UserId = guardian.Id };
         var lm = new OrganisationMembership { Organisation = second, UserId = learner.Id };
         db.Organisations.AddRange(first, second); db.Users.AddRange(guardian, learner); db.OrganisationMemberships.AddRange(gm, lm); await db.SaveChangesAsync();
