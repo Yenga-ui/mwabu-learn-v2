@@ -76,6 +76,53 @@ export function Shell() {
   const teacherNavigation =
     session.access?.roleCodes.includes("Teacher") &&
     !session.access.platformAuthority;
+  const platformNavigation = !!session.access?.platformAuthority;
+  const organisationNavigation =
+    !platformNavigation &&
+    !!session.access?.roleCodes.includes("OrganisationAdmin");
+  const learnerNavigation =
+    !platformNavigation &&
+    !organisationNavigation &&
+    !teacherNavigation &&
+    !!session.access?.roleCodes.includes("Learner");
+  const homeLabel = platformNavigation
+    ? "Platform overview"
+    : organisationNavigation
+      ? "Organisation overview"
+      : learnerNavigation
+        ? "My learning"
+        : teacherNavigation
+          ? "Today"
+          : "Your workspace";
+  const primaryRoutes = platformNavigation
+    ? [
+        "/app",
+        "/app/users",
+        "/app/organisations",
+        "/app/content",
+        "/app/curriculum",
+        "/app/role-permissions",
+        "/app/reports",
+      ]
+    : organisationNavigation
+      ? [
+          "/app",
+          "/app/organisations",
+          "/app/role-permissions",
+          "/app/reports",
+          "/app/resources",
+          "/app/curriculum",
+        ]
+      : learnerNavigation
+        ? [
+            "/app",
+            "/app/resources",
+            "/app/library",
+            "/app/assessments",
+            "/app/collections",
+            "/app/curriculum",
+          ]
+        : undefined;
   if (session.loading) return <Loading />;
   if (
     !session.user &&
@@ -107,9 +154,7 @@ export function Shell() {
   }[] = [
     {
       to: "/app",
-      label: session.access?.roleCodes.includes("Teacher")
-        ? "Today"
-        : "Your workspace",
+      label: homeLabel,
       icon: LayoutDashboard,
     },
     {
@@ -248,10 +293,28 @@ export function Shell() {
     },
     { to: "/app/account", label: "Your account", icon: Settings },
   ];
+  const isSecondary = (to: string) =>
+    primaryRoutes
+      ? !primaryRoutes.includes(to)
+      : !!teacherNavigation && secondaryTeacherLinks.includes(to);
+  const visibleLinks = links.filter(
+    (x) =>
+      x.show !== false &&
+      (!x.permission || session.can(x.permission, x.scope)) &&
+      (!learnerNavigation || x.to !== "/app/account"),
+  );
   return (
     <div
       className={
-        "app-shell modern-shell" + (collapsed ? " sidebar-collapsed" : "")
+        "app-shell modern-shell" +
+        (platformNavigation
+          ? " role-platform"
+          : organisationNavigation
+            ? " role-organisation"
+            : learnerNavigation
+              ? " role-learner"
+              : "") +
+        (collapsed ? " sidebar-collapsed" : "")
       }
     >
       <a className="skip-link" href="#main">
@@ -311,12 +374,17 @@ export function Shell() {
         </button>
         <p className="nav-label">YOUR WORKSPACE</p>
         <nav aria-label="Main navigation">
-          {links
+          {visibleLinks
             .filter(
               (x) =>
                 x.show !== false &&
-                (!teacherNavigation || !secondaryTeacherLinks.includes(x.to)) &&
+                !isSecondary(x.to) &&
                 (!x.permission || session.can(x.permission, x.scope)),
+            )
+            .sort((a, b) =>
+              primaryRoutes
+                ? primaryRoutes.indexOf(a.to) - primaryRoutes.indexOf(b.to)
+                : 0,
             )
             .map(({ to, label, icon: Icon }) => (
               <NavLink
@@ -349,14 +417,14 @@ export function Shell() {
               </NavLink>
             ))}
         </nav>
-        {teacherNavigation && (
+        {visibleLinks.some((x) => isSecondary(x.to)) && (
           <details className="sidebar-extra">
             <summary title="More workspace tools">More tools</summary>
             <nav aria-label="More workspace tools">
-              {links
+              {visibleLinks
                 .filter(
                   (x) =>
-                    secondaryTeacherLinks.includes(x.to) &&
+                    isSecondary(x.to) &&
                     x.show !== false &&
                     (!x.permission || session.can(x.permission, x.scope)),
                 )
@@ -420,7 +488,7 @@ export function Shell() {
         <header className="topbar">
           <strong className="topbar-title">
             {location.pathname === "/app"
-              ? "Today"
+              ? homeLabel
               : location.pathname.endsWith("/new")
                 ? "Create lesson"
                 : (links

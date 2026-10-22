@@ -9,6 +9,7 @@ import { ApiError } from "./api/client";
 import "./app/styles.css";
 import "./features/lessons/lessons.css";
 import "./app/modern.css";
+import "./app/roles.css";
 const Auth = lazy(() => import("./auth/AuthPages"));
 const GuestCatalogue = lazy(() => import("./features/content/GuestCatalogue"));
 const Register = lazy(() => import("./auth/Register"));

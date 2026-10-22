@@ -1,5 +1,11 @@
-import { useState } from "react";
-import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import {
+  Link,
+  Navigate,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Building2 } from "lucide-react";
 import { api, queryString } from "../../api/client";
@@ -54,6 +60,7 @@ export default function Organisations() {
   const session = useSession();
   const client = useQueryClient();
   const navigate = useNavigate();
+  const location = useLocation();
   const [page, setPage] = useState(1);
   const [text, setText] = useState("");
   const [edit, setEdit] = useState(false);
@@ -79,6 +86,24 @@ export default function Organisations() {
     queryFn: () => api<Organisation>("/api/organisations/" + id),
     enabled: !!id && allowed,
   });
+  useEffect(() => {
+    if (
+      !detail.data ||
+      ![
+        "#organisation-profile",
+        "#members",
+        "#assigned-curriculum",
+        "#guardian-relationships",
+      ].includes(location.hash)
+    )
+      return;
+    const frame = requestAnimationFrame(() => {
+      const target = document.getElementById(location.hash.slice(1));
+      target?.focus({ preventScroll: true });
+      target?.scrollIntoView({ block: "start" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [detail.data, location.hash]);
   if (!id && !platform)
     return session.organisationId ? (
       <Navigate replace to={"/app/organisations/" + session.organisationId} />
@@ -174,7 +199,21 @@ export default function Organisations() {
         <QueryState query={detail}>
           {(org) => (
             <>
-              <section className="card">
+              <nav className="role-subnav" aria-label="Organisation sections">
+                <Link to={`#organisation-profile`}>Profile</Link>
+                {org.isActive && (
+                  <>
+                    <Link to="#members">People</Link>
+                    <Link to="#assigned-curriculum">Curriculum</Link>
+                    {can(access.data, "memberships.manage") && (
+                      <Link to="#guardian-relationships">
+                        Guardian relationships
+                      </Link>
+                    )}
+                  </>
+                )}
+              </nav>
+              <section className="card" id="organisation-profile" tabIndex={-1}>
                 <div className="section-heading">
                   <h2>{org.organisationType} profile</h2>
                   <Badge>{org.isActive ? "Active" : "Inactive"}</Badge>
@@ -348,7 +387,7 @@ function Members({
   };
   if (!read) return null;
   return (
-    <section className="card">
+    <section className="card" id="members" tabIndex={-1}>
       <div className="section-heading">
         <h2>People in this organisation</h2>
         <div className="actions">
@@ -659,7 +698,7 @@ function SchoolConnections({
   });
   return (
     <div className="two-column">
-      <section className="card">
+      <section className="card" id="assigned-curriculum" tabIndex={-1}>
         <h2>Assigned curriculum</h2>
         <QueryState query={curricula}>
           {(items) =>
@@ -720,7 +759,7 @@ function SchoolConnections({
         )}
       </section>
       {can(access, "memberships.manage") && (
-        <section className="card">
+        <section className="card" id="guardian-relationships" tabIndex={-1}>
           <div className="section-heading">
             <h2>Guardian relationships</h2>
             <button

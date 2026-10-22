@@ -21,8 +21,13 @@ import { useSession } from "../../auth/Session";
 import { Empty, PageTitle, QueryState } from "../../components/ui";
 import { ContentCard } from "../content/Catalogue";
 import TeacherHome from "./TeacherHome";
+import { AdminHome, LearnerHome, workspaceKind } from "./RoleHome";
 export default function Dashboard() {
   const session = useSession();
+  const kind = workspaceKind(session.access);
+  if (kind === "platform" || kind === "organisation")
+    return <AdminHome platform={kind === "platform"} />;
+  if (kind === "learner") return <LearnerHome />;
   return session.access?.roleCodes.includes("Teacher") ? (
     <TeacherHome />
   ) : (

@@ -41,6 +41,9 @@ export default function CurriculumLibrary() {
   const [params, setParams] = useSearchParams();
   const [materialView, setMaterialView] = useState("all");
   const session = useSession();
+  const learner =
+    session.access?.roleCodes.includes("Learner") &&
+    !session.access.roleCodes.includes("Teacher");
   const query = useQuery({
     queryKey: ["curriculum-library", params.toString()],
     queryFn: ({ signal }) =>
@@ -95,9 +98,15 @@ export default function CurriculumLibrary() {
     <>
       <PageTitle
         eyebrow="MWABU CURRICULUM LIBRARY"
-        title="What would you like to teach?"
+        title={
+          learner
+            ? "What would you like to learn?"
+            : "What would you like to teach?"
+        }
       >
-        Find a real Mwabu plan and its learning resources in one place.
+        {learner
+          ? "Find approved lessons and activities by grade, subject and topic."
+          : "Find a real Mwabu plan and its learning resources in one place."}
       </PageTitle>
       <nav className="action-row" aria-label="Lesson starting points">
         {session.can("lessons.read") && (
@@ -239,8 +248,9 @@ export default function CurriculumLibrary() {
               </>
             )}
           <p className="muted">
-            Choose a plan below to adapt it, or write your own. No typing needed
-            to browse.
+            {learner
+              ? "Choose a topic, then open a lesson or learning resource below. No typing needed to browse."
+              : "Choose a plan below to adapt it, or write your own. No typing needed to browse."}
           </p>
         </section>
         <div className="discovery-results">
