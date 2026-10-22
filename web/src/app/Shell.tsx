@@ -28,6 +28,10 @@ import {
   X,
   Layers,
   FolderKanban,
+  PanelLeftClose,
+  PanelLeftOpen,
+  FilePlus,
+  Sparkles,
 } from "lucide-react";
 import { useSession } from "../auth/Session";
 import { api, ApiError, sessionChanged } from "../api/client";
@@ -50,6 +54,13 @@ export function Shell() {
   const session = useSession();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("mwabu.navigation.collapsed") === "true";
+    } catch {
+      return false;
+    }
+  });
   if (session.loading) return <Loading />;
   if (
     !session.user &&
@@ -79,7 +90,25 @@ export function Shell() {
     scope?: Scope;
     show?: boolean;
   }[] = [
-    { to: "/app", label: "Your workspace", icon: LayoutDashboard },
+    {
+      to: "/app",
+      label: session.access?.roleCodes.includes("Teacher")
+        ? "Today"
+        : "Your workspace",
+      icon: LayoutDashboard,
+    },
+    {
+      to: "/app/lessons/new?planning=topics",
+      label: "Create lesson",
+      icon: FilePlus,
+      permission: "lessons.manage",
+    },
+    {
+      to: "/app/lessons/new?planning=topics&assist=ai",
+      label: "Create with AI",
+      icon: Sparkles,
+      show: session.can("lessons.manage") && session.can("lessons.ai"),
+    },
     {
       to: "/app/role-permissions",
       label: "Roles and permissions",
@@ -118,7 +147,9 @@ export function Shell() {
     },
     {
       to: "/app/curriculum",
-      label: "Curriculum explorer",
+      label: session.access?.roleCodes.includes("Teacher")
+        ? "Curriculum"
+        : "Curriculum explorer",
       icon: GraduationCap,
       permission: "curriculum.read",
       scope: "catalogue",
@@ -203,7 +234,11 @@ export function Shell() {
     { to: "/app/account", label: "Your account", icon: Settings },
   ];
   return (
-    <div className="app-shell">
+    <div
+      className={
+        "app-shell modern-shell" + (collapsed ? " sidebar-collapsed" : "")
+      }
+    >
       <a className="skip-link" href="#main">
         Skip to content
       </a>
@@ -227,6 +262,22 @@ export function Shell() {
         id="workspace-navigation"
         className={"sidebar " + (open ? "open" : "")}
         onKeyDown={(event) => {
+          if (open && event.key === "Tab") {
+            const targets = Array.from(
+              event.currentTarget.querySelectorAll<HTMLElement>(
+                "a[href], button:not(:disabled), select:not(:disabled)",
+              ),
+            ).filter((x) => x.getClientRects().length > 0);
+            const first = targets[0];
+            const last = targets.at(-1);
+            if (event.shiftKey && document.activeElement === first) {
+              event.preventDefault();
+              last?.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+              event.preventDefault();
+              first?.focus();
+            }
+          }
           if (event.key === "Escape") {
             setOpen(false);
             document.querySelector<HTMLButtonElement>(".mobile-nav")?.focus();
@@ -243,7 +294,7 @@ export function Shell() {
         >
           <X />
         </button>
-        <p className="nav-label">LEARN. TEACH. GROW.</p>
+        <p className="nav-label">YOUR WORKSPACE</p>
         <nav aria-label="Main navigation">
           {links
             .filter(
@@ -253,23 +304,89 @@ export function Shell() {
             )
             .map(({ to, label, icon: Icon }) => (
               <NavLink
-                end={to === "/app"}
+                end={to === "/app" || to.startsWith("/app/lessons")}
                 key={to}
                 to={to}
                 onClick={() => setOpen(false)}
+                title={label}
+                aria-current={
+                  to.includes("?") &&
+                  new URLSearchParams(to.split("?")[1]).get("assist") !==
+                    new URLSearchParams(location.search).get("assist")
+                    ? "false"
+                    : undefined
+                }
+                className={({ isActive }) => {
+                  const query = to.includes("?")
+                    ? new URLSearchParams(to.split("?")[1])
+                    : null;
+                  const active =
+                    isActive &&
+                    (!query ||
+                      query.get("assist") ===
+                        new URLSearchParams(location.search).get("assist"));
+                  return active ? "active" : "";
+                }}
               >
                 <Icon size={19} />
-                {label}
+                <span className="nav-text">{label}</span>
               </NavLink>
             ))}
         </nav>
-        <div className="sidebar-note">
-          <span className="status-dot" />
-          Live web workspace<small>Learning that travels with you.</small>
+        <div className="sidebar-bottom">
+          <button
+            className="sidebar-toggle"
+            onClick={() => {
+              setCollapsed(!collapsed);
+              try {
+                localStorage.setItem(
+                  "mwabu.navigation.collapsed",
+                  String(!collapsed),
+                );
+              } catch {
+                /* Optional browser preference. */
+              }
+            }}
+            aria-label={
+              collapsed ? "Show navigation labels" : "Hide navigation labels"
+            }
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? (
+              <PanelLeftOpen size={18} />
+            ) : (
+              <PanelLeftClose size={18} />
+            )}
+            <span className="nav-text">Hide labels</span>
+          </button>
+          <Link
+            className="sidebar-profile"
+            to="/app/account"
+            title="Your account"
+          >
+            <span className="avatar">
+              {session.user?.firstName[0]}
+              {session.user?.lastName[0]}
+            </span>
+            <span className="nav-text">
+              {session.user?.firstName} {session.user?.lastName}
+              <small>Your account</small>
+            </span>
+          </Link>
         </div>
       </aside>
       <div className="workspace">
         <header className="topbar">
+          <strong className="topbar-title">
+            {location.pathname === "/app"
+              ? "Today"
+              : location.pathname.endsWith("/new")
+                ? "Create lesson"
+                : (links
+                    .filter((x) => x.to !== "/app" && !x.to.includes("?"))
+                    .find((x) => location.pathname.startsWith(x.to))?.label ??
+                  "Lesson workspace")}
+          </strong>
           <Link to="/app" className="brand header-brand">
             <Brand />
           </Link>

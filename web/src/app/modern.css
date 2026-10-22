@@ -1,0 +1,780 @@
+/* Teacher workspace: official brand colours, compact reference-inspired layout.
+   Scoped to the application shell so exports and the official PDF stay intact. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-control: 7px;
+  --radius-panel: 10px;
+  --navigation-width: 208px;
+}
+.modern-shell {
+  background: #fcfcfd;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+.modern-shell h1 {
+  font-size: clamp(1.5rem, 2vw, 1.875rem);
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+.modern-shell h2 {
+  font-size: 1.125rem;
+  letter-spacing: -0.015em;
+}
+.modern-shell h3 {
+  font-size: 1rem;
+}
+.modern-shell p {
+  line-height: 1.6;
+}
+.modern-shell .sidebar {
+  width: var(--navigation-width);
+  min-width: var(--navigation-width);
+  padding: 22px 10px 12px;
+  background: var(--surface);
+  color: var(--text);
+  border-right: 1px solid var(--border);
+}
+.modern-shell .sidebar .brand {
+  padding: 0 12px;
+  margin: 0 0 20px;
+  background: transparent;
+  border-radius: 0;
+}
+.modern-shell .sidebar .brand-lockup {
+  width: 126px;
+}
+.modern-shell .sidebar .brand-sub {
+  color: var(--primary);
+}
+.modern-shell .nav-label {
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  margin: 0 12px 10px;
+  color: var(--text-muted);
+}
+.modern-shell .sidebar nav {
+  gap: 4px;
+}
+.modern-shell .sidebar nav a {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  font-size: 0.875rem;
+  font-weight: 500;
+  gap: 11px;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.modern-shell .sidebar nav a svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+.modern-shell .sidebar nav a:hover {
+  background: var(--surface-muted);
+  color: var(--primary);
+}
+.modern-shell .sidebar nav a.active {
+  background: var(--accent-surface);
+  color: #994006;
+  border-color: transparent;
+  box-shadow: none;
+}
+.modern-shell .sidebar a:focus-visible,
+.modern-shell .sidebar button:focus-visible {
+  outline-color: var(--focus);
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding-top: 24px;
+  display: grid;
+  gap: 12px;
+}
+.sidebar-toggle {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: 44px;
+  text-align: left;
+  border-radius: 7px;
+}
+.sidebar-toggle:hover {
+  background: var(--surface-muted);
+}
+.sidebar-profile {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  text-decoration: none;
+  padding: 8px;
+  font-size: 0.8125rem;
+  color: var(--text);
+}
+.sidebar-profile small {
+  display: block;
+  color: var(--text-muted);
+}
+.modern-shell .avatar {
+  background: var(--primary-surface);
+  color: var(--primary);
+  width: 32px;
+  height: 32px;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+.modern-shell .workspace {
+  margin-left: var(--navigation-width);
+  width: calc(100% - var(--navigation-width));
+}
+.modern-shell .topbar {
+  min-height: 60px;
+  padding: 8px 28px;
+  gap: 20px;
+  background: var(--surface);
+}
+.topbar-title {
+  color: var(--primary);
+  font-size: 0.875rem;
+  margin-right: auto;
+  white-space: nowrap;
+}
+.modern-shell .context {
+  margin-right: 0;
+  min-width: 0;
+  max-width: 230px;
+}
+.modern-shell .context label {
+  font-size: 0.6rem;
+  letter-spacing: 0.06em;
+}
+.modern-shell .context select {
+  font-size: 0.75rem;
+  padding: 0 18px 0 0;
+  min-height: 24px;
+  max-width: 230px;
+  text-overflow: ellipsis;
+}
+.modern-shell .global-search {
+  max-width: 250px;
+  flex: 1;
+  min-width: 100px;
+}
+.modern-shell .global-search input {
+  min-height: 36px;
+  font-size: 0.8125rem;
+}
+.modern-shell .topbar .profile > span:not(.avatar) {
+  display: none;
+}
+.modern-shell main#main {
+  max-width: 1480px;
+  padding: 24px 32px 40px;
+}
+.modern-shell .breadcrumbs {
+  font-size: 0.75rem;
+  margin-bottom: 20px;
+}
+.modern-shell .page-title {
+  margin-bottom: 24px;
+  gap: 16px;
+}
+.modern-shell .page-title p:not(.eyebrow) {
+  font-size: 0.9375rem;
+  margin-bottom: 0;
+  max-width: 65ch;
+}
+.modern-shell .eyebrow {
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+}
+.modern-shell .card,
+.modern-shell .panel {
+  border-radius: var(--radius-panel);
+  box-shadow: none;
+  padding: 20px;
+}
+.modern-shell .button {
+  min-height: 44px;
+  border-radius: var(--radius-control);
+  padding: 9px 15px;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  gap: 8px;
+  box-shadow: none;
+}
+.modern-shell .button.secondary {
+  border-color: var(--border);
+}
+.modern-shell .button.secondary:hover {
+  border-color: var(--primary);
+}
+.modern-shell input,
+.modern-shell select,
+.modern-shell textarea {
+  border-radius: var(--radius-control);
+  border-color: #a19aaa;
+  font-size: 0.9375rem;
+}
+.modern-shell label {
+  font-size: 0.8125rem;
+}
+.modern-shell .badge {
+  border-radius: 5px;
+  font-size: 0.6875rem;
+  letter-spacing: 0.01em;
+  padding: 3px 8px;
+}
+.modern-shell .teacher-tasks {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 24px;
+}
+.modern-shell .teacher-tasks .card {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 3px 12px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  transition: none;
+}
+.modern-shell .teacher-tasks .card svg {
+  grid-row: span 2;
+  width: 23px;
+  height: 23px;
+  color: var(--accent-hover);
+  margin: 0;
+}
+.modern-shell .teacher-tasks .card strong {
+  font-size: 0.9375rem;
+}
+.modern-shell .teacher-tasks .card span {
+  font-size: 0.8125rem;
+}
+.modern-shell .teacher-tasks .card:hover {
+  transform: none;
+  border-color: var(--primary);
+  background: var(--primary-surface);
+}
+.modern-shell .teaching-choices {
+  margin-bottom: 20px;
+}
+.modern-shell .teaching-choice-grid {
+  gap: 8px;
+  margin: 12px 0 20px;
+  grid-template-columns: repeat(auto-fit, minmax(135px, 1fr));
+}
+.modern-shell .teaching-choice {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 7px;
+  gap: 8px;
+  font-size: 0.875rem;
+  box-shadow: none;
+}
+.modern-shell .teaching-choice svg {
+  width: 19px;
+  height: 19px;
+}
+.modern-shell .teaching-choice[aria-pressed="true"],
+.modern-shell .teaching-choice[aria-current="step"] {
+  border-color: var(--accent);
+  background: var(--accent-surface);
+  color: var(--primary);
+}
+.modern-shell .teacher-home-search {
+  display: flex;
+  gap: 12px;
+  align-items: end;
+}
+.modern-shell .teacher-home-search label {
+  flex: 1;
+}
+.modern-shell .lesson-welcome {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  padding: 16px;
+  gap: 16px;
+}
+.modern-shell .lesson-welcome > svg {
+  width: 24px;
+  height: 24px;
+}
+.modern-shell .lesson-welcome h2 {
+  font-size: 0.9375rem;
+  margin-bottom: 4px;
+}
+.modern-shell .lesson-welcome p {
+  font-size: 0.8125rem;
+  margin: 0;
+}
+.modern-shell .lesson-cards {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap: 16px;
+}
+.modern-shell .lesson-card {
+  padding: 18px;
+  gap: 12px;
+  border-radius: 10px;
+}
+.modern-shell .lesson-card h2 {
+  font-size: 1.0625rem;
+  line-height: 1.4;
+}
+.modern-shell .lesson-card h2 a {
+  text-decoration: none;
+}
+.modern-shell .lesson-card h2 a:hover {
+  text-decoration: underline;
+}
+.modern-shell .lesson-card p {
+  font-size: 0.8125rem;
+}
+.modern-shell .lesson-toolbar {
+  border-radius: 8px;
+  gap: 8px;
+  background: var(--surface);
+  border-color: var(--border);
+}
+.modern-shell .lesson-tabs {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.modern-shell .lesson-tabs .button {
+  background: transparent;
+  border-color: transparent;
+  color: var(--text-muted);
+}
+.modern-shell .lesson-tabs .button[aria-pressed="true"] {
+  color: var(--primary);
+  background: var(--primary-surface);
+}
+.modern-shell .content-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr));
+  gap: 16px;
+}
+.modern-shell .content-card {
+  border-radius: 10px;
+  box-shadow: none;
+}
+.modern-shell .content-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--control-border);
+}
+.modern-shell .content-card-body {
+  padding: 18px;
+}
+.modern-shell .content-card h2,
+.modern-shell .content-card h3 {
+  font-size: 1rem;
+  line-height: 1.45;
+}
+.modern-shell .content-card a:not(.button) {
+  text-decoration: none;
+}
+.modern-shell .content-card p {
+  font-size: 0.8125rem;
+}
+.modern-shell .footer {
+  padding: 16px 32px;
+  background: transparent;
+}
+.creation-methods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.creation-methods a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 10px 16px;
+  text-decoration: none;
+  background: var(--surface);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.creation-methods a[aria-current="page"] {
+  border-color: var(--primary);
+  background: var(--primary-surface);
+}
+.curriculum-workspace {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  min-height: calc(100dvh - 150px);
+  margin: -24px -32px -40px;
+}
+.curriculum-filters {
+  padding: 24px 18px;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  min-width: 0;
+}
+.curriculum-filters .filter-heading {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--primary);
+  margin-bottom: 24px;
+}
+.modern-shell .filter-heading h1 {
+  font-size: 1rem;
+  margin: 0;
+}
+.modern-shell .curriculum-filters h2 {
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+.curriculum-filters p {
+  font-size: 0.8125rem;
+}
+.curriculum-filters label {
+  margin-top: 24px;
+}
+.grade-buttons {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.grade-buttons button,
+.subject-buttons button {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  background: var(--surface);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 0.8125rem;
+}
+.subject-buttons {
+  display: grid;
+  gap: 5px;
+}
+.subject-buttons button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+}
+.subject-buttons svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.grade-buttons button[aria-pressed="true"],
+.subject-buttons button[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-surface);
+  color: #994006;
+  font-weight: 600;
+}
+.filter-library-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 32px;
+  padding-top: 20px;
+  font-size: 0.8125rem;
+}
+.curriculum-content {
+  padding: 28px 32px;
+  min-width: 0;
+}
+.modern-shell .curriculum-content > header h2 {
+  font-size: 1.375rem;
+}
+.curriculum-empty {
+  padding: 64px 12px;
+  max-width: 520px;
+  color: var(--text-muted);
+}
+.curriculum-empty svg {
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+.curriculum-topic {
+  margin: 0 !important;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--border);
+}
+.topic-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--primary);
+  text-align: left;
+  min-height: 44px;
+  width: 100%;
+}
+.topic-heading h3 {
+  margin: 0;
+}
+.topic-heading[aria-expanded="true"] > svg {
+  transform: rotate(180deg);
+}
+.curriculum-outcome {
+  border-left: 2px solid var(--border);
+  padding: 4px 0 8px 16px;
+  margin: 12px 0;
+}
+.curriculum-outcome h4 {
+  font-size: 0.9375rem;
+  font-weight: 500;
+  margin: 6px 0;
+}
+.curriculum-outcome a,
+.curriculum-outcome summary {
+  font-size: 0.8125rem;
+}
+.discovery-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+.discovery-layout > .teaching-choices {
+  padding: 18px;
+  position: sticky;
+  top: 16px;
+}
+.discovery-layout > .teaching-choices .teaching-choice-grid {
+  grid-template-columns: 1fr;
+}
+.modern-shell .discovery-layout > .teaching-choices h2 {
+  font-size: 0.875rem;
+}
+.discovery-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 16px 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 10px;
+}
+.discovery-tabs a {
+  padding: 9px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-size: 0.875rem;
+  min-height: 44px;
+}
+.discovery-tabs a[aria-current="page"] {
+  color: var(--primary);
+  background: var(--primary-surface);
+  font-weight: 600;
+}
+.modern-shell .classroom-controls {
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.modern-shell .classroom-controls .button {
+  min-height: 48px;
+}
+@media (min-width: 1001px) {
+  .sidebar-collapsed {
+    --navigation-width: 72px;
+  }
+  .sidebar-collapsed .sidebar .brand {
+    overflow: hidden;
+    width: 46px;
+    padding: 0;
+  }
+  .sidebar-collapsed .sidebar .brand-lockup {
+    min-width: 126px;
+  }
+  .sidebar-collapsed .nav-text {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+  .sidebar-collapsed .nav-label {
+    visibility: hidden;
+    height: 0;
+    margin: 0;
+  }
+  .sidebar-collapsed .sidebar nav a {
+    justify-content: center;
+    padding-inline: 0;
+  }
+  .sidebar-collapsed .sidebar-toggle {
+    justify-content: center;
+  }
+}
+@media (max-width: 1200px) {
+  .modern-shell .global-search {
+    display: none;
+  }
+  .modern-shell .lesson-welcome {
+    flex-wrap: wrap;
+  }
+  .modern-shell .teacher-tasks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1000px) {
+  .modern-shell .sidebar {
+    transform: translateX(-100%);
+    width: 240px;
+    min-width: 240px;
+    padding-top: 70px;
+  }
+  .modern-shell .sidebar.open {
+    transform: translateX(0);
+  }
+  .modern-shell .workspace {
+    width: 100%;
+    margin-left: 0;
+  }
+  .modern-shell .mobile-nav.icon-button {
+    display: inline-flex;
+    position: absolute;
+    top: 9px;
+    left: 12px;
+    z-index: 21;
+  }
+  .modern-shell .mobile-close.icon-button {
+    display: inline-flex;
+    color: var(--primary);
+  }
+  .modern-shell .topbar {
+    padding-left: 66px;
+  }
+  .modern-shell .header-brand {
+    display: none;
+  }
+  .modern-shell .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--overlay);
+    border: 0;
+    z-index: 19;
+  }
+  .sidebar-toggle {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .modern-shell {
+    font-size: 1rem;
+  }
+  .modern-shell main#main {
+    padding: 20px 16px 32px;
+  }
+  .modern-shell .topbar {
+    gap: 12px;
+    padding-right: 12px;
+  }
+  .modern-shell .context {
+    display: none;
+  }
+  .modern-shell .teacher-tasks {
+    grid-template-columns: 1fr;
+  }
+  .modern-shell .card,
+  .modern-shell .panel {
+    padding: 16px;
+  }
+  .modern-shell .teacher-home-search {
+    display: grid;
+  }
+  .modern-shell .page-title {
+    display: block;
+  }
+  .modern-shell .page-title .actions {
+    margin-top: 12px;
+  }
+  .curriculum-workspace {
+    grid-template-columns: 1fr;
+    margin: -8px -16px -32px;
+  }
+  .curriculum-filters {
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 20px 16px;
+  }
+  .curriculum-content {
+    padding: 24px 16px;
+  }
+  .grade-buttons {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .subject-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .curriculum-empty {
+    padding: 24px 0;
+  }
+  .discovery-layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .discovery-layout > .teaching-choices {
+    position: static;
+  }
+  .discovery-layout > .teaching-choices .teaching-choice-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .modern-shell .lesson-toolbar {
+    position: static;
+  }
+  .modern-shell .lesson-toolbar .button {
+    flex: 1 1 140px;
+  }
+  .modern-shell .footer {
+    padding: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modern-shell *,
+  .modern-shell *::before,
+  .modern-shell *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.modern-shell .classroom-stage h1 {
+  font-size: clamp(2rem, 4.5vw, 4rem);
+}
+.modern-shell .workspace {
+  background: #fcfcfd;
+}
+.modern-shell .teacher-tasks .card {
+  min-height: 104px;
+  align-content: start;
+  text-decoration: none;
+}
+.modern-shell .teacher-tasks .card span {
+  color: var(--text-muted);
+}
