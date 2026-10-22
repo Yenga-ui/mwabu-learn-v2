@@ -122,7 +122,7 @@ export default function TeacherHome() {
           >
             <FilePlus aria-hidden="true" />
             <strong>Create with AI</strong>
-            <span>Choose a topic, then review an AI proposal.</span>
+            <span>Choose a topic and answer a few classroom questions.</span>
           </Link>
         )}
         <Link className="card" to="/app/resources">

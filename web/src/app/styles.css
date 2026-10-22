@@ -2055,7 +2055,8 @@
   background: #f4f0fb;
   border-color: #66459d;
 }
-.teaching-choice[aria-pressed="true"] {
+.teaching-choice[aria-pressed="true"],
+.teaching-choice[aria-current="step"] {
   background: #291264;
   color: #fff;
   border-color: #291264;
@@ -2072,4 +2073,13 @@
   cursor: pointer;
   font-weight: 600;
   padding-block: 0.5rem;
+}
+.lesson-readable-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.7;
+}
+.guided-planning {
+  display: grid;
+  gap: 1rem;
 }

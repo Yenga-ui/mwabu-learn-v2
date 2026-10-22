@@ -46,6 +46,7 @@ import ContentAi from "./ContentAi";
 import OfficialPlanEditor from "./OfficialPlanEditor";
 import LessonResources from "./LessonResources";
 import LessonPackageDownload from "./LessonPackageDownload";
+import GuidedLessonQuestions from "./GuidedLessonQuestions";
 
 export default function LessonEditor({
   initial,
@@ -756,7 +757,7 @@ export default function LessonEditor({
       )}
       {tab === "ai" && (
         <section className="panel lesson-ai">
-          <h2>AI proposals - you remain the editor</h2>
+          <h2>Create your lesson with AI</h2>
           <p>
             Generation never publishes a plan. Review pedagogy, safety, factual
             claims and local-language wording. Only authorised retained evidence
@@ -771,72 +772,88 @@ export default function LessonEditor({
             </div>
           )}
           <fieldset disabled={!editable || !session.can("lessons.ai")}>
-            <legend>Request a proposal</legend>
-            <div className="lesson-grid">
-              <label>
-                AI action
-                <select
-                  value={operation}
-                  onChange={(e) => {
-                    setOperation(e.target.value);
-                    if (e.target.value === "generate") setSectionCode("");
-                  }}
-                >
-                  {(configuration.data?.operations ?? ["generate"]).map(
-                    (value) => (
-                      <option key={value} value={value}>
-                        {value.replaceAll("-", " ")}
-                      </option>
-                    ),
-                  )}
-                </select>
-              </label>
-              <label>
-                Target section
-                <select
-                  value={sectionCode}
-                  disabled={operation === "generate"}
-                  onChange={(e) => {
-                    setSectionCode(e.target.value);
-                    setSelectedPassage(undefined);
-                  }}
-                >
-                  <option value="">Whole lesson</option>
-                  {draft.document.sections
-                    .filter((x) => !authoritative.includes(x.code))
-                    .map((x) => (
-                      <option key={x.code} value={x.code}>
-                        {x.title}
-                      </option>
-                    ))}
-                </select>
-              </label>
-            </div>
-            <label>
-              Instructions for this proposal
-              <textarea
-                rows={4}
-                maxLength={2000}
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                placeholder="Explain the desired change, classroom constraints or selected passage to rewrite."
+            <legend>Tell us about your lesson</legend>
+            {operation === "generate" && (
+              <GuidedLessonQuestions
+                value={draft.document.setup}
+                change={(setup) =>
+                  draft.update((document) => ({ ...document, setup }))
+                }
               />
-            </label>
-            {selectedPassage?.code === sectionCode && (
-              <div>
-                <p>
-                  Selected passage only; surrounding text and timing must remain
-                  unchanged.
-                </p>
-                <pre>{selectedPassage.text}</pre>
-                <button
-                  className="button secondary"
-                  onClick={() => setSelectedPassage(undefined)}
-                >
-                  Use the whole section instead
-                </button>
-              </div>
             )}
+            <details
+              key={operation === "generate" ? "whole" : "part"}
+              open={operation !== "generate" || undefined}
+            >
+              <summary>
+                More options: improve an existing plan or add instructions
+              </summary>
+              <div className="lesson-grid">
+                <label>
+                  AI action
+                  <select
+                    value={operation}
+                    onChange={(e) => {
+                      setOperation(e.target.value);
+                      if (e.target.value === "generate") setSectionCode("");
+                    }}
+                  >
+                    {(configuration.data?.operations ?? ["generate"]).map(
+                      (value) => (
+                        <option key={value} value={value}>
+                          {value.replaceAll("-", " ")}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                </label>
+                <label>
+                  Target section
+                  <select
+                    value={sectionCode}
+                    disabled={operation === "generate"}
+                    onChange={(e) => {
+                      setSectionCode(e.target.value);
+                      setSelectedPassage(undefined);
+                    }}
+                  >
+                    <option value="">Whole lesson</option>
+                    {draft.document.sections
+                      .filter((x) => !authoritative.includes(x.code))
+                      .map((x) => (
+                        <option key={x.code} value={x.code}>
+                          {x.title}
+                        </option>
+                      ))}
+                  </select>
+                </label>
+              </div>
+              <label>
+                Instructions for this proposal
+                <textarea
+                  rows={4}
+                  maxLength={2000}
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  placeholder="Explain the desired change, classroom constraints or selected passage to rewrite."
+                />
+              </label>
+              {selectedPassage?.code === sectionCode && (
+                <div>
+                  <p>
+                    Selected passage only; surrounding text and timing must
+                    remain unchanged.
+                  </p>
+                  <pre>{selectedPassage.text}</pre>
+                  <button
+                    className="button secondary"
+                    onClick={() => setSelectedPassage(undefined)}
+                  >
+                    Use the whole section instead
+                  </button>
+                </div>
+              )}
+            </details>
             <label className="checkbox">
               <input
                 type="checkbox"
@@ -860,7 +877,9 @@ export default function LessonEditor({
               onClick={() => void generate()}
             >
               <Sparkles size={16} />
-              Request AI proposal
+              {operation === "generate"
+                ? "Create my lesson plan"
+                : "Request AI proposal"}
             </button>
           </fieldset>
           {busy && <p role="status">Saving and sending your request…</p>}
@@ -936,10 +955,42 @@ export default function LessonEditor({
               </p>
               {proposal.result && (
                 <>
-                  <DocumentComparison
-                    before={draft.document}
-                    after={proposalDocument(draft.document, proposal)}
-                  />
+                  {proposal.operation === "generate" ? (
+                    <>
+                      <h4>Your draft lesson</h4>
+                      <p>
+                        Read each part, check the examples and timings, then
+                        apply the draft if it suits your class.
+                      </p>
+                      {proposal.result.sections
+                        .filter((section) => section.body.trim())
+                        .map((section) => (
+                          <article className="card" key={section.code}>
+                            <h4>
+                              {section.title}
+                              {section.minutes > 0
+                                ? ` · ${section.minutes} minutes`
+                                : ""}
+                            </h4>
+                            <div className="lesson-readable-text">
+                              {section.body}
+                            </div>
+                          </article>
+                        ))}
+                      <details>
+                        <summary>Compare with my current plan</summary>
+                        <DocumentComparison
+                          before={draft.document}
+                          after={proposalDocument(draft.document, proposal)}
+                        />
+                      </details>
+                    </>
+                  ) : (
+                    <DocumentComparison
+                      before={draft.document}
+                      after={proposalDocument(draft.document, proposal)}
+                    />
+                  )}
                   <button
                     className="button"
                     disabled={

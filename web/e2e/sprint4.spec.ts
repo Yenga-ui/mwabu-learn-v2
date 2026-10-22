@@ -128,7 +128,7 @@ test("topic-first AI creation retains teacher choices and requires an explicit g
   await expect(page).toHaveURL(/\/app\/lessons\/[0-9a-f-]+\?view=ai$/);
   await expect(
     page.getByRole("heading", {
-      name: "AI proposals - you remain the editor",
+      name: "Create your lesson with AI",
       exact: true,
     }),
   ).toBeVisible();
@@ -140,7 +140,7 @@ test("topic-first AI creation retains teacher choices and requires an explicit g
   await page.reload();
   await expect(
     page.getByRole("heading", {
-      name: "AI proposals - you remain the editor",
+      name: "Create your lesson with AI",
       exact: true,
     }),
   ).toBeVisible();

@@ -151,15 +151,23 @@ export default function LessonPlanner() {
         <div>
           <h2>Your teaching judgement comes first.</h2>
           <p>
-            Plan manually, discover resources, or request an AI proposal. Every
-            lesson stays a draft until an authorised reviewer approves
-            publication.
+            Choose a ready-made lesson, write your own, or answer a few
+            questions for AI. Every lesson stays a draft until an authorised
+            reviewer approves publication.
           </p>
         </div>
         {session.can("lessons.manage") && (
-          <Link className="button" to="/app/lessons/new">
+          <Link className="button" to="/app/lessons/new?planning=topics">
             <Plus size={18} />
             Create lesson plan
+          </Link>
+        )}
+        {session.can("lessons.manage") && session.can("lessons.ai") && (
+          <Link
+            className="button secondary"
+            to="/app/lessons/new?planning=topics&assist=ai"
+          >
+            Create with AI
           </Link>
         )}
       </section>

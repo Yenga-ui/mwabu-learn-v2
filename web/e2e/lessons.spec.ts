@@ -74,17 +74,72 @@ async function createFree(page: Page, title: string) {
 }
 async function proposal(page: Page, instructions = "") {
   await selectLessonTool(page, "AI proposals");
+  await page
+    .getByText("More options: improve an existing plan or add instructions", {
+      exact: true,
+    })
+    .click();
   await page.getByLabel("Instructions for this proposal").fill(instructions);
   await page.getByLabel(/I reviewed this lesson and selected sources/).check();
   // The controlled fixture retains a real one-second per-user cooldown; do not bypass it.
   await page.waitForTimeout(1100);
   await page
-    .getByRole("button", { name: "Request AI proposal", exact: true })
+    .getByRole("button", { name: /Create my lesson plan|Request AI proposal/ })
     .click();
   await expect(
     page.getByRole("heading", { name: "Proposed changes" }),
   ).toBeVisible({ timeout: 15000 });
+  await expect(
+    page.getByRole("heading", { name: "Your draft lesson", exact: true }),
+  ).toBeVisible();
 }
+test("teacher answers guided questions and reviews a complete AI draft without technical prompts", async ({
+  page,
+}) => {
+  await login(page);
+  await createFree(page, "Guided classroom lesson");
+  await selectLessonTool(page, "AI proposals");
+  await page.getByLabel("How long is your lesson?").selectOption("40");
+  await page.getByLabel("Paper and pencils", { exact: true }).check();
+  await page
+    .getByRole("button", { name: "Continue to learning and support" })
+    .click();
+  await page
+    .getByLabel("What should learners be able to do by the end?")
+    .fill("Compare halves and quarters using paper");
+  await page
+    .getByLabel("What support will help your class?")
+    .fill("Use large diagrams and pair work");
+  await page
+    .getByRole("button", { name: "Continue to review your answers" })
+    .click();
+  await expect(
+    page.getByText("Compare halves and quarters using paper", { exact: true }),
+  ).toBeVisible();
+  await page.getByLabel(/I reviewed this lesson and selected sources/).check();
+  await page
+    .getByRole("button", { name: "Create my lesson plan", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Proposed changes" }),
+  ).toBeVisible({ timeout: 15000 });
+  await page
+    .getByRole("button", {
+      name: "Apply reviewed proposal to draft",
+      exact: true,
+    })
+    .click();
+  await page.reload();
+  await selectLessonTool(page, "AI proposals");
+  await expect(
+    page.getByLabel("Paper and pencils", { exact: true }),
+  ).toBeChecked();
+  await page.getByRole("button", { name: "2. Learning and support" }).click();
+  await expect(
+    page.getByLabel("What support will help your class?"),
+  ).toHaveValue("Use large diagrams and pair work");
+});
+
 test("Ministry teacher fields and progression survive save/reload and export a script-free offline copy", async ({
   page,
 }) => {
@@ -469,7 +524,7 @@ test("section refinement is proposed separately and leaves other teacher section
   // The controlled fixture retains a real one-second per-user cooldown; do not bypass it.
   await page.waitForTimeout(1100);
   await page
-    .getByRole("button", { name: "Request AI proposal", exact: true })
+    .getByRole("button", { name: /Create my lesson plan|Request AI proposal/ })
     .click();
   await expect(
     page.getByRole("heading", { name: "Proposed changes" }),
@@ -493,12 +548,17 @@ test("background generation survives navigation and reload and remains a reviewa
   const lessonUrl = page.url();
   await selectLessonTool(page, "AI proposals");
   await page
+    .getByText("More options: improve an existing plan or add instructions", {
+      exact: true,
+    })
+    .click();
+  await page
     .getByLabel("Instructions for this proposal")
     .fill("simulate-slow-job");
   await page.getByLabel(/I reviewed this lesson and selected sources/).check();
   const started = Date.now();
   await page
-    .getByRole("button", { name: "Request AI proposal", exact: true })
+    .getByRole("button", { name: /Create my lesson plan|Request AI proposal/ })
     .click();
   await expect(
     page
@@ -525,6 +585,11 @@ test("background generation survives navigation and reload and remains a reviewa
   )
     await selectLessonTool(page, "Structured editor");
   await selectLessonTool(page, "AI proposals");
+  await page
+    .getByText("More options: improve an existing plan or add instructions", {
+      exact: true,
+    })
+    .click();
   await expect(
     page.getByRole("button", {
       name: "Review completed proposal",
@@ -546,11 +611,16 @@ test("teacher can cancel a running background generation without changing the sa
   await createFree(page, "Background cancellation lesson");
   await selectLessonTool(page, "AI proposals");
   await page
+    .getByText("More options: improve an existing plan or add instructions", {
+      exact: true,
+    })
+    .click();
+  await page
     .getByLabel("Instructions for this proposal")
     .fill("simulate-slow-job");
   await page.getByLabel(/I reviewed this lesson and selected sources/).check();
   await page
-    .getByRole("button", { name: "Request AI proposal", exact: true })
+    .getByRole("button", { name: /Create my lesson plan|Request AI proposal/ })
     .click();
   await expect(
     page
@@ -860,13 +930,18 @@ test("provider failure preserves the teacher's current saved and manual content"
     .fill("Important teacher wording remains intact.");
   await selectLessonTool(page, "AI proposals");
   await page
+    .getByText("More options: improve an existing plan or add instructions", {
+      exact: true,
+    })
+    .click();
+  await page
     .getByLabel("Instructions for this proposal")
     .fill("simulate-provider-failure");
   await page.getByLabel(/I reviewed this lesson and selected sources/).check();
   // The controlled fixture retains a real one-second per-user cooldown; do not bypass it.
   await page.waitForTimeout(1100);
   await page
-    .getByRole("button", { name: "Request AI proposal", exact: true })
+    .getByRole("button", { name: /Create my lesson plan|Request AI proposal/ })
     .click();
   await expect(
     page
