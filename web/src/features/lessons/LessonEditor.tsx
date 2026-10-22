@@ -478,6 +478,7 @@ export default function LessonEditor({
         {[
           ["plan", "Lesson plan"],
           ["resources", "View resources"],
+          ["ai", "Create Plan with AI"],
         ].map(([value, label]) => (
           <button
             className={tab === value ? "button" : "button secondary"}
@@ -485,6 +486,7 @@ export default function LessonEditor({
             aria-pressed={tab === value}
             onClick={() => setTab(value)}
           >
+            {value === "ai" && <Sparkles size={18} aria-hidden="true" />}
             {label}
           </button>
         ))}
@@ -494,7 +496,6 @@ export default function LessonEditor({
             {[
               ["editor", "Structured editor"],
               ["sources", "Source Explorer"],
-              ["ai", "AI proposals"],
               ["history", "Revision history"],
               ["review", "Review & sharing"],
               ["print", "Print preview"],

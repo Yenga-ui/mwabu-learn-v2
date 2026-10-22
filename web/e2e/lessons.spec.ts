@@ -49,6 +49,10 @@ async function mutate(
   );
 }
 async function selectLessonTool(page: Page, name: string) {
+  if (name === "Create Plan with AI") {
+    await page.getByRole("button", { name, exact: true }).click();
+    return;
+  }
   const summary = page.getByText("More lesson tools", { exact: true });
   await expect(summary).toBeVisible();
   if (
@@ -73,7 +77,7 @@ async function createFree(page: Page, title: string) {
   return page.url().split("/").at(-1)!;
 }
 async function proposal(page: Page, instructions = "") {
-  await selectLessonTool(page, "AI proposals");
+  await selectLessonTool(page, "Create Plan with AI");
   await page
     .getByText("More options: improve an existing plan or add instructions", {
       exact: true,
@@ -98,7 +102,7 @@ test("teacher answers guided questions and reviews a complete AI draft without t
 }) => {
   await login(page);
   await createFree(page, "Guided classroom lesson");
-  await selectLessonTool(page, "AI proposals");
+  await selectLessonTool(page, "Create Plan with AI");
   await page.getByLabel("How long is your lesson?").selectOption("40");
   await page.getByLabel("Paper and pencils", { exact: true }).check();
   await page
@@ -130,7 +134,7 @@ test("teacher answers guided questions and reviews a complete AI draft without t
     })
     .click();
   await page.reload();
-  await selectLessonTool(page, "AI proposals");
+  await selectLessonTool(page, "Create Plan with AI");
   await expect(
     page.getByLabel("Paper and pencils", { exact: true }),
   ).toBeChecked();
@@ -546,7 +550,7 @@ test("background generation survives navigation and reload and remains a reviewa
   await login(page);
   await createFree(page, "Background recovery lesson");
   const lessonUrl = page.url();
-  await selectLessonTool(page, "AI proposals");
+  await selectLessonTool(page, "Create Plan with AI");
   await page
     .getByText("More options: improve an existing plan or add instructions", {
       exact: true,
@@ -584,7 +588,7 @@ test("background generation survives navigation and reload and remains a reviewa
       .isVisible()
   )
     await selectLessonTool(page, "Structured editor");
-  await selectLessonTool(page, "AI proposals");
+  await selectLessonTool(page, "Create Plan with AI");
   await page
     .getByText("More options: improve an existing plan or add instructions", {
       exact: true,
@@ -609,7 +613,7 @@ test("teacher can cancel a running background generation without changing the sa
 }) => {
   await login(page);
   await createFree(page, "Background cancellation lesson");
-  await selectLessonTool(page, "AI proposals");
+  await selectLessonTool(page, "Create Plan with AI");
   await page
     .getByText("More options: improve an existing plan or add instructions", {
       exact: true,
@@ -928,7 +932,7 @@ test("provider failure preserves the teacher's current saved and manual content"
   await page
     .getByRole("textbox", { name: "SMART lesson objectives", exact: true })
     .fill("Important teacher wording remains intact.");
-  await selectLessonTool(page, "AI proposals");
+  await selectLessonTool(page, "Create Plan with AI");
   await page
     .getByText("More options: improve an existing plan or add instructions", {
       exact: true,

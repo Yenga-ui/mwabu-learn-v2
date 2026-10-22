@@ -129,8 +129,8 @@ test("teacher starts with a published resource, completes the official plan, fin
     page.getByText("More lesson tools", { exact: true }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "AI proposals", exact: true }),
-  ).not.toBeVisible();
+    page.getByRole("button", { name: "Create Plan with AI", exact: true }),
+  ).toBeVisible();
   await page
     .getByLabel("School", { exact: true })
     .fill("Synthetic acceptance school");
