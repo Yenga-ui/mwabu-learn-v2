@@ -778,3 +778,52 @@
 .modern-shell .teacher-tasks .card span {
   color: var(--text-muted);
 }
+.grade-buttons small {
+  display: block;
+  font-size: 0.6875rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.sidebar-extra {
+  margin-top: 8px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+.sidebar-extra > summary {
+  min-height: 44px;
+  padding: 10px 12px;
+  cursor: pointer;
+}
+.sidebar-collapsed .sidebar-extra > summary {
+  font-size: 0.6875rem;
+  padding-inline: 3px;
+}
+.modern-shell .teaching-choice {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+}
+.discovery-layout > .teaching-choices > .teaching-choice-grid:first-of-type {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.discovery-tabs .button[aria-pressed="true"] {
+  background: var(--primary-surface);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+.modern-shell .catalogue-tools {
+  align-items: end;
+  gap: 12px;
+}
+.modern-shell .search {
+  align-items: center;
+}
+.modern-shell .icon-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+.modern-shell input,
+.modern-shell select,
+.modern-shell textarea {
+  border-color: var(--control-border);
+}

@@ -15,6 +15,8 @@ import {
   Paperclip,
   Play,
   BookOpen,
+  Sparkles,
+  FilePenLine,
 } from "lucide-react";
 import TeachingIcon from "../../components/TeachingIcon";
 import { api, queryString } from "../../api/client";
@@ -333,39 +335,39 @@ export default function LessonPlanner() {
                         </Link>
                       )}
                     </div>
+                    <div className="actions lesson-card-secondary">
+                      <Link
+                        className="button secondary"
+                        to={`/app/lessons/${lesson.id}?view=resources`}
+                      >
+                        View resources
+                      </Link>
+                      {lesson.canReuse && (
+                        <button
+                          className="button"
+                          disabled={!!copying}
+                          onClick={() => {
+                            setCopying(lesson.id);
+                            setReuseError(undefined);
+                            void api<Detail>(
+                              lessonBase(org!) + `/${lesson.id}/duplicate`,
+                              { method: "POST" },
+                            )
+                              .then((copy) =>
+                                navigate(`/app/lessons/${copy.lesson.id}`),
+                              )
+                              .catch(setReuseError)
+                              .finally(() => setCopying(undefined));
+                          }}
+                        >
+                          {copying === lesson.id
+                            ? "Creating your draft…"
+                            : "Adapt plan"}
+                        </button>
+                      )}
+                    </div>
                     <details className="lesson-card-more">
                       <summary>Resources and more options</summary>
-                      <div className="actions">
-                        <Link
-                          className="button secondary"
-                          to={`/app/lessons/${lesson.id}?view=resources`}
-                        >
-                          View resources
-                        </Link>
-                        {lesson.canReuse && (
-                          <button
-                            className="button"
-                            disabled={!!copying}
-                            onClick={() => {
-                              setCopying(lesson.id);
-                              setReuseError(undefined);
-                              void api<Detail>(
-                                lessonBase(org!) + `/${lesson.id}/duplicate`,
-                                { method: "POST" },
-                              )
-                                .then((copy) =>
-                                  navigate(`/app/lessons/${copy.lesson.id}`),
-                                )
-                                .catch(setReuseError)
-                                .finally(() => setCopying(undefined));
-                            }}
-                          >
-                            {copying === lesson.id
-                              ? "Creating your draft…"
-                              : "Adapt plan"}
-                          </button>
-                        )}
-                      </div>
                       <p className="muted">
                         {lesson.mode === "CurriculumAligned"
                           ? "Managed curriculum alignment"
@@ -616,6 +618,29 @@ function NewLesson({
         Choose your grade, subject and topic below. We will suggest a title.
         Save your plan, then write your teaching steps or ask AI to help.
       </PageTitle>
+      <nav
+        className="creation-methods"
+        aria-label="Choose how to create your lesson"
+      >
+        <Link
+          to="/app/lessons/new?planning=topics&assist=ai"
+          aria-current={aiPlanning ? "page" : undefined}
+        >
+          <Sparkles size={18} />
+          Create with AI
+        </Link>
+        <Link to="/app/library">
+          <BookOpen size={18} />
+          Adapt existing plan
+        </Link>
+        <Link
+          to="/app/lessons/new?planning=topics"
+          aria-current={!aiPlanning ? "page" : undefined}
+        >
+          <FilePenLine size={18} />
+          Start blank
+        </Link>
+      </nav>
       <form
         className="panel"
         onSubmit={create}
@@ -749,10 +774,27 @@ function NewLesson({
           hideFreeFormContext={topicPlanning && !customContext}
         />
         {aiPlanning && (
-          <p>
-            Next, review your AI settings and request a proposal. Nothing is
-            generated or published automatically.
-          </p>
+          <>
+            <label>
+              Optional teacher instruction
+              <textarea
+                rows={2}
+                maxLength={4000}
+                value={setup.instructions}
+                onChange={(e) =>
+                  setSetup((previous) => ({
+                    ...previous,
+                    instructions: e.target.value,
+                  }))
+                }
+                placeholder="For example: use bottle tops and simple classroom examples."
+              />
+            </label>
+            <p>
+              Next, review your AI settings and request a proposal. Nothing is
+              generated or published automatically.
+            </p>
+          </>
         )}
         {resource && (
           <p>

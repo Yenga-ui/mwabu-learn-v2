@@ -39,6 +39,7 @@ interface Result {
 }
 export default function CurriculumLibrary() {
   const [params, setParams] = useSearchParams();
+  const [materialView, setMaterialView] = useState("all");
   const session = useSession();
   const query = useQuery({
     queryKey: ["curriculum-library", params.toString()],
@@ -125,186 +126,49 @@ export default function CurriculumLibrary() {
           </>
         )}
       </nav>
-      <section
-        className="card teaching-choices"
-        aria-label="Browse by grade, subject and topic"
-      >
-        <h2>1. Choose your grade</h2>
-        <div className="teaching-choice-grid">
-          {distinct(
-            choices
-              .filter((x) => !year || String(x.year) === year)
-              .map((x) => String(x.grade)),
-          ).map((value) => (
-            <button
-              key={value}
-              className="teaching-choice"
-              aria-pressed={grade === value}
-              onClick={() => update("grade", value)}
-            >
-              <GraduationCap size={24} aria-hidden="true" /> Grade {value}
-            </button>
-          ))}
-        </div>
-        {grade && (
-          <>
-            <h2>2. Choose your subject</h2>
-            <div className="teaching-choice-grid">
-              {distinct(subjectChoices.map((x) => x.subject)).map((value) => (
-                <button
-                  key={value}
-                  className="teaching-choice"
-                  aria-pressed={subject === value}
-                  onClick={() => update("subject", value)}
-                >
-                  <TeachingIcon subject={value} /> {value}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-        {grade && subject && (
-          <>
-            <h2>3. Choose your topic</h2>
-            <div className="teaching-choice-grid">
-              {distinct(
-                scoped
-                  .filter(
-                    (x) => !params.get("term") || x.term === params.get("term"),
-                  )
-                  .map((x) => x.topic),
-              ).map((value) => (
-                <button
-                  key={value}
-                  className="teaching-choice"
-                  aria-pressed={topic === value}
-                  onClick={() => update("topic", value)}
-                >
-                  <TeachingIcon subject={subject} /> {value}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-        {topic && session.can("lessons.manage") && (
-          <p>
-            <Link className="button" to={createPath}>
-              Write a plan for {topic}
-            </Link>
-          </p>
-        )}
-        {topic &&
-          distinct(
-            scoped
-              .filter(
-                (x) =>
-                  x.topic === topic &&
-                  (!params.get("term") || x.term === params.get("term")),
-              )
-              .flatMap((x) => (x.subTopic ? [x.subTopic] : [])),
-          ).length > 0 && (
+      <div className="discovery-layout">
+        <section
+          className="card teaching-choices"
+          aria-label="Browse by grade, subject and topic"
+        >
+          <h2>1. Choose your grade</h2>
+          <div className="teaching-choice-grid">
+            {distinct(
+              choices
+                .filter((x) => !year || String(x.year) === year)
+                .map((x) => String(x.grade)),
+            ).map((value) => (
+              <button
+                key={value}
+                className="teaching-choice"
+                aria-pressed={grade === value}
+                onClick={() => update("grade", value)}
+              >
+                <GraduationCap size={24} aria-hidden="true" /> Grade {value}
+              </button>
+            ))}
+          </div>
+          {grade && (
             <>
-              <h2>4. Choose a subtopic (optional)</h2>
+              <h2>2. Choose your subject</h2>
               <div className="teaching-choice-grid">
-                <button
-                  className="teaching-choice"
-                  aria-pressed={!params.get("subTopic")}
-                  onClick={() => update("subTopic", "")}
-                >
-                  All subtopics
-                </button>
-                {distinct(
-                  scoped
-                    .filter(
-                      (x) =>
-                        x.topic === topic &&
-                        (!params.get("term") || x.term === params.get("term")),
-                    )
-                    .flatMap((x) => (x.subTopic ? [x.subTopic] : [])),
-                ).map((value) => (
+                {distinct(subjectChoices.map((x) => x.subject)).map((value) => (
                   <button
-                    className="teaching-choice"
                     key={value}
-                    aria-pressed={params.get("subTopic") === value}
-                    onClick={() => update("subTopic", value)}
+                    className="teaching-choice"
+                    aria-pressed={subject === value}
+                    onClick={() => update("subject", value)}
                   >
-                    {value}
+                    <TeachingIcon subject={value} /> {value}
                   </button>
                 ))}
               </div>
             </>
           )}
-        <p className="muted">
-          Choose a plan below to adapt it, or write your own. No typing needed
-          to browse.
-        </p>
-      </section>
-      <details
-        open={params.has("text") || undefined}
-        className="card catalogue-tools"
-      >
-        <summary>Search and filters</summary>
-        <section
-          className="card catalogue-tools"
-          aria-label="Choose learning context"
-        >
-          <SearchBar
-            value={params.get("text") ?? ""}
-            onSearch={(text) => update("text", text)}
-            placeholder="Search lesson titles, topics and keywords…"
-          />
-          <div className="filter-row">
-            <label>
-              Curriculum collection
-              <select
-                value={year}
-                onChange={(e) => update("year", e.target.value)}
-              >
-                <option value="">All collections — labelled separately</option>
-                {distinct(choices.map((x) => String(x.year))).map((x) => (
-                  <option key={x} value={x}>
-                    {x} Zambian curriculum
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Grade
-              <select
-                value={grade}
-                onChange={(e) => update("grade", e.target.value)}
-              >
-                <option value="">Choose a grade…</option>
-                {distinct(
-                  choices
-                    .filter((x) => !year || String(x.year) === year)
-                    .map((x) => String(x.grade)),
-                ).map((x) => (
-                  <option key={x} value={x}>
-                    Grade {x}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Subject
-              <select
-                value={subject}
-                onChange={(e) => update("subject", e.target.value)}
-              >
-                <option value="">All subjects</option>
-                {distinct(subjectChoices.map((x) => x.subject)).map((x) => (
-                  <option key={x}>{x}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Topic
-              <select
-                value={topic}
-                onChange={(e) => update("topic", e.target.value)}
-              >
-                <option value="">All topics</option>
+          {grade && subject && (
+            <>
+              <h2>3. Choose your topic</h2>
+              <div className="teaching-choice-grid">
                 {distinct(
                   scoped
                     .filter(
@@ -312,151 +176,341 @@ export default function CurriculumLibrary() {
                         !params.get("term") || x.term === params.get("term"),
                     )
                     .map((x) => x.topic),
-                ).map((x) => (
-                  <option key={x}>{x}</option>
+                ).map((value) => (
+                  <button
+                    key={value}
+                    className="teaching-choice"
+                    aria-pressed={topic === value}
+                    onClick={() => update("topic", value)}
+                  >
+                    <TeachingIcon subject={subject} /> {value}
+                  </button>
                 ))}
-              </select>
-            </label>
-            <label>
-              Term
-              <select
-                value={params.get("term") ?? ""}
-                onChange={(e) => update("term", e.target.value)}
-              >
-                <option value="">All / unspecified in source</option>
-                {distinct(scoped.flatMap((x) => (x.term ? [x.term] : []))).map(
-                  (x) => (
-                    <option key={x}>{x}</option>
-                  ),
-                )}
-              </select>
-            </label>
-            <label>
-              Show
-              <select
-                value={params.get("type") ?? ""}
-                onChange={(e) => update("type", e.target.value)}
-              >
-                <option value="">Plans and learning resources</option>
-                <option value="lesson-plan">Mwabu lesson plans</option>
-                <option value="interactive-activity">
-                  Interactive lessons
-                </option>
-                <option value="video">Videos</option>
-                <option value="audio">Audio</option>
-              </select>
-            </label>
-          </div>
+              </div>
+            </>
+          )}
+          {topic && session.can("lessons.manage") && (
+            <p>
+              <Link className="button" to={createPath}>
+                Write a plan for {topic}
+              </Link>
+            </p>
+          )}
+          {topic &&
+            distinct(
+              scoped
+                .filter(
+                  (x) =>
+                    x.topic === topic &&
+                    (!params.get("term") || x.term === params.get("term")),
+                )
+                .flatMap((x) => (x.subTopic ? [x.subTopic] : [])),
+            ).length > 0 && (
+              <>
+                <h2>4. Choose a subtopic (optional)</h2>
+                <div className="teaching-choice-grid">
+                  <button
+                    className="teaching-choice"
+                    aria-pressed={!params.get("subTopic")}
+                    onClick={() => update("subTopic", "")}
+                  >
+                    All subtopics
+                  </button>
+                  {distinct(
+                    scoped
+                      .filter(
+                        (x) =>
+                          x.topic === topic &&
+                          (!params.get("term") ||
+                            x.term === params.get("term")),
+                      )
+                      .flatMap((x) => (x.subTopic ? [x.subTopic] : [])),
+                  ).map((value) => (
+                    <button
+                      className="teaching-choice"
+                      key={value}
+                      aria-pressed={params.get("subTopic") === value}
+                      onClick={() => update("subTopic", value)}
+                    >
+                      {value}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
           <p className="muted">
-            2013 and 2023 source collections stay distinct. Linked older learner
-            resources are shown as teaching associations; their original
-            curriculum attribution is retained. Missing terms are not guessed.
+            Choose a plan below to adapt it, or write your own. No typing needed
+            to browse.
           </p>
         </section>
-      </details>
-      <QueryState query={query}>
-        {(result) => (
-          <>
-            <p role="status">
-              {result.resources.totalCount} available resources
-            </p>
-            {!result.resources.items.length && (
-              <section className="card">
-                <h2>No reviewed resources match yet</h2>
-                <p>
-                  Try another grade or topic. Unreviewed source files stay out
-                  of this library.
+        <div className="discovery-results">
+          <nav className="discovery-tabs" aria-label="Learning materials">
+            {[
+              ["all", "All materials"],
+              ["plans", "Lesson plans"],
+              ["resources", "Learning resources"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                className="button secondary"
+                aria-pressed={materialView === value}
+                onClick={() => setMaterialView(value)}
+              >
+                {label}
+              </button>
+            ))}
+            <Link to="/app/curriculum">Curriculum</Link>
+          </nav>
+          <SearchBar
+            value={params.get("text") ?? ""}
+            onSearch={(text) => update("text", text)}
+            placeholder="Search lesson titles, topics and keywords…"
+          />
+          <details
+            open={params.has("text") || undefined}
+            className="card catalogue-tools"
+          >
+            <summary>Search and filters</summary>
+            <section
+              className="card catalogue-tools"
+              aria-label="Choose learning context"
+            >
+              <div className="filter-row">
+                <label>
+                  Curriculum collection
+                  <select
+                    value={year}
+                    onChange={(e) => update("year", e.target.value)}
+                  >
+                    <option value="">
+                      All collections — labelled separately
+                    </option>
+                    {distinct(choices.map((x) => String(x.year))).map((x) => (
+                      <option key={x} value={x}>
+                        {x} Zambian curriculum
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Grade
+                  <select
+                    value={grade}
+                    onChange={(e) => update("grade", e.target.value)}
+                  >
+                    <option value="">Choose a grade…</option>
+                    {distinct(
+                      choices
+                        .filter((x) => !year || String(x.year) === year)
+                        .map((x) => String(x.grade)),
+                    ).map((x) => (
+                      <option key={x} value={x}>
+                        Grade {x}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Subject
+                  <select
+                    value={subject}
+                    onChange={(e) => update("subject", e.target.value)}
+                  >
+                    <option value="">All subjects</option>
+                    {distinct(subjectChoices.map((x) => x.subject)).map((x) => (
+                      <option key={x}>{x}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Topic
+                  <select
+                    value={topic}
+                    onChange={(e) => update("topic", e.target.value)}
+                  >
+                    <option value="">All topics</option>
+                    {distinct(
+                      scoped
+                        .filter(
+                          (x) =>
+                            !params.get("term") ||
+                            x.term === params.get("term"),
+                        )
+                        .map((x) => x.topic),
+                    ).map((x) => (
+                      <option key={x}>{x}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Term
+                  <select
+                    value={params.get("term") ?? ""}
+                    onChange={(e) => update("term", e.target.value)}
+                  >
+                    <option value="">All / unspecified in source</option>
+                    {distinct(
+                      scoped.flatMap((x) => (x.term ? [x.term] : [])),
+                    ).map((x) => (
+                      <option key={x}>{x}</option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Show
+                  <select
+                    value={params.get("type") ?? ""}
+                    onChange={(e) => update("type", e.target.value)}
+                  >
+                    <option value="">Plans and learning resources</option>
+                    <option value="lesson-plan">Mwabu lesson plans</option>
+                    <option value="interactive-activity">
+                      Interactive lessons
+                    </option>
+                    <option value="video">Videos</option>
+                    <option value="audio">Audio</option>
+                  </select>
+                </label>
+              </div>
+              <p className="muted">
+                2013 and 2023 source collections stay distinct. Linked older
+                learner resources are shown as teaching associations; their
+                original curriculum attribution is retained. Missing terms are
+                not guessed.
+              </p>
+            </section>
+          </details>
+          <QueryState query={query}>
+            {(result) => (
+              <>
+                <p role="status">
+                  {result.resources.totalCount} available resources
                 </p>
-                {session.can("lessons.manage") && (
-                  <Link to={createPath}>
-                    Create a lesson from the selected context
-                  </Link>
-                )}
-              </section>
-            )}
-            <div className="content-grid">
-              {result.resources.items.map((entry) => (
-                <article className="content-card" key={entry.content.id}>
-                  <div className="content-card-body">
-                    <Badge>
-                      {entry.isTemplate
-                        ? "Mwabu lesson plan"
-                        : entry.content.contentType.replaceAll("-", " ")}
-                    </Badge>
-                    <h2>
-                      <Link
-                        to={`/app/resources/${entry.content.id}?return=${encodeURIComponent(returnPath)}`}
-                      >
-                        {entry.content.title}
+                {!!result.resources.items.length &&
+                  materialView !== "all" &&
+                  !result.resources.items.some((entry) =>
+                    materialView === "plans"
+                      ? entry.isTemplate
+                      : !entry.isTemplate,
+                  ) && (
+                    <p role="status">
+                      No{" "}
+                      {materialView === "plans"
+                        ? "lesson plans"
+                        : "learning resources"}{" "}
+                      on this page. Choose All materials or try another page.
+                    </p>
+                  )}
+                {!result.resources.items.length && (
+                  <section className="card">
+                    <h2>No reviewed resources match yet</h2>
+                    <p>
+                      Try another grade or topic. Unreviewed source files stay
+                      out of this library.
+                    </p>
+                    {session.can("lessons.manage") && (
+                      <Link to={createPath}>
+                        Create a lesson from the selected context
                       </Link>
-                    </h2>
-                    {entry.year && (
-                      <p>
-                        {entry.year} curriculum · Grade {entry.grade} ·{" "}
-                        {entry.subject} · {entry.topic}
-                      </p>
                     )}
-                    {entry.associatedResource && (
-                      <p>
-                        Reviewed resource associated with this teaching context.
-                      </p>
-                    )}
-                    {entry.subTopic && <p>Subtopic: {entry.subTopic}</p>}
-                    {!entry.isTemplate && <p>{entry.content.summary}</p>}
-                    <Link
-                      className="button"
-                      to={`/app/resources/${entry.content.id}?return=${encodeURIComponent(returnPath)}`}
-                    >
-                      {entry.isTemplate
-                        ? "Open lesson plan"
-                        : "Open learning resource"}
-                    </Link>
-                  </div>
-                </article>
-              ))}
-            </div>
-            <nav className="pagination" aria-label="Library pages">
-              <button
-                className="button secondary"
-                disabled={result.resources.page <= 1}
-                onClick={() => {
-                  const n = new URLSearchParams(params);
-                  n.set("page", String(result.resources.page - 1));
-                  setParams(n);
-                }}
-              >
-                Previous
-              </button>
-              <span>Page {result.resources.page}</span>
-              <button
-                className="button secondary"
-                disabled={
-                  result.resources.page * 24 >= result.resources.totalCount
-                }
-                onClick={() => {
-                  const n = new URLSearchParams(params);
-                  n.set("page", String(result.resources.page + 1));
-                  setParams(n);
-                }}
-              >
-                Next
-              </button>
-            </nav>
-          </>
-        )}
-      </QueryState>
-      {session.can("lessons.read") && session.organisationId && (
-        <SchoolPlans
-          key={JSON.stringify([
-            session.organisationId,
-            schoolContext.toString(),
-            params.get("text") ?? "",
-          ])}
-          organisation={session.organisationId}
-          text={params.get("text") ?? ""}
-          contextQuery={schoolContext.toString()}
-        />
-      )}
+                  </section>
+                )}
+                <div className="content-grid">
+                  {result.resources.items
+                    .filter(
+                      (entry) =>
+                        materialView === "all" ||
+                        (materialView === "plans"
+                          ? entry.isTemplate
+                          : !entry.isTemplate),
+                    )
+                    .map((entry) => (
+                      <article className="content-card" key={entry.content.id}>
+                        <div className="content-card-body">
+                          <Badge>
+                            {entry.isTemplate
+                              ? "Mwabu lesson plan"
+                              : entry.content.contentType.replaceAll("-", " ")}
+                          </Badge>
+                          <h2>
+                            <Link
+                              to={`/app/resources/${entry.content.id}?return=${encodeURIComponent(returnPath)}`}
+                            >
+                              {entry.content.title}
+                            </Link>
+                          </h2>
+                          {entry.year && (
+                            <p>
+                              {entry.year} curriculum · Grade {entry.grade} ·{" "}
+                              {entry.subject} · {entry.topic}
+                            </p>
+                          )}
+                          {entry.associatedResource && (
+                            <p>
+                              Reviewed resource associated with this teaching
+                              context.
+                            </p>
+                          )}
+                          {entry.subTopic && <p>Subtopic: {entry.subTopic}</p>}
+                          {!entry.isTemplate && <p>{entry.content.summary}</p>}
+                          <Link
+                            className="button"
+                            to={`/app/resources/${entry.content.id}?return=${encodeURIComponent(returnPath)}`}
+                          >
+                            {entry.isTemplate
+                              ? "Open lesson plan"
+                              : "Open learning resource"}
+                          </Link>
+                        </div>
+                      </article>
+                    ))}
+                </div>
+                <nav className="pagination" aria-label="Library pages">
+                  <button
+                    className="button secondary"
+                    disabled={result.resources.page <= 1}
+                    onClick={() => {
+                      const n = new URLSearchParams(params);
+                      n.set("page", String(result.resources.page - 1));
+                      setParams(n);
+                    }}
+                  >
+                    Previous
+                  </button>
+                  <span>Page {result.resources.page}</span>
+                  <button
+                    className="button secondary"
+                    disabled={
+                      result.resources.page * 24 >= result.resources.totalCount
+                    }
+                    onClick={() => {
+                      const n = new URLSearchParams(params);
+                      n.set("page", String(result.resources.page + 1));
+                      setParams(n);
+                    }}
+                  >
+                    Next
+                  </button>
+                </nav>
+              </>
+            )}
+          </QueryState>
+          {materialView !== "resources" &&
+            session.can("lessons.read") &&
+            session.organisationId && (
+              <SchoolPlans
+                key={JSON.stringify([
+                  session.organisationId,
+                  schoolContext.toString(),
+                  params.get("text") ?? "",
+                ])}
+                organisation={session.organisationId}
+                text={params.get("text") ?? ""}
+                contextQuery={schoolContext.toString()}
+              />
+            )}
+        </div>
+      </div>
     </>
   );
 }

@@ -9,6 +9,7 @@ import type {
   Structure,
 } from "../../api/types";
 import { useSession } from "../../auth/Session";
+import TeacherCurriculum from "./TeacherCurriculum";
 import {
   Badge,
   Empty,
@@ -106,6 +107,8 @@ export default function Curriculum() {
   const managed = session.can("curriculum.manage", "global");
   if (!session.can("curriculum.read", "catalogue"))
     return <Empty title="Curriculum access is not available" />;
+  if (!managed && session.access?.roleCodes.includes("Teacher"))
+    return <TeacherCurriculum />;
   function select(node: Structure) {
     setTrail((x) => [...x, { id: node.id, name: node.name }]);
     setPage(1);

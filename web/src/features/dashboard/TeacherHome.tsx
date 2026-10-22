@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   BookOpen,
   FilePlus,
-  Play,
   Search,
   Sparkles,
   GraduationCap,
@@ -48,6 +47,46 @@ export default function TeacherHome() {
       >
         Find a lesson, make it your own and bring it to your classroom.
       </PageTitle>
+      <nav className="teacher-tasks" aria-label="Teaching tasks">
+        <Link className="card" to="/app/library">
+          <BookOpen aria-hidden="true" />
+          <strong>Find a lesson</strong>
+          <span>Choose a grade, subject and topic.</span>
+        </Link>
+        <Link className="card" to="/app/lessons?mine=true">
+          <BookOpen aria-hidden="true" />
+          <strong>My lesson plans</strong>
+          <span>Reopen and adapt your saved plans.</span>
+        </Link>
+        {session.can("lessons.manage") && (
+          <Link className="card" to="/app/lessons/new?planning=topics">
+            <FilePlus aria-hidden="true" />
+            <strong>Start blank</strong>
+            <span>Write your own teaching plan.</span>
+          </Link>
+        )}
+        {session.can("lessons.manage") && session.can("lessons.ai") && (
+          <Link
+            className="card"
+            to="/app/lessons/new?planning=topics&assist=ai"
+          >
+            <Sparkles aria-hidden="true" />
+            <strong>Create with AI</strong>
+            <span>Choose a topic and answer a few classroom questions.</span>
+          </Link>
+        )}
+        <Link className="card" to="/app/library">
+          <Search aria-hidden="true" />
+          <strong>Adapt existing plan</strong>
+          <span>Start with a reviewed plan and keep the original.</span>
+        </Link>
+        <Link className="card" to="/app/resources">
+          <Search aria-hidden="true" />
+          <strong>Learning resources</strong>
+          <span>Open videos, documents and interactive activities.</span>
+        </Link>
+      </nav>
+      <ContinueTeaching />
       <section
         className="card teaching-choices"
         aria-label="Start with your grade"
@@ -104,46 +143,7 @@ export default function TeacherHome() {
           </button>
         </form>
       </details>
-      <nav className="teacher-tasks" aria-label="Teaching tasks">
-        <Link className="card" to="/app/library">
-          <BookOpen aria-hidden="true" />
-          <strong>Find a lesson</strong>
-          <span>Choose a grade, subject and topic.</span>
-        </Link>
-        <Link className="card" to="/app/lessons?mine=true">
-          <BookOpen aria-hidden="true" />
-          <strong>My lesson plans</strong>
-          <span>Reopen and adapt your saved plans.</span>
-        </Link>
-        {session.can("lessons.manage") && (
-          <Link className="card" to="/app/lessons/new?planning=topics">
-            <FilePlus aria-hidden="true" />
-            <strong>Create a lesson</strong>
-            <span>Start with the official lesson plan.</span>
-          </Link>
-        )}
-        {session.can("lessons.manage") && (
-          <Link
-            className="card"
-            to="/app/lessons/new?planning=topics&assist=ai"
-          >
-            <Sparkles aria-hidden="true" />
-            <strong>Create with AI</strong>
-            <span>Choose a topic and answer a few classroom questions.</span>
-          </Link>
-        )}
-        <Link className="card" to="/app/resources">
-          <Search aria-hidden="true" />
-          <strong>Learning resources</strong>
-          <span>Find videos, documents and activities.</span>
-        </Link>
-        <Link className="card" to="/app/lessons?teach=true">
-          <Play aria-hidden="true" />
-          <strong>Teach a lesson</strong>
-          <span>Open your saved Lesson Journey.</span>
-        </Link>
-      </nav>
-      <ContinueTeaching />
+
       <section className="card">
         <div className="section-heading">
           <h2>Your recent drafts</h2>

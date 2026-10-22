@@ -1,5 +1,5 @@
 import { Brand } from "../components/Brand";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Link,
   Navigate,
@@ -54,6 +54,12 @@ export function Shell() {
   const session = useSession();
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (open)
+      document
+        .querySelector<HTMLAnchorElement>("#workspace-navigation a")
+        ?.focus();
+  }, [open]);
   const [collapsed, setCollapsed] = useState(() => {
     try {
       return localStorage.getItem("mwabu.navigation.collapsed") === "true";
@@ -61,6 +67,15 @@ export function Shell() {
       return false;
     }
   });
+  const secondaryTeacherLinks = [
+    "/app/assessments",
+    "/app/collections",
+    "/app/organisations",
+    "/app/account",
+  ];
+  const teacherNavigation =
+    session.access?.roleCodes.includes("Teacher") &&
+    !session.access.platformAuthority;
   if (session.loading) return <Loading />;
   if (
     !session.user &&
@@ -300,6 +315,7 @@ export function Shell() {
             .filter(
               (x) =>
                 x.show !== false &&
+                (!teacherNavigation || !secondaryTeacherLinks.includes(x.to)) &&
                 (!x.permission || session.can(x.permission, x.scope)),
             )
             .map(({ to, label, icon: Icon }) => (
@@ -333,6 +349,31 @@ export function Shell() {
               </NavLink>
             ))}
         </nav>
+        {teacherNavigation && (
+          <details className="sidebar-extra">
+            <summary title="More workspace tools">More tools</summary>
+            <nav aria-label="More workspace tools">
+              {links
+                .filter(
+                  (x) =>
+                    secondaryTeacherLinks.includes(x.to) &&
+                    x.show !== false &&
+                    (!x.permission || session.can(x.permission, x.scope)),
+                )
+                .map(({ to, label, icon: Icon }) => (
+                  <NavLink
+                    key={to}
+                    to={to}
+                    title={label}
+                    onClick={() => setOpen(false)}
+                  >
+                    <Icon size={18} />
+                    <span className="nav-text">{label}</span>
+                  </NavLink>
+                ))}
+            </nav>
+          </details>
+        )}
         <div className="sidebar-bottom">
           <button
             className="sidebar-toggle"

@@ -126,51 +126,65 @@ export default function LessonSetup({
             onChange={(e) => set("durationMinutes", Number(e.target.value))}
           />
         </label>
-        <label>
-          Lesson date
-          <input
-            type="date"
-            value={value.lessonDate ?? ""}
-            onChange={(e) => set("lessonDate", e.target.value || null)}
-          />
-        </label>
-        <label>
-          Language of instruction
-          <select
-            required
-            value={value.language}
-            onChange={(e) => set("language", e.target.value)}
-          >
-            {[
-              ["en", "English"],
-              ["bem", "Bemba"],
-              ["nya", "Chinyanja"],
-              ["toi", "Tonga"],
-              ["loz", "Lozi"],
-              ["lun", "Lunda"],
-              ["lue", "Luvale"],
-              ["kqn", "Kaonde"],
-            ].map(([code, label]) => (
-              <option key={code} value={code}>
-                {label}
-              </option>
-            ))}
-            {!["en", "bem", "nya", "toi", "loz", "lun", "lue", "kqn"].includes(
-              value.language,
-            ) && <option value={value.language}>Saved language</option>}
-          </select>
-        </label>
-        <label>
-          Class size
-          <input
-            type="number"
-            min={1}
-            max={1000}
-            value={value.classSize}
-            onChange={(e) => set("classSize", Number(e.target.value))}
-          />
-        </label>
       </div>
+      <details open={!simple}>
+        <summary>Class details (optional)</summary>
+        <div className="lesson-grid">
+          <label>
+            Lesson date
+            <input
+              type="date"
+              value={value.lessonDate ?? ""}
+              onChange={(e) => set("lessonDate", e.target.value || null)}
+            />
+          </label>
+          <label>
+            Language of instruction
+            <select
+              required
+              value={value.language}
+              onChange={(e) => set("language", e.target.value)}
+            >
+              {[
+                ["en", "English"],
+                ["bem", "Bemba"],
+                ["nya", "Chinyanja"],
+                ["toi", "Tonga"],
+                ["loz", "Lozi"],
+                ["lun", "Lunda"],
+                ["lue", "Luvale"],
+                ["kqn", "Kaonde"],
+              ].map(([code, label]) => (
+                <option key={code} value={code}>
+                  {label}
+                </option>
+              ))}
+              {![
+                "en",
+                "bem",
+                "nya",
+                "toi",
+                "loz",
+                "lun",
+                "lue",
+                "kqn",
+              ].includes(value.language) && (
+                <option value={value.language}>Saved language</option>
+              )}
+            </select>
+          </label>
+          <label>
+            Class size
+            <input
+              type="number"
+              min={1}
+              max={1000}
+              value={value.classSize}
+              onChange={(e) => set("classSize", Number(e.target.value))}
+            />
+          </label>
+        </div>
+      </details>
       <details open={!simple}>
         <summary>Optional teaching context and reuse settings</summary>
         {[

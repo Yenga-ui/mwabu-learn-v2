@@ -341,6 +341,7 @@ test("teacher searches curriculum by name and creates an aligned lesson with der
       exact: true,
     }),
   ).toHaveValue("Represent one half using familiar objects");
+  await page.getByText("Class details (optional)", { exact: true }).click();
   await expect(
     page.getByRole("combobox", {
       name: "Language of instruction",
