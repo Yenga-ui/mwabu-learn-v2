@@ -2,7 +2,13 @@ import { Brand } from "../components/Brand";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { BookOpen, ArrowRight, Play, Download } from "lucide-react";
+import {
+  BookOpen,
+  ArrowRight,
+  Play,
+  Download,
+  GraduationCap,
+} from "lucide-react";
 import { api, sessionChanged } from "../api/client";
 import { Form, type Field } from "../components/ui";
 import { safeReturn } from "./permissions";
@@ -53,17 +59,28 @@ export default function AuthPages({
       },
     );
   return (
-    <main className="auth-layout">
-      <section className="auth-story">
+    <main className="auth-layout auth-modern">
+      <header className="auth-header">
         <Link to="/" className="brand">
           <Brand />
         </Link>
+        <Link className="auth-explore" to="/guest">
+          Explore as a guest <ArrowRight size={16} aria-hidden="true" />
+        </Link>
+      </header>
+      <section className="auth-story">
         <div>
-          <p className="eyebrow">MWABU LEARN</p>
-          <h1>Ready for your next lesson.</h1>
+          <span className="auth-welcome-icon">
+            <GraduationCap size={25} aria-hidden="true" />
+          </span>
+          <p className="eyebrow">LEARN. TEACH. GROW.</p>
+          <h2>
+            More discovery.
+            <br />
+            Every day.
+          </h2>
           <p>
-            Find curriculum resources, prepare your lessons and bring learning
-            to life.
+            A welcoming place to learn, prepare lessons and bring ideas to life.
           </p>
           <div className="auth-features">
             <p>
@@ -89,18 +106,17 @@ export default function AuthPages({
             </p>
           </div>
         </div>
-        <small>Made for teachers. Built around learners.</small>
       </section>
       <section className="auth-panel">
         <div className="auth-form">
-          <p className="eyebrow">WELCOME TO MWABU LEARN</p>
-          <h2>
+          <p className="eyebrow">YOUR LEARNING WORKSPACE</p>
+          <h1>
             {mode === "login"
               ? "Sign in to Mwabu Learn"
               : mode === "recovery"
                 ? "Recover your account"
                 : "Set a new password"}
-          </h2>
+          </h1>
           <p>
             {mode === "login"
               ? "Sign in to your learning workspace."
@@ -161,30 +177,35 @@ export default function AuthPages({
           </div>
           <div className="auth-help">
             {mode === "login" && (
-              <p>
+              <nav
+                className="auth-guest-choices"
+                aria-label="Guest experiences"
+              >
                 <Link to="/guest?audience=teacher">
                   Explore as a guest teacher
-                </Link>{" "}
-                ·{" "}
+                </Link>
                 <Link to="/guest?audience=learner">
                   Explore as a guest learner
                 </Link>
-              </p>
+              </nav>
             )}
-            <strong>Need an account?</strong>
             {mode === "login" && (
               <p>
+                New to Mwabu Learn?{" "}
                 <Link to="/register">Create an account</Link>
               </p>
             )}
             <p>
-              Teachers and parents can request an account. An authorised adult
-              or Mwabu registers learners. Your school administrator or Mwabu
-              can help arrange access.
+              Teachers and parents can request an account. A parent, teacher or
+              Mwabu registers learners.
             </p>
           </div>
         </div>
       </section>
+      <footer className="auth-footer">
+        Mwabu Learn <span aria-hidden="true">·</span> A little discovery, every
+        day.
+      </footer>
     </main>
   );
 }
